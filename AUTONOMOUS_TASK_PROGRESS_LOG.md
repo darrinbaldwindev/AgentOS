@@ -62,3 +62,20 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 **Boundary.** These are local contract drafts only. They do not implement provider connections, persist secret values, activate referral routing, create a frontend/backend runtime, or claim production, security, or release readiness.
 
 **Follow-up.** The next safe backlog task is B2: draft deterministic local mock adapters that consume these contracts without external network calls.
+
+## 2026-08-21 — B2 deterministic local mock adapters
+
+**Maintainer:** Current project coordinator
+**Executor:** AgentOS Autonomous
+**Backlog task:** B2 — Draft mock adapters
+**Status:** COMPLETED
+
+**Preflight.** The canonical repository `/home/ubuntu/projects/agentos-3b88b539` was clean on `main` tracking `origin/main`. The A4 contract draft and structural validator were present. B2 was selected because the backlog defines it as the next safe task after A4. The task required no external services, credentials, provider activation, scheduling, deployment, publication, or network access.
+
+**Files added.** `mocks/integration-mock-adapters.mjs` supplies stable local fixtures and adapter outcomes for every required integration state: `available`, `needs_connection`, `limited`, `offline`, `permission_denied`, `rate_limited`, `degraded`, and `error`. It uses fixed timestamps, stable diagnostic codes, deterministic input-key ordering, explicit retry behavior, immutable result objects, and no provider, credential, environment, or network access. `tests/integration-mock-adapters.test.mjs` verifies all eight scenarios, expected retry semantics, catalog identity, invalid-input handling, result immutability, and offline-source safeguards.
+
+**Validation.** `node --check mocks/integration-mock-adapters.mjs` passed. `node --check tests/integration-mock-adapters.test.mjs` passed. `node tests/integration-mock-adapters.test.mjs` passed, reporting verification of eight deterministic states and offline-source safeguards. `node tests/validate-agentos-core-types.mjs` passed. `git diff --check` passed.
+
+**Boundary.** These adapters are offline fixtures only. They do not make network requests, resolve keys, call providers, test real connections, alter routing, or claim runtime, security, production, or release readiness.
+
+**Follow-up.** The next safe backlog task is B3: draft frontend test fixtures that keep affiliate status secondary to capability fit and use only local deterministic data.
