@@ -37,6 +37,13 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain("Ready for your next message");
     expect(markup).toContain('aria-label="Start a new conversation"');
     expect(markup).toContain("New conversation");
+    expect(markup).toContain("Local route preview");
+    expect(markup).toContain(
+      "Ollama Local / agentos-default is ready in the local mock preview. Chat execution remains unchanged."
+    );
+    expect(markup).toContain(
+      "no live provider action · no affiliate routing · no owner telemetry"
+    );
     expect(markup).not.toContain("Recovery + policy");
     expect(markup).not.toContain("Affiliate telemetry");
   });

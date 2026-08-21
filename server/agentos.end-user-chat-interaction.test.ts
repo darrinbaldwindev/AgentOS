@@ -101,4 +101,42 @@ describe("EndUserChat conversation reset interaction", () => {
         .join(" ")
     ).not.toContain("stale reply");
   });
+
+  it("updates the local route preview for limited and unavailable mock routes", async () => {
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Choose end-user provider" })
+        .props.onChange({ target: { value: "together" } });
+    });
+
+    let previewText = renderer.root
+      .findAllByType("p")
+      .map(node => node.children.join(" "))
+      .join(" ");
+    expect(previewText).toContain(
+      "Together AI / meta-llama-3.1-8b may need a retry or a different route. No provider action has been attempted."
+    );
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Choose end-user provider" })
+        .props.onChange({ target: { value: "github" } });
+    });
+
+    previewText = renderer.root
+      .findAllByType("p")
+      .map(node => node.children.join(" "))
+      .join(" ");
+    expect(previewText).toContain(
+      "GitHub / repo-assistant is not ready in the local mock preview. Choose another route to continue."
+    );
+    expect(previewText).toContain(
+      "no live provider action · no affiliate routing · no owner telemetry"
+    );
+  });
 });

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { AIChatBox, type Message } from "@/components/AIChatBox";
-import { providers } from "@/lib/agentosMock";
+import { providers, type Provider } from "@/lib/agentosMock";
 import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -25,6 +25,28 @@ export function resetConversationState(currentEpoch: number) {
 
 export function getEndUserChatStatus(isTyping: boolean): string {
   return isTyping ? "AgentOS is typing" : "Ready for your next message";
+}
+
+export function getEndUserRoutePreview(
+  provider: Pick<Provider, "name" | "state">,
+  modelId: string
+): { tone: "ready" | "review" | "unavailable"; message: string } {
+  if (provider.state === "available") {
+    return {
+      tone: "ready",
+      message: `${provider.name} / ${modelId} is ready in the local mock preview. Chat execution remains unchanged.`,
+    };
+  }
+  if (provider.state === "limited" || provider.state === "degraded") {
+    return {
+      tone: "review",
+      message: `${provider.name} / ${modelId} may need a retry or a different route. No provider action has been attempted.`,
+    };
+  }
+  return {
+    tone: "unavailable",
+    message: `${provider.name} / ${modelId} is not ready in the local mock preview. Choose another route to continue.`,
+  };
 }
 
 export function EndUserTypingStatus({ isTyping }: { isTyping: boolean }) {
@@ -64,6 +86,7 @@ export default function EndUserChat() {
   );
   const selectedProvider =
     providers.find(provider => provider.id === providerId) ?? providers[0];
+  const routePreview = getEndUserRoutePreview(selectedProvider, modelId);
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
       if (
@@ -258,6 +281,24 @@ export default function EndUserChat() {
                 )}
               </select>
             </div>
+            <section
+              aria-labelledby="local-route-preview"
+              className={`rounded-lg border p-3 ${routePreview.tone === "ready" ? "border-emerald-300/20 bg-emerald-300/[0.06]" : routePreview.tone === "review" ? "border-amber-300/20 bg-amber-300/[0.06]" : "border-rose-300/20 bg-rose-300/[0.06]"}`}
+            >
+              <h2
+                id="local-route-preview"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-300"
+              >
+                Local route preview
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                {routePreview.message}
+              </p>
+              <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500">
+                no live provider action · no affiliate routing · no owner
+                telemetry
+              </p>
+            </section>
             <div
               aria-live="polite"
               className="rounded-lg border border-dashed border-white/10 p-3 text-xs leading-5 text-slate-500"

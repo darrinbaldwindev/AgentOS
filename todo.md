@@ -204,7 +204,16 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Add rendered and interaction tests for labels, loading/error states, and recovery guidance visibility
 - [x] Review settled desktop and mobile views, run the full test suite, typecheck, and production build
 - [x] Record shared verification evidence
-- [ ] Save a recoverable checkpoint for the owner health and recovery guidance UI
+- [x] Save a recoverable checkpoint for the owner health and recovery guidance UI
+
+## Autonomous end-user local route preview
+
+- [x] Inspect end-user chat selections and local route contracts before UI changes
+- [x] Define an end-user-safe route preview that excludes owner telemetry, operational logs, credentials, affiliate controls, and live-provider claims
+- [x] Render local mock route readiness and non-sensitive recovery guidance without changing chat execution routing
+- [x] Add rendered and interaction tests for preview ready, limited, unavailable, and isolation states
+- [x] Review settled desktop/mobile views, run the full test suite, typecheck, production build, and record evidence
+- [ ] Save a recoverable checkpoint for the end-user route preview phase
 
 ## Owner guidance interaction evidence repair
 
