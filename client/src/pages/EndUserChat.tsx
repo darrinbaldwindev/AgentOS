@@ -1,11 +1,27 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { AIChatBox, type Message } from "@/components/AIChatBox";
 import { providers } from "@/lib/agentosMock";
 import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { ShieldCheck } from "lucide-react";
+import { RotateCcw, ShieldCheck } from "lucide-react";
+
+export function shouldAcceptChatResponse(
+  responseEpoch: number,
+  currentEpoch: number
+): boolean {
+  return responseEpoch === currentEpoch;
+}
+
+export function resetConversationState(currentEpoch: number) {
+  return {
+    nextEpoch: currentEpoch + 1,
+    messages: [] as Message[],
+    isTyping: false,
+    pendingEpoch: null as number | null,
+  };
+}
 
 export function getEndUserChatStatus(isTyping: boolean): string {
   return isTyping ? "AgentOS is typing" : "Ready for your next message";
@@ -40,6 +56,9 @@ export default function EndUserChat() {
   const [modelId, setModelId] = useState("agentos-default");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationKey, setConversationKey] = useState(0);
+  const conversationEpochRef = useRef(0);
+  const pendingEpochRef = useRef<number | null>(null);
   const [notice, setNotice] = useState(
     "Your conversation stays separate from the AgentOS owner control plane."
   );
@@ -47,6 +66,14 @@ export default function EndUserChat() {
     providers.find(provider => provider.id === providerId) ?? providers[0];
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
+      if (
+        !shouldAcceptChatResponse(
+          pendingEpochRef.current ?? -1,
+          conversationEpochRef.current
+        )
+      )
+        return;
+      pendingEpochRef.current = null;
       setIsTyping(false);
       setMessages(current => [
         ...current,
@@ -57,6 +84,14 @@ export default function EndUserChat() {
       );
     },
     onError: error => {
+      if (
+        !shouldAcceptChatResponse(
+          pendingEpochRef.current ?? -1,
+          conversationEpochRef.current
+        )
+      )
+        return;
+      pendingEpochRef.current = null;
       setIsTyping(false);
       setNotice(`Chat unavailable: ${error.message}`);
     },
@@ -89,10 +124,23 @@ export default function EndUserChat() {
       </div>
     );
 
+  const handleNewConversation = () => {
+    const reset = resetConversationState(conversationEpochRef.current);
+    conversationEpochRef.current = reset.nextEpoch;
+    pendingEpochRef.current = reset.pendingEpoch;
+    setMessages(reset.messages);
+    setIsTyping(reset.isTyping);
+    setConversationKey(current => current + 1);
+    setNotice(
+      "New private conversation ready. Owner telemetry remains unavailable here."
+    );
+  };
+
   const handleSend = (content: string) => {
     const nextMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(nextMessages);
     setIsTyping(true);
+    pendingEpochRef.current = conversationEpochRef.current;
     setNotice(
       `AgentOS is composing through ${selectedProvider.name} / ${modelId}…`
     );
@@ -125,18 +173,32 @@ export default function EndUserChat() {
                 intentionally unavailable.
               </p>
             </div>
-            <Badge className="w-fit border border-cyan-200/20 bg-cyan-200/10 text-cyan-100 hover:bg-cyan-200/10">
-              <ShieldCheck className="mr-2 h-3 w-3" />
-              user workspace
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="w-fit border border-cyan-200/20 bg-cyan-200/10 text-cyan-100 hover:bg-cyan-200/10">
+                <ShieldCheck className="mr-2 h-3 w-3" />
+                user workspace
+              </Badge>
+              <button
+                type="button"
+                onClick={handleNewConversation}
+                aria-label="Start a new conversation"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-300 hover:bg-white/[0.08]"
+              >
+                <RotateCcw className="h-3 w-3" /> New conversation
+              </button>
+            </div>
           </div>
         </header>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
             <AIChatBox
+              key={conversationKey}
               messages={messages}
               onSendMessage={handleSend}
-              isLoading={chatMutation.isPending}
+              isLoading={
+                chatMutation.isPending &&
+                pendingEpochRef.current === conversationEpochRef.current
+              }
               height="560px"
               placeholder={`Message ${selectedProvider.name}…`}
               emptyStateMessage="Start your private AgentOS conversation"

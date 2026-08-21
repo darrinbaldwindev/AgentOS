@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, User, Sparkles } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { Check, Copy, Loader2, Send, User, Sparkles } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 
 /**
  * Message type matching server-side LLM Message interface
@@ -12,6 +13,93 @@ export type Message = {
   role: "system" | "user" | "assistant";
   content: string;
 };
+
+export function getCopyStatusLabel(status: "copied" | "failed"): string {
+  return status === "copied"
+    ? "Copied"
+    : "Copy failed. Select and copy manually.";
+}
+
+export async function copyTextToClipboard(
+  content: string,
+  writer: (value: string) => Promise<void>
+): Promise<"copied" | "failed"> {
+  try {
+    await writer(content);
+    return "copied";
+  } catch {
+    return "failed";
+  }
+}
+
+function renderInlineMarkdown(text: string): ReactNode[] {
+  const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/\S+)/g;
+  return text.split(tokenPattern).map((token, index) => {
+    if (token.startsWith("**") && token.endsWith("**"))
+      return <strong key={index}>{token.slice(2, -2)}</strong>;
+    if (token.startsWith("`") && token.endsWith("`"))
+      return (
+        <code
+          key={index}
+          className="rounded bg-black/20 px-1 py-0.5 font-mono text-[0.9em]"
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    if (/^https?:\/\//.test(token))
+      return (
+        <a
+          key={index}
+          href={token}
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-cyan-200/60 underline-offset-2"
+        >
+          {token}
+        </a>
+      );
+    return token;
+  });
+}
+
+export function MarkdownMessage({ content }: { content: string }) {
+  return (
+    <div className="space-y-2 text-sm leading-6">
+      {content.split("\n").map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" />;
+        if (trimmed.startsWith("### "))
+          return (
+            <h4 key={index} className="font-semibold text-foreground">
+              {renderInlineMarkdown(trimmed.slice(4))}
+            </h4>
+          );
+        if (trimmed.startsWith("## "))
+          return (
+            <h3 key={index} className="font-semibold text-foreground">
+              {renderInlineMarkdown(trimmed.slice(3))}
+            </h3>
+          );
+        if (trimmed.startsWith("# "))
+          return (
+            <h2 key={index} className="font-semibold text-foreground">
+              {renderInlineMarkdown(trimmed.slice(2))}
+            </h2>
+          );
+        if (/^[-*] /.test(trimmed))
+          return (
+            <div
+              key={index}
+              className="pl-4 before:mr-2 before:text-cyan-200 before:content-['•']"
+            >
+              {renderInlineMarkdown(trimmed.slice(2))}
+            </div>
+          );
+        return <p key={index}>{renderInlineMarkdown(line)}</p>;
+      })}
+    </div>
+  );
+}
 
 export type AIChatBoxProps = {
   /**
@@ -56,6 +144,7 @@ export type AIChatBoxProps = {
    * Click to send directly
    */
   suggestedPrompts?: string[];
+  showCopyActions?: boolean;
 };
 
 /**
@@ -118,12 +207,17 @@ export function AIChatBox({
   height = "600px",
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
+  showCopyActions = true,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputAreaRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [copyState, setCopyState] = useState<{
+    index: number;
+    status: "copied" | "failed";
+  } | null>(null);
 
   // Filter out system messages
   const displayMessages = messages.filter(msg => msg.role !== "system");
@@ -162,6 +256,30 @@ export function AIChatBox({
           behavior: "smooth",
         });
       });
+    }
+  };
+
+  const handleCopy = async (content: string, index: number) => {
+    const writer = navigator.clipboard?.writeText
+      ? (value: string) => navigator.clipboard.writeText(value)
+      : async (value: string) => {
+          const helper = document.createElement("textarea");
+          helper.value = value;
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        };
+    const status = await copyTextToClipboard(content, writer);
+    if (status === "copied") {
+      setCopyState({ index, status });
+      globalThis.setTimeout(
+        () =>
+          setCopyState(current => (current?.index === index ? null : current)),
+        1600
+      );
+    } else {
+      setCopyState({ index, status });
     }
   };
 
@@ -261,15 +379,29 @@ export function AIChatBox({
                       )}
                     >
                       {message.role === "assistant" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <div className="whitespace-pre-wrap">
-                            {message.content}
-                          </div>
-                        </div>
+                        <MarkdownMessage content={message.content} />
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">
                           {message.content}
                         </p>
+                      )}
+                      {showCopyActions && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(message.content, index)}
+                          aria-label={`Copy ${message.role} message`}
+                          className="mt-2 inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] text-muted-foreground hover:bg-black/10 hover:text-foreground"
+                        >
+                          {copyState?.index === index &&
+                          copyState.status === "copied" ? (
+                            <Check className="size-3" />
+                          ) : (
+                            <Copy className="size-3" />
+                          )}
+                          {copyState?.index === index
+                            ? getCopyStatusLabel(copyState.status)
+                            : "Copy"}
+                        </button>
                       )}
                     </div>
 
@@ -332,6 +464,15 @@ export function AIChatBox({
           )}
         </Button>
       </form>
+      {copyState?.status === "failed" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="border-t border-rose-200/10 px-4 py-2 font-mono text-[10px] text-rose-200/80"
+        >
+          {getCopyStatusLabel("failed")}
+        </div>
+      )}
     </div>
   );
 }

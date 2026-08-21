@@ -57,7 +57,7 @@ describe("AgentOS dashboard safety invariants", () => {
     expect(filtered).toHaveLength(3);
     expect(summarizeTelemetry(filtered).clicks).toBe(404);
     expect(telemetryToCsv(filtered)).toContain(
-      "date,label,clicks,signups,conversion_rate"
+      "date,label,clicks,signups,active_users,conversion_rate"
     );
     expect(telemetryToCsv(filtered)).toContain("2026-08-17,MON,98,22");
   });
@@ -217,6 +217,7 @@ describe("AgentOS dashboard safety invariants", () => {
     expect(summarizeTelemetry(selectTelemetryRange("4D"))).toEqual({
       clicks: 626,
       signups: 151,
+      activeUsers: 112,
       conversionRate: 151 / 626,
     });
   });

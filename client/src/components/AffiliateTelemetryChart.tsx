@@ -133,7 +133,7 @@ export function AffiliateTelemetryChart() {
             {data.length} days selected
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-xs">
+        <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
           <div>
             <p className="font-mono text-[9px] uppercase text-slate-500">
               clicks
@@ -148,6 +148,14 @@ export function AffiliateTelemetryChart() {
             </p>
             <p className="mt-1 text-lg font-semibold text-pink-100">
               {summary.signups}
+            </p>
+          </div>
+          <div>
+            <p className="font-mono text-[9px] uppercase text-slate-500">
+              active users
+            </p>
+            <p className="mt-1 text-lg font-semibold text-amber-100">
+              {summary.activeUsers}
             </p>
           </div>
           <div>

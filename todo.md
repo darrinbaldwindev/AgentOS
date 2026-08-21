@@ -107,11 +107,35 @@
 - [x] Add prominent admin/owner identity badge and visual treatment to the control plane
 - [x] Add tests for typing state, message history, date filtering, CSV serialization, and admin identity rendering
 - [x] Verify desktop/mobile accessibility and responsive behavior
-- [ ] Save a checkpoint after all enhancement work is complete
+- [x] Save a checkpoint after all enhancement work is complete
 
 ## Final enhancement evidence repair
 
 - [x] Add rendered tests for the actual admin/owner badge and both ready/typing end-user chat states
 - [x] Capture and review settled post-enhancement desktop screenshots for the owner dashboard, owner chat, and end-user chat
 - [x] Re-capture settled post-enhancement mobile screenshots if the loading-state frame persists
-- [ ] Save the final enhancement checkpoint after all evidence items are complete
+- [x] Save the final enhancement checkpoint after all evidence items are complete
+
+## End-user chat and telemetry usability enhancement
+
+- [x] Add safe markdown rendering for end-user assistant messages
+- [x] Add copy-to-clipboard actions with accessible success/failure status
+- [x] Add a New Conversation action that clears current-session history and pending state
+- [x] Add telemetry summary cards for total clicks, signups, conversion rate, and active users
+- [x] Add tests for markdown output, copy controls, reset behavior, and summary metrics
+- [x] Verify responsive and accessible desktop/mobile rendering
+- [x] Save a checkpoint after all usability enhancements are complete
+
+## Final usability evidence repair
+
+- [x] Add a user-visible and accessible copy failure status and test success/failure behavior
+- [x] Isolate New Conversation from stale in-flight chat responses and reset pending state safely
+- [x] Add a behavior test proving reset clears rendered history/input and ignores stale replies
+- [x] Record final desktop/mobile review findings for markdown, copy, reset, and telemetry summary cards
+- [x] Save the final usability checkpoint after all evidence items are complete
+
+## Interactive behavior evidence repair
+
+- [x] Add a component interaction test that simulates clipboard success and failure and asserts visible/live-region status changes
+- [x] Add an end-user chat interaction test that triggers New Conversation, clears rendered history/input, and ignores a stale pending response
+- [x] Save the final usability checkpoint after interactive evidence is complete

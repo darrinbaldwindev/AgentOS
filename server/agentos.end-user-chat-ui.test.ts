@@ -35,6 +35,8 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain("Message history");
     expect(markup).toContain("No messages in this session yet.");
     expect(markup).toContain("Ready for your next message");
+    expect(markup).toContain('aria-label="Start a new conversation"');
+    expect(markup).toContain("New conversation");
     expect(markup).not.toContain("Recovery + policy");
     expect(markup).not.toContain("Affiliate telemetry");
   });

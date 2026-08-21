@@ -23,5 +23,6 @@ describe("Affiliate telemetry chart accessibility surface", () => {
     expect(markup).toContain(">4D<");
     expect(markup).toContain(">2D<");
     expect(markup).toContain("Affiliate telemetry chart for 7D");
+    expect(markup).toContain("active users");
   });
 });
