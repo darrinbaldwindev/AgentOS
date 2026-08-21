@@ -175,10 +175,23 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Ensure route resolution is capability-first, consent-aware, and never activates affiliate routing
 - [x] Add direct router tests for access control, deterministic responses, failure semantics, and attribution isolation
 - [x] Run the full test suite, typecheck, production build, and record shared verification evidence
-- [ ] Save a recoverable checkpoint for the local orchestration phase
+- [x] Save a recoverable checkpoint for the local orchestration phase
 
 ## Local orchestration consent evidence repair
 
 - [x] Encode that granted and declined consent are visible in route resolution but never alter capability-first local routing while affiliate routing is disabled
 - [x] Add direct tests covering both consent states and non-activation of attribution or affiliate routing
 - [x] Rerun verification and update the shared orchestration evidence record
+
+## Autonomous continuation after local orchestration
+
+- [x] Reassess the current repository, shared records, and local-safe backlog candidates
+- [x] Select and define the next highest-value deterministic implementation task before editing code
+
+## Autonomous recovery event schema phase
+
+- [x] Define append-only sanitized local recovery-event shapes for execution, model switch, fallback selection, provider status, consent, referral click, redirect failure, tool failure, and recovery action
+- [x] Implement deterministic recovery-event mapping from local orchestration outcomes without persistence or external side effects
+- [x] Add tests for event allowlisting, prompt/secret/context exclusion, event ordering, and failure mapping
+- [x] Run the full test suite, typecheck, production build, and record shared verification evidence
+- [ ] Save a recoverable checkpoint for the autonomous recovery-event schema phase
