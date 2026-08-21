@@ -165,4 +165,20 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Add direct tests for contract invariants, adapter transitions, capability fit, and attribution isolation
 - [x] Run tests, typecheck, production build, and evidence review for the contract/mock-adapter phase
 - [x] Record verification evidence in shared Files & Sources
-- [ ] Save a recoverable checkpoint for the contract/mock-adapter phase
+- [x] Save a recoverable checkpoint for the contract/mock-adapter phase
+
+## Governed local orchestration boundary
+
+- [x] Define the deterministic catalog, health, route-resolution, and mock-execution API contracts
+- [x] Enforce authenticated versus owner/admin boundaries for local orchestration procedures
+- [x] Implement local catalog, health, route-resolution, and mock-execution procedures without external calls
+- [x] Ensure route resolution is capability-first, consent-aware, and never activates affiliate routing
+- [x] Add direct router tests for access control, deterministic responses, failure semantics, and attribution isolation
+- [x] Run the full test suite, typecheck, production build, and record shared verification evidence
+- [ ] Save a recoverable checkpoint for the local orchestration phase
+
+## Local orchestration consent evidence repair
+
+- [x] Encode that granted and declined consent are visible in route resolution but never alter capability-first local routing while affiliate routing is disabled
+- [x] Add direct tests covering both consent states and non-activation of attribution or affiliate routing
+- [x] Rerun verification and update the shared orchestration evidence record

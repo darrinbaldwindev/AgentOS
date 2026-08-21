@@ -21,6 +21,13 @@ import {
   listAttributionRecords,
   listRecoveryRecords,
 } from "./db";
+import {
+  executeMockRoute,
+  getMockCatalog,
+  getMockHealth,
+  getMockScenarios,
+  resolveMockRoute,
+} from "./agentosOrchestrator";
 
 const providerIds = [
   "ollama",
@@ -40,6 +47,16 @@ const recoveryKinds = [
   "partial_stream",
   "artifact_conflict",
   "referral_failure",
+] as const;
+const agentosCapabilities = [
+  "chat",
+  "streaming",
+  "tools",
+  "vision",
+  "audio",
+  "json",
+  "local",
+  "mcp",
 ] as const;
 
 const chatMessage = z.object({
@@ -66,6 +83,39 @@ export const appRouter = router({
           (Boolean(ENV.ownerOpenId) && ctx.user.openId === ENV.ownerOpenId),
         role: ctx.user.role,
       })),
+    }),
+
+    orchestration: router({
+      catalog: protectedProcedure.query(() => getMockCatalog()),
+      health: ownerOrAdminProcedure.query(() => getMockHealth()),
+      scenarios: ownerOrAdminProcedure.query(() => getMockScenarios()),
+      resolve: protectedProcedure
+        .input(
+          z.object({
+            providerId: z.enum(providerIds),
+            modelId: z.string().trim().min(1).max(128),
+            agentId: z.string().trim().min(1).max(128),
+            requestedCapabilities: z.array(z.enum(agentosCapabilities)).max(8),
+            consent: z.enum(["granted", "declined"]),
+          })
+        )
+        .query(({ input }) => resolveMockRoute(input)),
+      execute: protectedProcedure
+        .input(
+          z.object({
+            providerId: z.enum(providerIds),
+            modelId: z.string().trim().min(1).max(128),
+            agentId: z.string().trim().min(1).max(128),
+            requestedCapabilities: z.array(z.enum(agentosCapabilities)).max(8),
+            consent: z.enum(["granted", "declined"]),
+            message: z.string().trim().min(1).max(12000),
+            conversationId: z.string().trim().min(1).max(128),
+            requestId: z.string().trim().min(1).max(128),
+            inputTokens: z.number().int().min(0).max(100000),
+            maxContextTokens: z.number().int().min(1).max(200000),
+          })
+        )
+        .mutation(({ input }) => executeMockRoute(input)),
     }),
 
     chat: protectedProcedure
