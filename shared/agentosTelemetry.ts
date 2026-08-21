@@ -1,17 +1,18 @@
 export type TelemetryPoint = {
+  date: string;
   label: string;
   clicks: number;
   signups: number;
 };
 
 export const affiliateTelemetry: TelemetryPoint[] = [
-  { label: "MON", clicks: 86, signups: 19 },
-  { label: "TUE", clicks: 112, signups: 26 },
-  { label: "WED", clicks: 98, signups: 22 },
-  { label: "THU", clicks: 145, signups: 34 },
-  { label: "FRI", clicks: 161, signups: 41 },
-  { label: "SAT", clicks: 132, signups: 29 },
-  { label: "SUN", clicks: 188, signups: 47 },
+  { date: "2026-08-15", label: "SAT", clicks: 86, signups: 19 },
+  { date: "2026-08-16", label: "SUN", clicks: 112, signups: 26 },
+  { date: "2026-08-17", label: "MON", clicks: 98, signups: 22 },
+  { date: "2026-08-18", label: "TUE", clicks: 145, signups: 34 },
+  { date: "2026-08-19", label: "WED", clicks: 161, signups: 41 },
+  { date: "2026-08-20", label: "THU", clicks: 132, signups: 29 },
+  { date: "2026-08-21", label: "FRI", clicks: 188, signups: 47 },
 ];
 
 export type TelemetryRange = "2D" | "4D" | "7D";
@@ -19,6 +20,39 @@ export type TelemetryRange = "2D" | "4D" | "7D";
 export function selectTelemetryRange(range: TelemetryRange): TelemetryPoint[] {
   const count = range === "2D" ? 2 : range === "4D" ? 4 : 7;
   return affiliateTelemetry.slice(-count);
+}
+
+export function filterTelemetryByDateRange(
+  points: TelemetryPoint[],
+  startDate: string,
+  endDate: string
+): TelemetryPoint[] {
+  return points.filter(
+    point => point.date >= startDate && point.date <= endDate
+  );
+}
+
+function escapeCsvCell(value: string | number): string {
+  const text = String(value);
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+export function telemetryToCsv(points: TelemetryPoint[]): string {
+  const header = ["date", "label", "clicks", "signups", "conversion_rate"].join(
+    ","
+  );
+  const rows = points.map(point =>
+    [
+      point.date,
+      point.label,
+      point.clicks,
+      point.signups,
+      point.clicks ? (point.signups / point.clicks).toFixed(4) : "0",
+    ]
+      .map(escapeCsvCell)
+      .join(",")
+  );
+  return [header, ...rows].join("\n");
 }
 
 export function summarizeTelemetry(points: TelemetryPoint[]) {

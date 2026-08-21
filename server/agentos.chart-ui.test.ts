@@ -16,6 +16,9 @@ describe("Affiliate telemetry chart accessibility surface", () => {
     const markup = renderToStaticMarkup(createElement(AffiliateTelemetryChart));
     expect(markup).toContain('role="group"');
     expect(markup).toContain('aria-label="Telemetry range"');
+    expect(markup).toContain('id="telemetry-start"');
+    expect(markup).toContain('id="telemetry-end"');
+    expect(markup).toContain('aria-label="Export filtered telemetry CSV"');
     expect(markup).toContain(">7D<");
     expect(markup).toContain(">4D<");
     expect(markup).toContain(">2D<");

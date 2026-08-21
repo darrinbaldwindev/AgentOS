@@ -3,15 +3,19 @@ import { createElement } from "react";
 import { attributionRecords, recoveryRecords } from "../drizzle/schema";
 import {
   affiliateTelemetry,
+  filterTelemetryByDateRange,
   selectTelemetryRange,
   summarizeTelemetry,
+  telemetryToCsv,
 } from "../shared/agentosTelemetry";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DashboardAccessibilityProbe } from "../client/src/components/DashboardAccessibilityProbe";
 import {
   dashboardA11yContract,
   dashboardNavItems,
+  CONTROL_PLANE_BADGE_LABELS,
 } from "../client/src/lib/dashboardContracts";
+import { getEndUserChatStatus } from "../client/src/pages/EndUserChat";
 import {
   AppendOnlyRecoveryLog,
   CONNECTION_STATES,
@@ -42,6 +46,27 @@ describe("AgentOS dashboard safety invariants", () => {
     expect(nextConnectionState("unknown")).toBe("checking");
     expect(nextConnectionState("degraded")).toBe("offline");
     expect(nextConnectionState("offline")).toBe("offline");
+  });
+
+  it("filters telemetry by date and serializes a governed CSV export", () => {
+    const filtered = filterTelemetryByDateRange(
+      affiliateTelemetry,
+      "2026-08-17",
+      "2026-08-19"
+    );
+    expect(filtered).toHaveLength(3);
+    expect(summarizeTelemetry(filtered).clicks).toBe(404);
+    expect(telemetryToCsv(filtered)).toContain(
+      "date,label,clicks,signups,conversion_rate"
+    );
+    expect(telemetryToCsv(filtered)).toContain("2026-08-17,MON,98,22");
+  });
+
+  it("exposes explicit end-user typing and control-plane identity labels", () => {
+    expect(getEndUserChatStatus(true)).toBe("AgentOS is typing");
+    expect(getEndUserChatStatus(false)).toBe("Ready for your next message");
+    expect(CONTROL_PLANE_BADGE_LABELS.admin).toBe("ADMIN CONTROL");
+    expect(CONTROL_PLANE_BADGE_LABELS.owner).toBe("OWNER CONTROL");
   });
 
   it("keeps live affiliate routing disabled in the preload catalog", () => {

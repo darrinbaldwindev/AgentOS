@@ -84,16 +84,34 @@
 - [x] Create a separate end-user chat route and layout that does not expose owner telemetry or recovery controls
 - [x] Add direct RBAC tests for owner, admin, ordinary user, and unauthenticated callers
 - [x] Verify the protected owner dashboard and separate end-user chat responsively
-- [ ] Save a checkpoint after the RBAC and end-user chat work is complete
+- [x] Save a checkpoint after the RBAC and end-user chat work is complete
 
 ## Final RBAC evidence repair
 
 - [x] Add a direct test proving a non-admin configured owner ID is allowed through owner-only procedures
 - [x] Capture and review post-RBAC mobile screenshots for the owner dashboard, owner chat, and end-user chat
-- [ ] Save the RBAC checkpoint after all evidence items are complete
+- [x] Save the RBAC checkpoint after all evidence items are complete
 
 ## Mobile screenshot review
 
 - [x] Review settled mobile screenshots for the owner dashboard, owner chat, and end-user chat and record responsive findings
 - [x] Fix any owner-chat mobile clipping or loading-state presentation issues found during review
-- [ ] Save the final RBAC checkpoint after the mobile review is complete
+- [x] Save the final RBAC checkpoint after the mobile review is complete
+
+## Autonomous chat, telemetry export, and admin identity enhancement
+
+- [x] Add end-user typing indicators with accessible live status
+- [x] Add end-user message history view with clear current-session separation
+- [x] Add date-range filtering to affiliate telemetry using typed backend data
+- [x] Add governed CSV export for filtered affiliate telemetry
+- [x] Add prominent admin/owner identity badge and visual treatment to the control plane
+- [x] Add tests for typing state, message history, date filtering, CSV serialization, and admin identity rendering
+- [x] Verify desktop/mobile accessibility and responsive behavior
+- [ ] Save a checkpoint after all enhancement work is complete
+
+## Final enhancement evidence repair
+
+- [x] Add rendered tests for the actual admin/owner badge and both ready/typing end-user chat states
+- [x] Capture and review settled post-enhancement desktop screenshots for the owner dashboard, owner chat, and end-user chat
+- [x] Re-capture settled post-enhancement mobile screenshots if the loading-state frame persists
+- [ ] Save the final enhancement checkpoint after all evidence items are complete

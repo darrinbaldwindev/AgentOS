@@ -7,6 +7,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+export const CONTROL_PLANE_BADGE_LABELS = {
+  admin: "ADMIN CONTROL",
+  owner: "OWNER CONTROL",
+} as const;
+
 export const dashboardNavItems = [
   { icon: LayoutDashboard, label: "Command center", path: "/" },
   { icon: MessageSquare, label: "Model-switch chat", path: "/control/chat" },

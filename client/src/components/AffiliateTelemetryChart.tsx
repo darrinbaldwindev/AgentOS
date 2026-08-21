@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,8 +12,10 @@ import {
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import {
+  filterTelemetryByDateRange,
   selectTelemetryRange,
   summarizeTelemetry,
+  telemetryToCsv,
   type TelemetryRange,
 } from "@shared/agentosTelemetry";
 
@@ -25,14 +28,31 @@ type Range = TelemetryRange;
 
 export function AffiliateTelemetryChart() {
   const [range, setRange] = useState<Range>("7D");
+  const [startDate, setStartDate] = useState("2026-08-15");
+  const [endDate, setEndDate] = useState("2026-08-21");
   const { isAuthenticated } = useAuth();
   const telemetryQuery = trpc.agentos.telemetry.useQuery(
     { range },
     { enabled: isAuthenticated }
   );
-  const data = telemetryQuery.data?.points ?? selectTelemetryRange(range);
-  const summary = telemetryQuery.data?.summary ?? summarizeTelemetry(data);
+  const sourceData = telemetryQuery.data?.points ?? selectTelemetryRange(range);
+  const data = useMemo(
+    () => filterTelemetryByDateRange(sourceData, startDate, endDate),
+    [sourceData, startDate, endDate]
+  );
+  const summary = useMemo(() => summarizeTelemetry(data), [data]);
   const conversionRate = summary.conversionRate * 100;
+  const exportCsv = () => {
+    const blob = new Blob([telemetryToCsv(data)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `agentos-affiliate-telemetry-${startDate}-to-${endDate}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <Card className="border-white/10 bg-white/[0.035] text-white shadow-none">
@@ -45,21 +65,74 @@ export function AffiliateTelemetryChart() {
             clicks, signups, and consent-aware conversion
           </p>
         </div>
-        <div className="flex gap-1" role="group" aria-label="Telemetry range">
-          {(["7D", "4D", "2D"] as Range[]).map(option => (
-            <Button
-              key={option}
-              size="sm"
-              variant={range === option ? "default" : "outline"}
-              onClick={() => setRange(option)}
-              className="h-7 border-white/10 bg-white/5 px-2 font-mono text-[10px]"
-            >
-              {option}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex gap-1" role="group" aria-label="Telemetry range">
+            {(["7D", "4D", "2D"] as Range[]).map(option => (
+              <Button
+                key={option}
+                size="sm"
+                variant={range === option ? "default" : "outline"}
+                onClick={() => setRange(option)}
+                className="h-7 border-white/10 bg-white/5 px-2 font-mono text-[10px]"
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={exportCsv}
+            disabled={data.length === 0}
+            aria-label="Export filtered telemetry CSV"
+            className="h-7 border-cyan-200/20 bg-cyan-200/5 px-2 font-mono text-[10px] text-cyan-100"
+          >
+            <Download className="mr-1 h-3 w-3" /> CSV
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 p-5">
+        <div className="grid gap-3 rounded-lg border border-white/10 bg-black/10 p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div>
+            <label
+              htmlFor="telemetry-start"
+              className="font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500"
+            >
+              Start date
+            </label>
+            <input
+              id="telemetry-start"
+              type="date"
+              value={startDate}
+              max={endDate}
+              onChange={event => setStartDate(event.target.value)}
+              className="mt-1 w-full rounded border border-white/10 bg-[#07111f] px-2 py-2 text-xs text-slate-200"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="telemetry-end"
+              className="font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500"
+            >
+              End date
+            </label>
+            <input
+              id="telemetry-end"
+              type="date"
+              value={endDate}
+              min={startDate}
+              onChange={event => setEndDate(event.target.value)}
+              className="mt-1 w-full rounded border border-white/10 bg-[#07111f] px-2 py-2 text-xs text-slate-200"
+            />
+          </div>
+          <p
+            aria-live="polite"
+            className="font-mono text-[10px] text-slate-500"
+          >
+            {data.length} days selected
+          </p>
+        </div>
         <div className="grid grid-cols-3 gap-3 text-xs">
           <div>
             <p className="font-mono text-[9px] uppercase text-slate-500">

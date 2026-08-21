@@ -7,6 +7,24 @@ import { startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { ShieldCheck } from "lucide-react";
 
+export function getEndUserChatStatus(isTyping: boolean): string {
+  return isTyping ? "AgentOS is typing" : "Ready for your next message";
+}
+
+export function EndUserTypingStatus({ isTyping }: { isTyping: boolean }) {
+  return (
+    <div
+      aria-live="polite"
+      className="mt-3 flex items-center gap-2 rounded-lg border border-cyan-200/10 bg-cyan-200/[0.04] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-cyan-100/70"
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${isTyping ? "animate-pulse bg-cyan-200" : "bg-slate-600"}`}
+      />
+      {getEndUserChatStatus(isTyping)}
+    </div>
+  );
+}
+
 const modelOptions = {
   ollama: ["agentos-default", "llama-local"],
   together: ["meta-llama-3.1-8b", "qwen2.5-coder"],
@@ -21,6 +39,7 @@ export default function EndUserChat() {
   const [providerId, setProviderId] = useState("ollama");
   const [modelId, setModelId] = useState("agentos-default");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
   const [notice, setNotice] = useState(
     "Your conversation stays separate from the AgentOS owner control plane."
   );
@@ -28,6 +47,7 @@ export default function EndUserChat() {
     providers.find(provider => provider.id === providerId) ?? providers[0];
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
+      setIsTyping(false);
       setMessages(current => [
         ...current,
         { role: "assistant", content: response.content },
@@ -36,7 +56,10 @@ export default function EndUserChat() {
         `${response.providerId} / ${response.modelId} responded. Owner telemetry is not exposed here.`
       );
     },
-    onError: error => setNotice(`Chat unavailable: ${error.message}`),
+    onError: error => {
+      setIsTyping(false);
+      setNotice(`Chat unavailable: ${error.message}`);
+    },
   });
 
   if (loading)
@@ -69,6 +92,10 @@ export default function EndUserChat() {
   const handleSend = (content: string) => {
     const nextMessages: Message[] = [...messages, { role: "user", content }];
     setMessages(nextMessages);
+    setIsTyping(true);
+    setNotice(
+      `AgentOS is composing through ${selectedProvider.name} / ${modelId}…`
+    );
     chatMutation.mutate({
       providerId: providerId as keyof typeof modelOptions,
       modelId,
@@ -119,6 +146,7 @@ export default function EndUserChat() {
               ]}
               className="border-white/10 bg-[#081321]"
             />
+            <EndUserTypingStatus isTyping={isTyping} />
           </section>
           <aside className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.035] p-5">
             <div>
@@ -174,6 +202,46 @@ export default function EndUserChat() {
             >
               {notice}
             </div>
+            <section
+              aria-labelledby="user-message-history"
+              className="border-t border-white/10 pt-5"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2
+                  id="user-message-history"
+                  className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400"
+                >
+                  Message history
+                </h2>
+                <span className="font-mono text-[10px] text-slate-600">
+                  {messages.length} messages
+                </span>
+              </div>
+              <div
+                className="mt-3 max-h-56 space-y-2 overflow-y-auto"
+                aria-label="Current session message history"
+              >
+                {messages.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-white/10 p-3 text-xs leading-5 text-slate-600">
+                    No messages in this session yet.
+                  </p>
+                ) : (
+                  messages.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className="rounded-lg border border-white/10 bg-black/10 p-3 text-xs leading-5"
+                    >
+                      <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-cyan-200/60">
+                        {message.role}
+                      </span>
+                      <p className="mt-1 line-clamp-3 text-slate-300">
+                        {message.content}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
           </aside>
         </div>
       </div>

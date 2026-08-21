@@ -32,6 +32,9 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain(
       "Owner telemetry, recovery records, and affiliate routing controls are intentionally unavailable."
     );
+    expect(markup).toContain("Message history");
+    expect(markup).toContain("No messages in this session yet.");
+    expect(markup).toContain("Ready for your next message");
     expect(markup).not.toContain("Recovery + policy");
     expect(markup).not.toContain("Affiliate telemetry");
   });

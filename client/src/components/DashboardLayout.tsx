@@ -22,9 +22,12 @@ import {
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LogOut, PanelLeft } from "lucide-react";
-import { dashboardNavItems } from "@/lib/dashboardContracts";
+import {
+  CONTROL_PLANE_BADGE_LABELS,
+  dashboardNavItems,
+} from "@/lib/dashboardContracts";
 import { trpc } from "@/lib/trpc";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import React, { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
@@ -83,7 +86,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (accessQuery.isLoading) return <DashboardLayoutSkeleton />;
+  if (accessQuery.isLoading) return <OwnerAccessChecking />;
   if (accessQuery.data && !accessQuery.data.allowed)
     return <OwnerAccessDenied />;
 
@@ -99,6 +102,42 @@ export default function DashboardLayout({
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
+  );
+}
+
+function OwnerAccessChecking() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-screen items-center justify-center bg-[#07111f] p-6 text-slate-100"
+    >
+      <div className="w-full max-w-sm rounded-2xl border border-cyan-200/20 bg-white/[0.035] p-6 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-cyan-200/70">
+          AgentOS / control plane
+        </p>
+        <p className="mt-3 text-sm text-slate-300">
+          Verifying administrator access…
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function ControlPlaneIdentityBadge({
+  role,
+}: {
+  role: "admin" | "owner";
+}) {
+  return (
+    <span
+      aria-label="Admin control plane"
+      className="rounded border border-amber-200/30 bg-amber-200/10 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em] text-amber-100"
+    >
+      {role === "admin"
+        ? CONTROL_PLANE_BADGE_LABELS.admin
+        : CONTROL_PLANE_BADGE_LABELS.owner}
+    </span>
   );
 }
 
@@ -206,6 +245,9 @@ function DashboardLayoutContent({
                   <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-slate-600">
                     control plane
                   </span>
+                  <ControlPlaneIdentityBadge
+                    role={user?.role === "admin" ? "admin" : "owner"}
+                  />
                 </div>
               ) : null}
             </div>
