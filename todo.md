@@ -139,3 +139,19 @@
 - [x] Add a component interaction test that simulates clipboard success and failure and asserts visible/live-region status changes
 - [x] Add an end-user chat interaction test that triggers New Conversation, clears rendered history/input, and ignores a stale pending response
 - [x] Save the final usability checkpoint after interactive evidence is complete
+
+## Reusable skill formalization
+
+- [x] Define the reusable AgentOS governed-dashboard workflow and trigger conditions
+- [x] Initialize the agentos-governed-dashboard skill with skill-creator
+- [x] Author concise imperative SKILL.md guidance for TODO-led development, RBAC, persistence, testing, evidence, and checkpointing
+- [x] Add only reusable references or templates that materially improve repeat use
+- [x] Validate the skill with quick_validate.py and revise any failures
+- [x] Save the canonical skill deliverable in the project shared Files & Sources area
+- [x] Deliver the validated skill package to the user
+
+Progress note: Preserve strict owner-gated routing, no secrets in logs, append-only audit/persistence patterns, evidence-based verification, and recoverable checkpoint delivery while keeping the skill concise and progressively disclosed.
+
+Source of truth: /home/ubuntu/skills/skill-creator/SKILL.md and the completed AgentOS dashboard workflow in this project.
+
+Append-only history: new skill formalization requested by the user after the final dashboard usability checkpoint.
