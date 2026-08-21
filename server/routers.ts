@@ -23,6 +23,7 @@ import {
 } from "./db";
 import {
   executeMockRoute,
+  getEndUserMockCatalog,
   getMockCatalog,
   getMockHealth,
   getMockScenarios,
@@ -86,7 +87,8 @@ export const appRouter = router({
     }),
 
     orchestration: router({
-      catalog: protectedProcedure.query(() => getMockCatalog()),
+      catalog: ownerOrAdminProcedure.query(() => getMockCatalog()),
+      endUserCatalog: protectedProcedure.query(() => getEndUserMockCatalog()),
       health: ownerOrAdminProcedure.query(() => getMockHealth()),
       scenarios: ownerOrAdminProcedure.query(() => getMockScenarios()),
       resolve: protectedProcedure

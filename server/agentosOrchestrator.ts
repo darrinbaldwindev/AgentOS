@@ -22,6 +22,14 @@ export interface RouteResolutionInput {
   consent: "granted" | "declined";
 }
 
+export type EndUserRouteReadiness = "ready" | "review" | "unavailable";
+
+function readinessFor(connection: string): EndUserRouteReadiness {
+  if (connection === "available") return "ready";
+  if (connection === "limited" || connection === "degraded") return "review";
+  return "unavailable";
+}
+
 export type RouteResolution =
   | {
       status: "selected";
@@ -63,6 +71,27 @@ export function getMockCatalog() {
     models: mockModels,
     agents: mockAgents,
     integrations: mockIntegrations,
+    affiliateRoutingEnabled: false as const,
+  };
+}
+
+/**
+ * Minimal authenticated user catalog. It intentionally omits affiliate status,
+ * privacy/cost attributes, capabilities, operational retry data, agents,
+ * integrations, credentials, and all live-routing controls.
+ */
+export function getEndUserMockCatalog() {
+  return {
+    mode: "local_mock" as const,
+    providers: mockProviders.map(provider => ({
+      id: provider.id,
+      name: provider.name,
+      readiness: readinessFor(provider.connection),
+      models: mockModels
+        .filter(model => model.providerId === provider.id)
+        .map(model => ({ id: model.id, name: model.name })),
+    })),
+    liveProviderCallsEnabled: false as const,
     affiliateRoutingEnabled: false as const,
   };
 }

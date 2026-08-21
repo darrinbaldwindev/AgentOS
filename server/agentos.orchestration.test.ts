@@ -29,13 +29,43 @@ const routeInput = {
 };
 
 describe("AgentOS governed local orchestration", () => {
-  it("returns an authenticated local-only catalog with affiliate routing disabled", async () => {
+  it("returns a minimal authenticated end-user catalog without affiliate or operational fields", async () => {
     const result = await appRouter
       .createCaller(createContext("user"))
-      .agentos.orchestration.catalog();
+      .agentos.orchestration.endUserCatalog();
     expect(result.mode).toBe("local_mock");
     expect(result.providers).toHaveLength(6);
+    expect(result.providers[0]).toMatchObject({
+      id: "ollama",
+      name: "Ollama Local",
+      readiness: "ready",
+      models: [{ id: "ollama-default", name: "Ollama Local Default" }],
+    });
+    expect(result.providers[0]).not.toHaveProperty("affiliateStatus");
+    expect(result.providers[0]).not.toHaveProperty("privacy");
+    expect(result.providers[0]).not.toHaveProperty("cost");
+    expect(result.providers[0]).not.toHaveProperty("capabilities");
+    expect(result).not.toHaveProperty("agents");
+    expect(result).not.toHaveProperty("integrations");
+    expect(result.liveProviderCallsEnabled).toBe(false);
     expect(result.affiliateRoutingEnabled).toBe(false);
+  });
+
+  it("keeps the full catalog in the owner control plane", async () => {
+    const ordinary = appRouter.createCaller(createContext("user"));
+    await expect(
+      ordinary.agentos.orchestration.catalog()
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      appRouter
+        .createCaller(createContext("admin"))
+        .agentos.orchestration.catalog()
+    ).resolves.toMatchObject({
+      agents: expect.any(Array),
+      integrations: expect.any(Array),
+    });
   });
 
   it("limits health and scenario inspection to the owner control plane", async () => {
@@ -134,9 +164,9 @@ describe("AgentOS governed local orchestration", () => {
     const context = createContext("user");
     context.user = null;
     const caller = appRouter.createCaller(context);
-    await expect(caller.agentos.orchestration.catalog()).rejects.toMatchObject({
-      code: "UNAUTHORIZED",
-    });
+    await expect(
+      caller.agentos.orchestration.endUserCatalog()
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(
       caller.agentos.orchestration.execute({
         ...routeInput,

@@ -213,7 +213,16 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Render local mock route readiness and non-sensitive recovery guidance without changing chat execution routing
 - [x] Add rendered and interaction tests for preview ready, limited, unavailable, and isolation states
 - [x] Review settled desktop/mobile views, run the full test suite, typecheck, production build, and record evidence
-- [ ] Save a recoverable checkpoint for the end-user route preview phase
+- [x] Save a recoverable checkpoint for the end-user route preview phase
+
+## Autonomous end-user catalog projection
+
+- [x] Inspect current local catalog, adapter, and end-user selection contracts
+- [x] Define a minimal authenticated end-user catalog projection excluding affiliate fields, operational logs, credentials, agents, integrations, and live-routing controls
+- [x] Implement the filtered local catalog procedure without changing chat execution or provider activation
+- [x] Add direct tests for authentication, stable catalog values, and excluded sensitive fields
+- [x] Run full verification and record shared evidence
+- [ ] Save a recoverable checkpoint for the end-user catalog projection phase
 
 ## Owner guidance interaction evidence repair
 
