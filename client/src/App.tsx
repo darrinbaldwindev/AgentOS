@@ -6,6 +6,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import EndUserChat from "./pages/EndUserChat";
 const Chat = lazy(() => import("./pages/Chat"));
 
 function Router() {
@@ -20,7 +21,8 @@ function Router() {
     >
       <Switch>
         <Route path={"/"} component={Home} />
-        <Route path={"/chat"} component={Chat} />
+        <Route path={"/chat"} component={EndUserChat} />
+        <Route path={"/control/chat"} component={Chat} />
         <Route path={"/providers"} component={Home} />
         <Route path={"/affiliates"} component={Home} />
         <Route path={"/integrations"} component={Home} />

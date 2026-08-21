@@ -73,4 +73,27 @@
 ## Final accessibility evidence
 
 - [x] Assert actual Home select, button, live-region, and range-control elements in rendered markup
-- [ ] Create and record the post-expansion checkpoint
+- [x] Create and record the post-expansion checkpoint
+
+## Owner control plane RBAC and end-user chat
+
+- [x] Define owner/admin versus authenticated end-user route and procedure boundaries
+- [x] Add server-side RBAC middleware for admin and configured-owner authorization
+- [x] Lock down owner dashboard routes, telemetry, recovery, attribution, and routing procedures
+- [x] Add explicit unauthorized and forbidden states for owner-only surfaces
+- [x] Create a separate end-user chat route and layout that does not expose owner telemetry or recovery controls
+- [x] Add direct RBAC tests for owner, admin, ordinary user, and unauthenticated callers
+- [x] Verify the protected owner dashboard and separate end-user chat responsively
+- [ ] Save a checkpoint after the RBAC and end-user chat work is complete
+
+## Final RBAC evidence repair
+
+- [x] Add a direct test proving a non-admin configured owner ID is allowed through owner-only procedures
+- [x] Capture and review post-RBAC mobile screenshots for the owner dashboard, owner chat, and end-user chat
+- [ ] Save the RBAC checkpoint after all evidence items are complete
+
+## Mobile screenshot review
+
+- [x] Review settled mobile screenshots for the owner dashboard, owner chat, and end-user chat and record responsive findings
+- [x] Fix any owner-chat mobile clipping or loading-state presentation issues found during review
+- [ ] Save the final RBAC checkpoint after the mobile review is complete

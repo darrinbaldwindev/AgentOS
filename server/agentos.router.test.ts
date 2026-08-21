@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
+import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
 import { appendAttributionRecord } from "./db";
 import { appRouter } from "./routers";
@@ -33,7 +34,7 @@ function createContext(): TrpcContext {
       email: "router@example.com",
       name: "Router Test",
       loginMethod: "test",
-      role: "user",
+      role: "admin",
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
@@ -55,14 +56,16 @@ describe("AgentOS protected procedures", () => {
   });
 
   it("records a model-switch event without context identifiers", async () => {
-    const result = await appRouter.createCaller(createContext()).agentos.chat({
-      providerId: "together",
-      modelId: "qwen2.5-coder",
-      previousProviderId: "ollama",
-      previousModelId: "agentos-default",
-      consent: "declined",
-      messages: [{ role: "user", content: "Switch safely" }],
-    });
+    const result = await appRouter
+      .createCaller(createContext())
+      .agentos.controlChat({
+        providerId: "together",
+        modelId: "qwen2.5-coder",
+        previousProviderId: "ollama",
+        previousModelId: "agentos-default",
+        consent: "declined",
+        messages: [{ role: "user", content: "Switch safely" }],
+      });
     expect(result.attributionRecorded).toBe(true);
     expect(appendAttributionRecord).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -78,5 +81,54 @@ describe("AgentOS protected procedures", () => {
       "threadId"
     );
     expect(invokeLLM).toHaveBeenCalledOnce();
+  });
+
+  it("denies unauthenticated and ordinary-user access to owner telemetry", async () => {
+    const unauthenticated = createContext();
+    unauthenticated.user = null;
+    await expect(
+      appRouter.createCaller(unauthenticated).agentos.telemetry({ range: "7D" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+
+    const ordinary = createContext();
+    ordinary.user!.role = "user";
+    await expect(
+      appRouter.createCaller(ordinary).agentos.telemetry({ range: "7D" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows the configured owner ID even when the role is not admin", async () => {
+    ENV.ownerOpenId = "configured-owner-test";
+    const owner = createContext();
+    owner.user!.role = "user";
+    owner.user!.openId = "configured-owner-test";
+    expect(
+      (await appRouter.createCaller(owner).agentos.access.status()).allowed
+    ).toBe(true);
+    await expect(
+      appRouter.createCaller(owner).agentos.telemetry({ range: "2D" })
+    ).resolves.toMatchObject({ range: "2D" });
+  });
+
+  it("allows admins to read control-plane access status and denies ordinary users", async () => {
+    const admin = createContext();
+    admin.user!.role = "admin";
+    expect(
+      (await appRouter.createCaller(admin).agentos.access.status()).allowed
+    ).toBe(true);
+
+    const ordinary = createContext();
+    ordinary.user!.role = "user";
+    expect(
+      (await appRouter.createCaller(ordinary).agentos.access.status()).allowed
+    ).toBe(false);
+    await expect(
+      appRouter.createCaller(ordinary).agentos.controlChat({
+        providerId: "ollama",
+        modelId: "agentos-default",
+        consent: "declined",
+        messages: [{ role: "user", content: "not allowed" }],
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

@@ -23,6 +23,7 @@ import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LogOut, PanelLeft } from "lucide-react";
 import { dashboardNavItems } from "@/lib/dashboardContracts";
+import { trpc } from "@/lib/trpc";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
@@ -45,6 +46,9 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const accessQuery = trpc.agentos.access.status.useQuery(undefined, {
+    enabled: Boolean(user),
+  });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -79,6 +83,10 @@ export default function DashboardLayout({
     );
   }
 
+  if (accessQuery.isLoading) return <DashboardLayoutSkeleton />;
+  if (accessQuery.data && !accessQuery.data.allowed)
+    return <OwnerAccessDenied />;
+
   return (
     <SidebarProvider
       style={
@@ -91,6 +99,31 @@ export default function DashboardLayout({
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
+  );
+}
+
+function OwnerAccessDenied() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#07111f] p-6 text-slate-100">
+      <div className="max-w-lg space-y-4 rounded-2xl border border-amber-200/20 bg-white/[0.035] p-8 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-amber-200/70">
+          403 / owner control plane
+        </p>
+        <h1 className="text-2xl font-semibold">
+          Administrator access required
+        </h1>
+        <p className="text-sm leading-6 text-slate-400">
+          This surface is restricted to AgentOS administrators or the configured
+          owner identity. Use the separate end-user chat workspace instead.
+        </p>
+        <a
+          href="/chat"
+          className="inline-flex rounded-lg bg-cyan-200 px-4 py-2 text-sm font-medium text-slate-950"
+        >
+          Open end-user chat
+        </a>
+      </div>
+    </div>
   );
 }
 

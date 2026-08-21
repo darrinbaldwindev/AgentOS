@@ -1,9 +1,15 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { ENV } from "./_core/env";
 import { systemRouter } from "./_core/systemRouter";
 import { invokeLLM } from "./_core/llm";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  ownerOrAdminProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "./_core/trpc";
 import {
   selectTelemetryRange,
   summarizeTelemetry,
@@ -53,6 +59,15 @@ export const appRouter = router({
   }),
 
   agentos: router({
+    access: router({
+      status: protectedProcedure.query(({ ctx }) => ({
+        allowed:
+          ctx.user.role === "admin" ||
+          (Boolean(ENV.ownerOpenId) && ctx.user.openId === ENV.ownerOpenId),
+        role: ctx.user.role,
+      })),
+    }),
+
     chat: protectedProcedure
       .input(
         z.object({
@@ -65,21 +80,6 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const switched =
-          (input.previousProviderId !== undefined &&
-            input.previousProviderId !== input.providerId) ||
-          (input.previousModelId !== undefined &&
-            input.previousModelId !== input.modelId);
-        if (switched) {
-          await appendAttributionRecord({
-            eventId: `model-switch-${ctx.user.id}-${Date.now()}`,
-            userId: ctx.user.id,
-            eventType: "model_switch",
-            provider: input.providerId,
-            consent: input.consent,
-          });
-        }
-
         const response = await invokeLLM({
           ...(input.modelId ? { model: input.modelId } : {}),
           messages: [
@@ -105,12 +105,66 @@ export const appRouter = router({
           providerId: input.providerId,
           modelId: response.model,
           content: text,
+          attributionRecorded: false,
+        };
+      }),
+
+    controlChat: ownerOrAdminProcedure
+      .input(
+        z.object({
+          providerId: z.enum(providerIds),
+          modelId: z.string().trim().min(1).max(128).optional(),
+          previousProviderId: z.enum(providerIds).optional(),
+          previousModelId: z.string().trim().min(1).max(128).optional(),
+          consent: z.enum(["granted", "declined"]),
+          messages: z.array(chatMessage).min(1).max(40),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const switched =
+          (input.previousProviderId !== undefined &&
+            input.previousProviderId !== input.providerId) ||
+          (input.previousModelId !== undefined &&
+            input.previousModelId !== input.modelId);
+        if (switched) {
+          await appendAttributionRecord({
+            eventId: `control-model-switch-${ctx.user.id}-${Date.now()}`,
+            userId: ctx.user.id,
+            eventType: "model_switch",
+            provider: input.providerId,
+            consent: input.consent,
+          });
+        }
+        const response = await invokeLLM({
+          ...(input.modelId ? { model: input.modelId } : {}),
+          messages: [
+            {
+              role: "system",
+              content: `You are AgentOS owner control-plane routing through ${input.providerId}. Live affiliate routing is disabled.`,
+            },
+            ...input.messages,
+          ],
+          maxTokens: 1200,
+        });
+        const content = response.choices[0]?.message.content;
+        const text =
+          typeof content === "string"
+            ? content
+            : content
+                .map(part =>
+                  part.type === "text" ? part.text : "[non-text content]"
+                )
+                .join("\\n");
+        return {
+          providerId: input.providerId,
+          modelId: response.model,
+          content: text,
           attributionRecorded: switched,
         };
       }),
 
     recovery: router({
-      list: protectedProcedure
+      list: ownerOrAdminProcedure
         .input(
           z
             .object({ limit: z.number().int().min(1).max(100).default(50) })
@@ -119,7 +173,7 @@ export const appRouter = router({
         .query(({ ctx, input }) =>
           listRecoveryRecords(ctx.user.id, input?.limit ?? 50)
         ),
-      append: protectedProcedure
+      append: ownerOrAdminProcedure
         .input(
           z.object({
             eventId: z.string().trim().min(1).max(96),
@@ -134,7 +188,7 @@ export const appRouter = router({
         ),
     }),
 
-    telemetry: protectedProcedure
+    telemetry: ownerOrAdminProcedure
       .input(
         z.object({ range: z.enum(["2D", "4D", "7D"]).default("7D") }).optional()
       )
@@ -145,7 +199,7 @@ export const appRouter = router({
       }),
 
     attribution: router({
-      list: protectedProcedure
+      list: ownerOrAdminProcedure
         .input(
           z
             .object({ limit: z.number().int().min(1).max(200).default(100) })
@@ -154,7 +208,7 @@ export const appRouter = router({
         .query(({ ctx, input }) =>
           listAttributionRecords(ctx.user.id, input?.limit ?? 100)
         ),
-      append: protectedProcedure
+      append: ownerOrAdminProcedure
         .input(
           z.object({
             eventId: z.string().trim().min(1).max(96),

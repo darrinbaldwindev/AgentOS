@@ -11,12 +11,14 @@ vi.mock("@/components/AIChatBox", () => ({
     createElement("div", { role: "log", "aria-label": "Active conversation" }),
 }));
 vi.mock("@/_core/hooks/useAuth", () => ({
-  useAuth: () => ({ isAuthenticated: true, user: { role: "user" } }),
+  useAuth: () => ({ isAuthenticated: true, user: { role: "admin" } }),
 }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     agentos: {
-      chat: { useMutation: () => ({ mutate: vi.fn(), isPending: false }) },
+      controlChat: {
+        useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+      },
     },
   },
 }));

@@ -34,7 +34,7 @@ export default function Chat() {
       providers[0],
     [selectedProviderId]
   );
-  const chatMutation = trpc.agentos.chat.useMutation({
+  const chatMutation = trpc.agentos.controlChat.useMutation({
     onSuccess: response => {
       setMessages(current => [
         ...current,
