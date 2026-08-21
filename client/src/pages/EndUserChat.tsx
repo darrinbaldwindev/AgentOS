@@ -1,11 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { AIChatBox, type Message } from "@/components/AIChatBox";
 import { providers, type Provider } from "@/lib/agentosMock";
 import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { RotateCcw, ShieldCheck } from "lucide-react";
+import { assertPrivateConversationMessageContent } from "@shared/agentosConversationPolicy";
+import { ArchiveRestore, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 
 export function shouldAcceptChatResponse(
   responseEpoch: number,
@@ -72,6 +73,8 @@ const modelOptions = {
   github: ["repo-assistant"],
 } as const;
 
+const EMPTY_CONVERSATION_ID = "00000000-0000-0000-0000-000000000000";
+
 type EndUserCatalogProvider = {
   id: string;
   models: Array<{ id: string; name: string }>;
@@ -99,9 +102,14 @@ export default function EndUserChat() {
   const [modelId, setModelId] = useState("agentos-default");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [conversationKey, setConversationKey] = useState(0);
   const conversationEpochRef = useRef(0);
   const pendingEpochRef = useRef<number | null>(null);
+  const pendingConversationIdRef = useRef<string | null>(null);
   const [notice, setNotice] = useState(
     "Your conversation stays separate from the AgentOS owner control plane."
   );
@@ -132,6 +140,53 @@ export default function EndUserChat() {
     providerId,
     selectedCatalogProvider
   );
+  const utils = trpc.useUtils();
+  const savedConversationsQuery = trpc.agentos.conversations.list.useQuery(
+    undefined,
+    { enabled: Boolean(user) }
+  );
+  const activeConversationQuery = trpc.agentos.conversations.get.useQuery(
+    { conversationId: activeConversationId ?? EMPTY_CONVERSATION_ID },
+    { enabled: Boolean(user && activeConversationId) }
+  );
+  const createConversationMutation =
+    trpc.agentos.conversations.create.useMutation({
+      onSuccess: () => utils.agentos.conversations.list.invalidate(),
+    });
+  const appendConversationMutation =
+    trpc.agentos.conversations.append.useMutation({
+      onSuccess: () => {
+        if (activeConversationId) {
+          utils.agentos.conversations.get.invalidate({
+            conversationId: activeConversationId,
+          });
+        }
+        utils.agentos.conversations.list.invalidate();
+      },
+    });
+  const deleteConversationMutation =
+    trpc.agentos.conversations.delete.useMutation({
+      onSuccess: () => utils.agentos.conversations.list.invalidate(),
+    });
+
+  useEffect(() => {
+    const restored = activeConversationQuery.data;
+    if (!restored?.conversation || !activeConversationId) return;
+    if (restored.conversation.conversationId !== activeConversationId) return;
+    setMessages(
+      restored.messages.map(message => ({
+        role: message.role,
+        content: message.content,
+      }))
+    );
+    setProviderId(
+      restored.conversation.providerId as keyof typeof modelOptions
+    );
+    setModelId(restored.conversation.modelId);
+    setNotice(
+      "Private conversation restored. Saved messages are retained for 30 days after the latest saved message."
+    );
+  }, [activeConversationId, activeConversationQuery.data]);
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
       if (
@@ -143,6 +198,16 @@ export default function EndUserChat() {
         return;
       pendingEpochRef.current = null;
       setIsTyping(false);
+      const persistedConversationId = pendingConversationIdRef.current;
+      if (persistedConversationId) {
+        appendConversationMutation.mutate({
+          conversationId: persistedConversationId,
+          role: "assistant",
+          content: response.content,
+          providerId: response.providerId as keyof typeof modelOptions,
+          modelId: response.modelId,
+        });
+      }
       setMessages(current => [
         ...current,
         { role: "assistant", content: response.content },
@@ -198,17 +263,97 @@ export default function EndUserChat() {
     pendingEpochRef.current = reset.pendingEpoch;
     setMessages(reset.messages);
     setIsTyping(reset.isTyping);
+    pendingConversationIdRef.current = null;
+    setActiveConversationId(null);
+    setConfirmDelete(false);
     setConversationKey(current => current + 1);
     setNotice(
       "New private conversation ready. Owner telemetry remains unavailable here."
     );
   };
 
-  const handleSend = (content: string) => {
-    const nextMessages: Message[] = [...messages, { role: "user", content }];
+  const handleRestoreConversation = (conversationId: string) => {
+    const reset = resetConversationState(conversationEpochRef.current);
+    conversationEpochRef.current = reset.nextEpoch;
+    pendingEpochRef.current = reset.pendingEpoch;
+    pendingConversationIdRef.current = conversationId;
+    setMessages([]);
+    setIsTyping(false);
+    setConfirmDelete(false);
+    setActiveConversationId(conversationId);
+    setNotice("Restoring your private conversation…");
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!activeConversationId) return;
+    const deleted = await deleteConversationMutation.mutateAsync({
+      conversationId: activeConversationId,
+    });
+    if (deleted) {
+      handleNewConversation();
+      setNotice("Private conversation permanently deleted.");
+    } else {
+      setNotice("That private conversation is no longer available.");
+    }
+  };
+
+  const handleSend = async (content: string) => {
+    let sanitizedContent: string;
+    try {
+      sanitizedContent = assertPrivateConversationMessageContent(content);
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Remove secret-like material before saving this message."
+      );
+      return;
+    }
+    let persistedConversationId = activeConversationId;
+    try {
+      if (!persistedConversationId) {
+        const created = await createConversationMutation.mutateAsync({
+          providerId: providerId as keyof typeof modelOptions,
+          modelId,
+        });
+        if (!created) {
+          setNotice(
+            "Private conversation storage is unavailable. Your message was not sent."
+          );
+          return;
+        }
+        persistedConversationId = created.conversationId;
+        setActiveConversationId(persistedConversationId);
+      }
+      const persistedUserMessage = await appendConversationMutation.mutateAsync(
+        {
+          conversationId: persistedConversationId,
+          role: "user",
+          content: sanitizedContent,
+          providerId: providerId as keyof typeof modelOptions,
+          modelId,
+        }
+      );
+      if (!persistedUserMessage) {
+        setNotice(
+          "Private conversation storage is unavailable. Your message was not sent."
+        );
+        return;
+      }
+    } catch {
+      setNotice(
+        "Private conversation storage is unavailable. Your message was not sent."
+      );
+      return;
+    }
+    const nextMessages: Message[] = [
+      ...messages,
+      { role: "user", content: sanitizedContent },
+    ];
     setMessages(nextMessages);
     setIsTyping(true);
     pendingEpochRef.current = conversationEpochRef.current;
+    pendingConversationIdRef.current = persistedConversationId;
     setNotice(
       `AgentOS is composing through ${selectedProvider.name} / ${modelId}…`
     );
@@ -364,6 +509,104 @@ export default function EndUserChat() {
             >
               {notice}
             </div>
+            <section
+              aria-labelledby="saved-private-conversations"
+              className="border-t border-white/10 pt-5"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2
+                  id="saved-private-conversations"
+                  className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400"
+                >
+                  Saved private conversations
+                </h2>
+                {activeConversationId ? (
+                  <button
+                    type="button"
+                    aria-label="Delete active private conversation"
+                    onClick={() => setConfirmDelete(true)}
+                    className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.12em] text-rose-200/80 hover:text-rose-100"
+                  >
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </button>
+                ) : null}
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Saved messages stay private to this account and expire 30 days
+                after the latest saved message. Do not save secrets.
+              </p>
+              {confirmDelete ? (
+                <div
+                  role="alert"
+                  className="mt-3 space-y-2 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] p-3"
+                >
+                  <p className="text-xs leading-5 text-rose-100/90">
+                    Permanently delete this conversation and all of its saved
+                    messages?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDeleteConversation}
+                      disabled={deleteConversationMutation.isPending}
+                      className="rounded-md bg-rose-200 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-rose-950 disabled:opacity-60"
+                    >
+                      Delete permanently
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      className="rounded-md border border-white/10 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <div
+                className="mt-3 max-h-40 space-y-2 overflow-y-auto"
+                aria-label="Saved private conversations"
+              >
+                {savedConversationsQuery.isLoading ? (
+                  <p className="text-xs text-slate-500">
+                    Loading your private conversations…
+                  </p>
+                ) : savedConversationsQuery.error ? (
+                  <p role="status" className="text-xs text-amber-100/80">
+                    Saved conversation history is unavailable. Your current
+                    session remains private.
+                  </p>
+                ) : savedConversationsQuery.data?.length ? (
+                  savedConversationsQuery.data.map(conversation => (
+                    <button
+                      type="button"
+                      key={conversation.conversationId}
+                      onClick={() =>
+                        handleRestoreConversation(conversation.conversationId)
+                      }
+                      aria-pressed={
+                        activeConversationId === conversation.conversationId
+                      }
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/10 p-3 text-left hover:bg-white/[0.04]"
+                    >
+                      <span>
+                        <span className="block text-xs text-slate-200">
+                          {conversation.providerId} / {conversation.modelId}
+                        </span>
+                        <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em] text-slate-600">
+                          saved private conversation
+                        </span>
+                      </span>
+                      <ArchiveRestore className="h-3.5 w-3.5 shrink-0 text-cyan-200/70" />
+                    </button>
+                  ))
+                ) : (
+                  <p className="rounded-lg border border-dashed border-white/10 p-3 text-xs leading-5 text-slate-600">
+                    No saved private conversations yet.
+                  </p>
+                )}
+              </div>
+            </section>
             <section
               aria-labelledby="user-message-history"
               className="border-t border-white/10 pt-5"

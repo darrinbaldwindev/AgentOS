@@ -20,6 +20,15 @@ const catalogQueryState = vi.hoisted(() => ({
   error: null as unknown,
 }));
 
+const conversationQueryState = vi.hoisted(() => ({
+  list: { data: [] as unknown[], isLoading: false, error: null as unknown },
+  get: {
+    data: { conversation: null, messages: [] },
+    isLoading: false,
+    error: null as unknown,
+  },
+}));
+
 vi.mock("@/components/AIChatBox", () => ({
   AIChatBox: () =>
     createElement("div", {
@@ -38,7 +47,32 @@ vi.mock("@/lib/trpc", () => ({
       orchestration: {
         endUserCatalog: { useQuery: () => catalogQueryState },
       },
+      conversations: {
+        list: { useQuery: () => conversationQueryState.list },
+        get: { useQuery: () => conversationQueryState.get },
+        create: {
+          useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+        },
+        append: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+          }),
+        },
+        delete: {
+          useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+        },
+      },
     },
+    useUtils: () => ({
+      agentos: {
+        conversations: {
+          list: { invalidate: vi.fn() },
+          get: { invalidate: vi.fn() },
+        },
+      },
+    }),
   },
 }));
 
@@ -54,6 +88,9 @@ describe("AgentOS end-user chat surface", () => {
       "Owner telemetry, recovery records, and affiliate routing controls are intentionally unavailable."
     );
     expect(markup).toContain("Message history");
+    expect(markup).toContain("Saved private conversations");
+    expect(markup).toContain("No saved private conversations yet.");
+    expect(markup).toContain("expire 30 days after the latest saved message");
     expect(markup).toContain("No messages in this session yet.");
     expect(markup).toContain("Ready for your next message");
     expect(markup).toContain('aria-label="Start a new conversation"');
@@ -93,5 +130,21 @@ describe("AgentOS end-user chat surface", () => {
     expect(fallbackMarkup).toContain(
       "no affiliate routing · no owner telemetry"
     );
+  });
+
+  it("shows loading and unavailable saved-conversation states without control-plane data", () => {
+    conversationQueryState.list.data = undefined;
+    conversationQueryState.list.isLoading = true;
+    conversationQueryState.list.error = null;
+    expect(renderToStaticMarkup(createElement(EndUserChat))).toContain(
+      "Loading your private conversations…"
+    );
+
+    conversationQueryState.list.isLoading = false;
+    conversationQueryState.list.error = { message: "history unavailable" };
+    const errorMarkup = renderToStaticMarkup(createElement(EndUserChat));
+    expect(errorMarkup).toContain("Saved conversation history is unavailable.");
+    expect(errorMarkup).not.toContain("Recovery + policy");
+    expect(errorMarkup).not.toContain("Affiliate telemetry");
   });
 });

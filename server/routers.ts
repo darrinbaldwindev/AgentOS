@@ -16,8 +16,14 @@ import {
   type TelemetryRange,
 } from "../shared/agentosTelemetry";
 import {
+  appendPrivateConversationMessage,
   appendAttributionRecord,
   appendRecoveryRecord,
+  createPrivateConversation,
+  deletePrivateConversation,
+  getPrivateConversation,
+  listPrivateConversationMessages,
+  listPrivateConversations,
   listAttributionRecords,
   listRecoveryRecords,
 } from "./db";
@@ -160,6 +166,63 @@ export const appRouter = router({
           attributionRecorded: false,
         };
       }),
+
+    conversations: router({
+      list: protectedProcedure.query(({ ctx }) =>
+        listPrivateConversations(ctx.user.id)
+      ),
+      get: protectedProcedure
+        .input(z.object({ conversationId: z.string().uuid() }))
+        .query(async ({ ctx, input }) => {
+          const conversation = await getPrivateConversation(
+            ctx.user.id,
+            input.conversationId
+          );
+          if (!conversation) return { conversation: null, messages: [] };
+          const messages = await listPrivateConversationMessages(
+            ctx.user.id,
+            input.conversationId
+          );
+          return { conversation, messages };
+        }),
+      create: protectedProcedure
+        .input(
+          z.object({
+            providerId: z.enum(providerIds),
+            modelId: z.string().trim().min(1).max(128),
+          })
+        )
+        .mutation(({ ctx, input }) =>
+          createPrivateConversation({
+            conversationId: crypto.randomUUID(),
+            userId: ctx.user.id,
+            providerId: input.providerId,
+            modelId: input.modelId,
+          })
+        ),
+      append: protectedProcedure
+        .input(
+          z.object({
+            conversationId: z.string().uuid(),
+            role: z.enum(["user", "assistant"]),
+            content: z.string().trim().min(1).max(12000),
+            providerId: z.enum(providerIds),
+            modelId: z.string().trim().min(1).max(128),
+          })
+        )
+        .mutation(({ ctx, input }) =>
+          appendPrivateConversationMessage({
+            ...input,
+            messageId: crypto.randomUUID(),
+            userId: ctx.user.id,
+          })
+        ),
+      delete: protectedProcedure
+        .input(z.object({ conversationId: z.string().uuid() }))
+        .mutation(({ ctx, input }) =>
+          deletePrivateConversation(ctx.user.id, input.conversationId)
+        ),
+    }),
 
     controlChat: ownerOrAdminProcedure
       .input(

@@ -1,0 +1,188 @@
+import { describe, expect, it, vi } from "vitest";
+import type { TrpcContext } from "./_core/context";
+
+const store = vi.hoisted(() => ({
+  conversations: new Map<
+    number,
+    Array<{
+      conversationId: string;
+      userId: number;
+      providerId: string;
+      modelId: string;
+      expiresAt: Date;
+    }>
+  >(),
+  messages: new Map<
+    string,
+    Array<{ role: "user" | "assistant"; content: string; userId: number }>
+  >(),
+}));
+
+vi.mock("./db", () => ({
+  appendAttributionRecord: vi.fn(),
+  appendRecoveryRecord: vi.fn(),
+  listAttributionRecords: vi.fn(),
+  listRecoveryRecords: vi.fn(),
+  listPrivateConversations: vi.fn(
+    async (userId: number) => store.conversations.get(userId) ?? []
+  ),
+  getPrivateConversation: vi.fn(
+    async (userId: number, conversationId: string) =>
+      (store.conversations.get(userId) ?? []).find(
+        conversation => conversation.conversationId === conversationId
+      )
+  ),
+  listPrivateConversationMessages: vi.fn(
+    async (userId: number, conversationId: string) =>
+      (store.messages.get(conversationId) ?? []).filter(
+        message => message.userId === userId
+      )
+  ),
+  createPrivateConversation: vi.fn(async input => {
+    const conversation = {
+      ...input,
+      expiresAt: new Date("2026-09-20T00:00:00.000Z"),
+    };
+    store.conversations.set(input.userId, [
+      ...(store.conversations.get(input.userId) ?? []),
+      conversation,
+    ]);
+    return conversation;
+  }),
+  appendPrivateConversationMessage: vi.fn(async input => {
+    const existing = store.conversations
+      .get(input.userId)
+      ?.find(
+        conversation => conversation.conversationId === input.conversationId
+      );
+    if (!existing) return undefined;
+    const message = {
+      role: input.role,
+      content: input.content,
+      userId: input.userId,
+    };
+    store.messages.set(input.conversationId, [
+      ...(store.messages.get(input.conversationId) ?? []),
+      message,
+    ]);
+    return message;
+  }),
+  deletePrivateConversation: vi.fn(
+    async (userId: number, conversationId: string) => {
+      const before = store.conversations.get(userId) ?? [];
+      const remaining = before.filter(
+        conversation => conversation.conversationId !== conversationId
+      );
+      store.conversations.set(userId, remaining);
+      if (remaining.length === before.length) return false;
+      store.messages.delete(conversationId);
+      return true;
+    }
+  ),
+}));
+
+import { appRouter } from "./routers";
+
+function context(userId: number | null): TrpcContext {
+  return {
+    user:
+      userId === null
+        ? null
+        : {
+            id: userId,
+            openId: `user-${userId}`,
+            email: null,
+            name: `User ${userId}`,
+            loginMethod: "test",
+            role: "user",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lastSignedIn: new Date(),
+          },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: {} as TrpcContext["res"],
+  };
+}
+
+describe("AgentOS private conversations", () => {
+  it("creates, appends, reads, and hard-deletes only the caller's private conversation", async () => {
+    const caller = appRouter.createCaller(context(41));
+    const created = await caller.agentos.conversations.create({
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+    expect(created).toMatchObject({ userId: 41, providerId: "ollama" });
+    if (!created) throw new Error("Expected private conversation");
+
+    await caller.agentos.conversations.append({
+      conversationId: created.conversationId,
+      role: "user",
+      content: "Keep this private.",
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+    expect(
+      await caller.agentos.conversations.get({
+        conversationId: created.conversationId,
+      })
+    ).toMatchObject({
+      conversation: { userId: 41 },
+      messages: [{ role: "user", content: "Keep this private.", userId: 41 }],
+    });
+
+    expect(
+      await caller.agentos.conversations.delete({
+        conversationId: created.conversationId,
+      })
+    ).toBe(true);
+    expect(
+      await caller.agentos.conversations.get({
+        conversationId: created.conversationId,
+      })
+    ).toEqual({ conversation: null, messages: [] });
+  });
+
+  it("does not reveal another user's conversation or allow a cross-user delete", async () => {
+    const owner = appRouter.createCaller(context(51));
+    const outsider = appRouter.createCaller(context(52));
+    const created = await owner.agentos.conversations.create({
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+    if (!created) throw new Error("Expected private conversation");
+
+    expect(
+      await outsider.agentos.conversations.get({
+        conversationId: created.conversationId,
+      })
+    ).toEqual({ conversation: null, messages: [] });
+    expect(
+      await outsider.agentos.conversations.delete({
+        conversationId: created.conversationId,
+      })
+    ).toBe(false);
+  });
+
+  it("denies unauthenticated private conversation access and disallows system roles", async () => {
+    const anonymous = appRouter.createCaller(context(null));
+    await expect(anonymous.agentos.conversations.list()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+
+    const caller = appRouter.createCaller(context(61));
+    const created = await caller.agentos.conversations.create({
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+    if (!created) throw new Error("Expected private conversation");
+    await expect(
+      caller.agentos.conversations.append({
+        conversationId: created.conversationId,
+        role: "system" as "user",
+        content: "never accepted",
+        providerId: "ollama",
+        modelId: "agentos-default",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});

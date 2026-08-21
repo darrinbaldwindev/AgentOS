@@ -99,3 +99,70 @@ export const attributionRecords = mysqlTable(
 
 export type AttributionRecord = typeof attributionRecords.$inferSelect;
 export type InsertAttributionRecord = typeof attributionRecords.$inferInsert;
+
+/**
+ * Private end-user conversations. This table intentionally belongs to the user
+ * workspace rather than the owner control plane and contains no affiliate,
+ * telemetry, recovery, credential, raw-provider, browser, or project fields.
+ */
+export const privateConversations = mysqlTable(
+  "private_conversations",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    conversationId: varchar("conversationId", { length: 64 }).notNull().unique(),
+    userId: int("userId").notNull(),
+    providerId: varchar("providerId", { length: 128 }).notNull(),
+    modelId: varchar("modelId", { length: 128 }).notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    userExpiresAtIdx: index("private_conversation_user_expiry_idx").on(
+      table.userId,
+      table.expiresAt
+    ),
+    userUpdatedAtIdx: index("private_conversation_user_updated_idx").on(
+      table.userId,
+      table.updatedAt
+    ),
+  })
+);
+
+export type PrivateConversation = typeof privateConversations.$inferSelect;
+export type InsertPrivateConversation =
+  typeof privateConversations.$inferInsert;
+
+/**
+ * User-visible conversation messages. Only user and assistant roles are
+ * allowed. System prompts, tool payloads, attribution, and recovery data must
+ * remain outside this table.
+ */
+export const privateConversationMessages = mysqlTable(
+  "private_conversation_messages",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    messageId: varchar("messageId", { length: 64 }).notNull().unique(),
+    conversationId: int("conversationId").notNull(),
+    userId: int("userId").notNull(),
+    role: mysqlEnum("role", ["user", "assistant"]).notNull(),
+    content: text("content").notNull(),
+    providerId: varchar("providerId", { length: 128 }).notNull(),
+    modelId: varchar("modelId", { length: 128 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    conversationCreatedAtIdx: index(
+      "private_message_conversation_created_idx"
+    ).on(table.conversationId, table.createdAt),
+    userConversationIdx: index("private_message_user_conversation_idx").on(
+      table.userId,
+      table.conversationId
+    ),
+  })
+);
+
+export type PrivateConversationMessage =
+  typeof privateConversationMessages.$inferSelect;
+export type InsertPrivateConversationMessage =
+  typeof privateConversationMessages.$inferInsert;

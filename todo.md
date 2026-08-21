@@ -231,7 +231,7 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Consume the filtered end-user catalog in provider and model selectors with a deterministic local fallback
 - [x] Add rendered and interaction tests for catalog loading, fallback, and provider/model selection behavior
 - [x] Review desktop/mobile behavior, run full verification, and record shared evidence
-- [ ] Save a recoverable checkpoint for the end-user catalog consumption phase
+- [x] Save a recoverable checkpoint for the end-user catalog consumption phase
 
 ## End-user catalog model-selector completion
 
@@ -244,6 +244,17 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Verify deterministic fallback model options render when the filtered catalog is loading or unavailable
 - [x] Rerun focused and full verification, then update the shared catalog-consumption evidence record
+
+## Privacy-first persistent conversations and retention
+
+- [x] Inspect current database schema, chat flow, persistence helpers, shared records, and relevant governance guidance
+- [x] Define user ownership, retention period, deletion semantics, audit boundaries, and prohibited stored content
+- [x] Add schema tables and migration for private conversations and messages with user-scoped ownership and retention metadata
+- [x] Implement governed conversation create/list/read/append/delete procedures with no cross-user access and no owner-control-plane content
+- [x] Integrate private conversation restoration and deletion controls into the end-user chat workspace
+- [x] Add direct persistence, RBAC, retention, deletion, and rendered interaction tests
+- [x] Run migration, full verification, responsive review, and record shared privacy evidence
+- [ ] Save a recoverable checkpoint for the persistent conversation and retention phase
 
 ## Owner guidance interaction evidence repair
 

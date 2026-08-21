@@ -12,6 +12,33 @@ const testState = vi.hoisted(() => ({
   },
 }));
 
+const conversationState = vi.hoisted(() => {
+  const conversationId = "11111111-1111-4111-8111-111111111111";
+  return {
+    conversationId,
+    list: {
+      data: [
+        {
+          conversationId,
+          userId: 1,
+          providerId: "ollama",
+          modelId: "agentos-default",
+        },
+      ],
+      isLoading: false,
+      error: null,
+    },
+    get: {
+      data: {
+        conversation: null as Record<string, unknown> | null,
+        messages: [] as Array<Record<string, unknown>>,
+      },
+      isLoading: false,
+      error: null,
+    },
+  };
+});
+
 vi.mock("@/components/AIChatBox", () => ({
   AIChatBox: ({
     messages,
@@ -108,7 +135,43 @@ vi.mock("@/lib/trpc", () => ({
           }),
         },
       },
+      conversations: {
+        list: { useQuery: () => conversationState.list },
+        get: { useQuery: () => conversationState.get },
+        create: {
+          useMutation: () => ({
+            mutateAsync: vi.fn(async () => ({
+              conversationId: conversationState.conversationId,
+              userId: 1,
+              providerId: "ollama",
+              modelId: "agentos-default",
+            })),
+            isPending: false,
+          }),
+        },
+        append: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(async input => ({ ...input })),
+            isPending: false,
+          }),
+        },
+        delete: {
+          useMutation: () => ({
+            mutateAsync: vi.fn(async () => true),
+            isPending: false,
+          }),
+        },
+      },
     },
+    useUtils: () => ({
+      agentos: {
+        conversations: {
+          list: { invalidate: vi.fn() },
+          get: { invalidate: vi.fn() },
+        },
+      },
+    }),
   },
 }));
 
@@ -203,5 +266,53 @@ describe("EndUserChat conversation reset interaction", () => {
     expect(previewText).toContain(
       "no live provider action · no affiliate routing · no owner telemetry"
     );
+  });
+
+  it("restores a saved private conversation and requires confirmation before hard deletion", async () => {
+    conversationState.get.data = {
+      conversation: {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+      messages: [{ role: "assistant", content: "restored private reply" }],
+    };
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findAllByProps({ "aria-pressed": false })[0]
+        .props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByType("p")
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain("restored private reply");
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Delete active private conversation" })
+        .props.onClick();
+    });
+    const confirmButton = renderer.root
+      .findAllByType("button")
+      .find(node => node.children.join(" ") === "Delete permanently");
+    expect(confirmButton).toBeDefined();
+
+    await act(async () => {
+      await confirmButton?.props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain("Private conversation permanently deleted.");
   });
 });
