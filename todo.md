@@ -155,3 +155,14 @@ Progress note: Preserve strict owner-gated routing, no secrets in logs, append-o
 Source of truth: /home/ubuntu/skills/skill-creator/SKILL.md and the completed AgentOS dashboard workflow in this project.
 
 Append-only history: new skill formalization requested by the user after the final dashboard usability checkpoint.
+
+## Provider contracts and deterministic mock adapters
+
+- [x] Define typed provider, model, agent, integration, execution, context, artifact, tool, credential, and attribution contracts
+- [x] Define explicit connection and execution states for available, needs connection, limited, offline, permission denied, rate limited, degraded, timeout, streaming, and error outcomes
+- [x] Implement deterministic local mock adapters with no network calls or external credentials
+- [x] Add fixtures covering normal, limited, offline, permission-denied, rate-limited, degraded, timeout, partial-stream, and error states
+- [x] Add direct tests for contract invariants, adapter transitions, capability fit, and attribution isolation
+- [x] Run tests, typecheck, production build, and evidence review for the contract/mock-adapter phase
+- [x] Record verification evidence in shared Files & Sources
+- [ ] Save a recoverable checkpoint for the contract/mock-adapter phase
