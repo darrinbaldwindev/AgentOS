@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -5,20 +6,30 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+const Chat = lazy(() => import("./pages/Chat"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/providers"} component={Home} />
-      <Route path={"/affiliates"} component={Home} />
-      <Route path={"/integrations"} component={Home} />
-      <Route path={"/recovery"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#07111f] p-8 font-mono text-xs uppercase tracking-[0.14em] text-cyan-200">
+          Loading AgentOS surface…
+        </div>
+      }
+    >
+      <Switch>
+        <Route path={"/"} component={Home} />
+        <Route path={"/chat"} component={Chat} />
+        <Route path={"/providers"} component={Home} />
+        <Route path={"/affiliates"} component={Home} />
+        <Route path={"/integrations"} component={Home} />
+        <Route path={"/recovery"} component={Home} />
+        <Route path={"/404"} component={NotFound} />
+        {/* Final fallback route */}
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
+import { attributionRecords, recoveryRecords } from "../drizzle/schema";
+import {
+  affiliateTelemetry,
+  selectTelemetryRange,
+  summarizeTelemetry,
+} from "../shared/agentosTelemetry";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DashboardAccessibilityProbe } from "../client/src/components/DashboardAccessibilityProbe";
 import {
@@ -133,9 +139,12 @@ describe("AgentOS dashboard safety invariants", () => {
   });
 
   it("keeps the dashboard interaction contract keyboard- and screen-reader-oriented", () => {
-    expect(dashboardNavItems).toHaveLength(5);
+    expect(dashboardNavItems).toHaveLength(6);
     expect(dashboardNavItems.map(item => item.label)).toContain(
       "Recovery + policy"
+    );
+    expect(dashboardNavItems.map(item => item.label)).toContain(
+      "Model-switch chat"
     );
     expect(dashboardA11yContract.providerSelectLabel).toBe(
       "Choose provider route"
@@ -175,6 +184,29 @@ describe("AgentOS dashboard safety invariants", () => {
       signups: 218,
       conversionRate: 0.236,
     });
+  });
+
+  it("shapes telemetry ranges deterministically for the interactive chart", () => {
+    expect(affiliateTelemetry).toHaveLength(7);
+    expect(selectTelemetryRange("4D")).toHaveLength(4);
+    expect(summarizeTelemetry(selectTelemetryRange("4D"))).toEqual({
+      clicks: 626,
+      signups: 151,
+      conversionRate: 151 / 626,
+    });
+  });
+
+  it("keeps persistence records append-only and context-free", () => {
+    expect(recoveryRecords.eventId).toBeDefined();
+    expect(recoveryRecords.userId).toBeDefined();
+    expect(recoveryRecords.containsPrompt).toBeDefined();
+    expect(recoveryRecords.containsSecret).toBeDefined();
+    expect("prompt" in recoveryRecords).toBe(false);
+    expect("threadId" in recoveryRecords).toBe(false);
+    expect("projectId" in recoveryRecords).toBe(false);
+    expect(attributionRecords.eventType).toBeDefined();
+    expect(attributionRecords.userId).toBeDefined();
+    expect("referralParams" in attributionRecords).toBe(false);
   });
 
   it("does not construct referral parameters without consent or eligibility", () => {

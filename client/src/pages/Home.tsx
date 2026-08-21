@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import {
   Activity,
@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DashboardAccessibilityProbe } from "@/components/DashboardAccessibilityProbe";
+import { AffiliateTelemetryChart } from "@/components/AffiliateTelemetryChart";
 import { dashboardA11yContract } from "@/lib/dashboardContracts";
+import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -192,7 +194,7 @@ function Metric({
 
 export default function Home() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const isAdmin = user?.role === "admin";
   const [selectedProviderId, setSelectedProviderId] = useState("ollama");
   const [selectedAdapter, setSelectedAdapter] = useState("Voice AI");
@@ -209,6 +211,26 @@ export default function Home() {
   const [recoverySnapshot, setRecoverySnapshot] = useState(() =>
     recoveryLog.snapshot()
   );
+  const recoveryQuery = trpc.agentos.recovery.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const attributionQuery = trpc.agentos.attribution.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const recoveryAppend = trpc.agentos.recovery.append.useMutation({
+    onSuccess: () => recoveryQuery.refetch(),
+  });
+  const attributionAppend = trpc.agentos.attribution.append.useMutation({
+    onSuccess: () => attributionQuery.refetch(),
+  });
+  const persistedRecovery =
+    recoveryQuery.data?.map(event => ({
+      ...event,
+      timestamp: event.occurredAt.toLocaleString(),
+      id: event.eventId,
+    })) ?? [];
+  const displayedRecovery =
+    persistedRecovery.length > 0 ? persistedRecovery : recoverySnapshot;
   const trafficSummary = summarizeTraffic();
   const cycleDatasetStates = () =>
     setDatasetStates(current =>
@@ -232,6 +254,24 @@ export default function Home() {
     setFlash(`Mock transition accepted: ${selectedState} → ${next}`);
   };
 
+  const recordReferralClick = () => {
+    if (!isAuthenticated || !referralPreview) {
+      setFlash(
+        "Referral click requires authentication, consent, and an eligible provider."
+      );
+      return;
+    }
+    attributionAppend.mutate({
+      eventId: `referral-click-${Date.now()}`,
+      eventType: "referral_click",
+      provider: selectedProvider.name,
+      consent,
+    });
+    setFlash(
+      "Referral click recorded without project, thread, prompt, or secret data."
+    );
+  };
+
   const simulateRecovery = (kind: RecoveryKind) => {
     const result = executeRecovery(kind);
     recoveryLog.append({
@@ -243,6 +283,15 @@ export default function Home() {
       timestamp: "now",
     });
     setRecoverySnapshot(recoveryLog.snapshot());
+    if (isAuthenticated) {
+      recoveryAppend.mutate({
+        eventId: `mock-${Date.now()}`,
+        kind,
+        provider: selectedProvider.name,
+        action: result.action,
+        status: result.status === "observed" ? "resolved" : result.status,
+      });
+    }
     setFlash(`${kind.replaceAll("_", " ")} handled safely: ${result.action}`);
   };
 
@@ -506,7 +555,7 @@ export default function Home() {
                   emptyLabel="No recovery events recorded."
                 >
                   <>
-                    {recoverySnapshot.map(event => (
+                    {displayedRecovery.map(event => (
                       <div
                         key={event.id}
                         className="grid gap-3 px-5 py-4 sm:grid-cols-[1.1fr_1fr_1.6fr_auto] sm:items-center"
@@ -535,6 +584,8 @@ export default function Home() {
               </CardContent>
             </Card>
           </section>
+
+          <AffiliateTelemetryChart />
 
           <aside className="space-y-6">
             <Card className="border-cyan-200/20 bg-cyan-200/[0.06] text-white shadow-none">
@@ -691,7 +742,15 @@ export default function Home() {
                 </p>
               </CardHeader>
               <CardContent className="divide-y divide-white/10 p-0">
-                {attributionEvents.map(event => (
+                {(
+                  attributionQuery.data?.map(event => ({
+                    id: event.eventId,
+                    type: event.eventType,
+                    provider: event.provider,
+                    consent: event.consent,
+                    timestamp: event.occurredAt.toLocaleString(),
+                  })) ?? attributionEvents
+                ).map(event => (
                   <div
                     key={event.id}
                     className="flex items-center gap-3 px-5 py-3"
@@ -754,6 +813,14 @@ export default function Home() {
                     Decline
                   </Button>
                 </div>
+                <Button
+                  size="sm"
+                  onClick={recordReferralClick}
+                  disabled={!referralPreview || attributionAppend.isPending}
+                  className="border-white/10 bg-pink-200/10 text-xs text-pink-100 hover:bg-pink-200/20"
+                >
+                  Record consented referral click
+                </Button>
                 <div className="rounded-lg border border-dashed border-white/10 bg-black/10 p-3 font-mono text-[10px] leading-5 text-slate-500">
                   {referralPreview ? (
                     <>

@@ -42,3 +42,35 @@
 - [x] Implement real mock dataset-state transitions with tests for loading, empty, error, and ready states
 - [x] Add a rendered accessibility probe test for the dashboard navigation and controls
 - [x] Create and record the actual project checkpoint
+
+## Authenticated chat, persistence, and telemetry expansion
+
+- [x] Read and apply the LLM integration guidance for authenticated model-switch chat
+- [x] Extend the database schema for append-only recovery records and attribution records scoped to the authenticated owner
+- [x] Generate and apply the database migration through the project migration workflow
+- [x] Add protected tRPC procedures for chat execution, recovery-event persistence, attribution-event persistence, and telemetry reads
+- [x] Build an authenticated model-switch chat surface using the existing provider contracts and disclosure-safe attribution behavior
+- [x] Persist recovery and attribution events without prompts, secrets, project identifiers, or thread identifiers
+- [x] Add interactive affiliate telemetry charts with accessible labels, tooltips, and responsive layouts
+- [x] Add Vitest coverage for persistence helpers, protected procedures, chat model switching, attribution isolation, and chart data shaping
+- [x] Verify the expanded dashboard with tests, production build, responsive screenshots, and accessibility checks
+- [x] Save a checkpoint for the completed expansion
+
+## Final correction pass
+
+- [x] Add a protected telemetry read procedure and wire the affiliate chart to typed backend telemetry data
+- [x] Add a real model selector and model-switch workflow to the authenticated chat UI
+- [x] Add direct router-caller and persistence-helper tests for protected AgentOS procedures
+- [x] Add chart data-shaping tests and rendered accessibility tests for the actual Home and Chat surfaces
+- [x] Save a checkpoint after all correction items are complete
+
+## Checkpoint evidence repair
+
+- [x] Add direct persistence-helper tests for append/list behavior and safety fields
+- [x] Add a rendered accessibility test for the actual Home page, including live regions, provider labels, telemetry range controls, and keyboard-reachable actions
+- [x] Create a new checkpoint after the complete expansion and correction pass
+
+## Final accessibility evidence
+
+- [x] Assert actual Home select, button, live-region, and range-control elements in rendered markup
+- [ ] Create and record the post-expansion checkpoint
