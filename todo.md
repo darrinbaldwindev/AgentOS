@@ -194,4 +194,19 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Implement deterministic recovery-event mapping from local orchestration outcomes without persistence or external side effects
 - [x] Add tests for event allowlisting, prompt/secret/context exclusion, event ordering, and failure mapping
 - [x] Run the full test suite, typecheck, production build, and record shared verification evidence
-- [ ] Save a recoverable checkpoint for the autonomous recovery-event schema phase
+- [x] Save a recoverable checkpoint for the autonomous recovery-event schema phase
+
+## Autonomous owner health and recovery guidance UI
+
+- [x] Inspect the existing owner control-plane components and local orchestration data before UI changes
+- [x] Define accessible local-provider health and recovery guidance states without live-provider claims
+- [x] Render owner-only deterministic provider health, retry timing, and recovery guidance from the local orchestration procedure
+- [x] Add rendered and interaction tests for labels, loading/error states, and recovery guidance visibility
+- [x] Review settled desktop and mobile views, run the full test suite, typecheck, and production build
+- [x] Record shared verification evidence
+- [ ] Save a recoverable checkpoint for the owner health and recovery guidance UI
+
+## Owner guidance interaction evidence repair
+
+- [x] Add an owner-only local guidance refresh interaction and direct component interaction test
+- [x] Rerun verification and update the shared owner guidance evidence record

@@ -128,6 +128,26 @@ function StatePill({ state }: { state: ConnectionState }) {
   );
 }
 
+function localRecoveryGuidance(
+  connection: string,
+  retryAfterMs: number | null
+) {
+  if (connection === "available") return "Ready for local mock execution.";
+  if (connection === "needs_connection")
+    return "Request a governed connection before use.";
+  if (connection === "permission_denied")
+    return "Request owner-approved access before use.";
+  if (connection === "offline") return "Switch to an available local route.";
+  if (connection === "rate_limited" || connection === "limited") {
+    return retryAfterMs
+      ? `Wait ${Math.ceil(retryAfterMs / 1000)} seconds before retrying.`
+      : "Wait before retrying this route.";
+  }
+  if (connection === "degraded")
+    return "Use a fallback route or retry after review.";
+  return "Stop and review the local recovery record.";
+}
+
 function CollectionState({
   state,
   emptyLabel,
@@ -214,6 +234,16 @@ export default function Home() {
   const recoveryQuery = trpc.agentos.recovery.list.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const accessQuery = trpc.agentos.access.status.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const hasControlAccess = accessQuery.data?.allowed ?? isAdmin;
+  const localHealthQuery = trpc.agentos.orchestration.health.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated && hasControlAccess,
+    }
+  );
   const attributionQuery = trpc.agentos.attribution.list.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -460,6 +490,88 @@ export default function Home() {
                     ))}
                   </>
                 </CollectionState>
+              </CardContent>
+            </Card>
+
+            <Card className="border-cyan-200/20 bg-cyan-200/[0.04] text-white shadow-none">
+              <CardHeader className="border-b border-cyan-200/10 px-5 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base font-medium">
+                      Local orchestration guidance
+                    </CardTitle>
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                      deterministic fixtures · owner view · no live provider
+                      calls
+                    </p>
+                  </div>
+                  <Badge className="border border-amber-300/20 bg-amber-300/10 text-amber-100 hover:bg-amber-300/10">
+                    routing locked
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500">
+                    Refresh reads the deterministic local fixture only.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label="Refresh local provider guidance"
+                    disabled={localHealthQuery.isLoading}
+                    onClick={() => localHealthQuery.refetch()}
+                    className="border-white/10 bg-white/5 text-[10px] text-slate-200 hover:bg-white/10 hover:text-white"
+                  >
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Refresh guidance
+                  </Button>
+                </div>
+                {localHealthQuery.isLoading ? (
+                  <p
+                    role="status"
+                    className="font-mono text-[10px] uppercase tracking-[0.14em] text-cyan-100"
+                  >
+                    Loading local provider guidance…
+                  </p>
+                ) : localHealthQuery.error ? (
+                  <p role="alert" className="text-xs text-rose-200">
+                    Local provider guidance is unavailable. No provider action
+                    was attempted.
+                  </p>
+                ) : localHealthQuery.data?.length ? (
+                  <div
+                    role="region"
+                    aria-label="Local provider health and recovery guidance"
+                    className="grid gap-3 sm:grid-cols-2"
+                  >
+                    {localHealthQuery.data.map(item => (
+                      <div
+                        key={item.providerId}
+                        className="rounded-lg border border-white/10 bg-black/10 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-200">
+                            {item.providerId}
+                          </p>
+                          <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-cyan-100">
+                            {item.connection.replaceAll("_", " ")}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-slate-400">
+                          {localRecoveryGuidance(
+                            item.connection,
+                            item.retryAfterMs
+                          )}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    No local health fixtures are configured.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
