@@ -1,0 +1,56 @@
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+credentials*
+*credential*
+*secret*
+*token*
+*password*
+
+# Operating-system metadata and editor state
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files and local logs
+*.tmp
+*.temp
+*.cache
+*.log
+
+# Dependencies and generated build output
+node_modules/
+bower_components/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage/
+dist/
+build/
+out/
+target/
+.next/
+.svelte-kit/
+
+# Root ZIP archives are intentionally versioned at the owner's instruction.
+# Do not add a blanket archive ignore rule without renewed owner approval.
