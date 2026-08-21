@@ -222,7 +222,28 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Implement the filtered local catalog procedure without changing chat execution or provider activation
 - [x] Add direct tests for authentication, stable catalog values, and excluded sensitive fields
 - [x] Run full verification and record shared evidence
-- [ ] Save a recoverable checkpoint for the end-user catalog projection phase
+- [x] Save a recoverable checkpoint for the end-user catalog projection phase
+
+## Autonomous end-user catalog consumption
+
+- [x] Inspect selector model identifiers and filtered catalog compatibility
+- [x] Define safe local catalog loading, fallback, selection-reset, and accessibility behavior without changing chat execution
+- [x] Consume the filtered end-user catalog in provider and model selectors with a deterministic local fallback
+- [x] Add rendered and interaction tests for catalog loading, fallback, and provider/model selection behavior
+- [x] Review desktop/mobile behavior, run full verification, and record shared evidence
+- [ ] Save a recoverable checkpoint for the end-user catalog consumption phase
+
+## End-user catalog model-selector completion
+
+- [x] Consume filtered catalog model options in the end-user model selector while retaining deterministic fallback IDs and unchanged chat execution
+- [x] Reset the selected model deterministically when a catalog-backed provider changes
+- [x] Add rendered and interaction coverage for catalog-backed model options, fallback options, and provider-driven model reset
+- [x] Rerun verification and update the shared catalog-consumption evidence record
+
+## End-user catalog fallback model evidence repair
+
+- [x] Verify deterministic fallback model options render when the filtered catalog is loading or unavailable
+- [x] Rerun focused and full verification, then update the shared catalog-consumption evidence record
 
 ## Owner guidance interaction evidence repair
 

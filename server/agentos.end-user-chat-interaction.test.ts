@@ -50,6 +50,64 @@ vi.mock("@/lib/trpc", () => ({
           return { mutate: vi.fn(), isPending: false };
         },
       },
+      orchestration: {
+        endUserCatalog: {
+          useQuery: () => ({
+            data: {
+              mode: "local_mock",
+              providers: [
+                {
+                  id: "ollama",
+                  name: "Ollama Local",
+                  readiness: "ready",
+                  models: [
+                    { id: "ollama-default", name: "Ollama Catalog Default" },
+                  ],
+                },
+                {
+                  id: "together",
+                  name: "Together AI",
+                  readiness: "review",
+                  models: [
+                    {
+                      id: "together-default",
+                      name: "Together Catalog Default",
+                    },
+                  ],
+                },
+                {
+                  id: "taskade",
+                  name: "Taskade",
+                  readiness: "unavailable",
+                  models: [],
+                },
+                {
+                  id: "elevenlabs",
+                  name: "ElevenLabs",
+                  readiness: "review",
+                  models: [],
+                },
+                {
+                  id: "n8n",
+                  name: "n8n",
+                  readiness: "unavailable",
+                  models: [],
+                },
+                {
+                  id: "github",
+                  name: "GitHub",
+                  readiness: "unavailable",
+                  models: [],
+                },
+              ],
+              liveProviderCallsEnabled: false,
+              affiliateRoutingEnabled: false,
+            },
+            isLoading: false,
+            error: null,
+          }),
+        },
+      },
     },
   },
 }));
@@ -121,6 +179,13 @@ describe("EndUserChat conversation reset interaction", () => {
     expect(previewText).toContain(
       "Together AI / meta-llama-3.1-8b may need a retry or a different route. No provider action has been attempted."
     );
+    expect(
+      renderer.root.findByProps({ "aria-label": "Choose end-user model" }).props
+        .value
+    ).toBe("meta-llama-3.1-8b");
+    expect(
+      renderer.root.findAllByType("option").map(node => node.children.join(" "))
+    ).toContain("Together Catalog Default");
 
     await act(async () => {
       renderer.root

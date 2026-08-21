@@ -72,6 +72,27 @@ const modelOptions = {
   github: ["repo-assistant"],
 } as const;
 
+type EndUserCatalogProvider = {
+  id: string;
+  models: Array<{ id: string; name: string }>;
+};
+
+export function getEndUserSelectorModelOptions(
+  providerId: string,
+  catalogProvider?: EndUserCatalogProvider
+): Array<{ id: string; label: string }> {
+  const fallbackIds =
+    modelOptions[providerId as keyof typeof modelOptions] ??
+    modelOptions.ollama;
+  if (catalogProvider?.models.length) {
+    return catalogProvider.models.map((model, index) => ({
+      id: fallbackIds[index] ?? fallbackIds[0],
+      label: model.name,
+    }));
+  }
+  return fallbackIds.map(id => ({ id, label: id }));
+}
+
 export default function EndUserChat() {
   const { loading, user } = useAuth();
   const [providerId, setProviderId] = useState("ollama");
@@ -87,6 +108,30 @@ export default function EndUserChat() {
   const selectedProvider =
     providers.find(provider => provider.id === providerId) ?? providers[0];
   const routePreview = getEndUserRoutePreview(selectedProvider, modelId);
+  const endUserCatalogQuery =
+    trpc.agentos.orchestration.endUserCatalog.useQuery(undefined, {
+      enabled: Boolean(user),
+    });
+  const selectorProviders = endUserCatalogQuery.data?.providers?.length
+    ? endUserCatalogQuery.data.providers
+    : providers.map(provider => ({
+        id: provider.id,
+        name: provider.name,
+        readiness:
+          provider.state === "available"
+            ? ("ready" as const)
+            : provider.state === "limited" || provider.state === "degraded"
+              ? ("review" as const)
+              : ("unavailable" as const),
+        models: [],
+      }));
+  const selectedCatalogProvider = selectorProviders.find(
+    provider => provider.id === providerId
+  );
+  const selectorModelOptions = getEndUserSelectorModelOptions(
+    providerId,
+    selectedCatalogProvider
+  );
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
       if (
@@ -248,17 +293,31 @@ export default function EndUserChat() {
                 onChange={event => {
                   const next = event.target.value as keyof typeof modelOptions;
                   setProviderId(next);
-                  setModelId(modelOptions[next][0]);
+                  setModelId(
+                    getEndUserSelectorModelOptions(
+                      next,
+                      selectorProviders.find(provider => provider.id === next)
+                    )[0]?.id ?? modelOptions.ollama[0]
+                  );
                 }}
                 className="mt-2 w-full rounded-lg border border-white/10 bg-[#07111f] px-3 py-3 text-sm text-white"
               >
-                <option value="ollama">Ollama Local</option>
-                <option value="together">Together AI</option>
-                <option value="taskade">Taskade</option>
-                <option value="elevenlabs">ElevenLabs</option>
-                <option value="n8n">n8n</option>
-                <option value="github">GitHub</option>
+                {selectorProviders.map(provider => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
               </select>
+              <p
+                role="status"
+                className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-600"
+              >
+                {endUserCatalogQuery.isLoading
+                  ? "Loading local catalog…"
+                  : endUserCatalogQuery.error
+                    ? "Using local catalog fallback"
+                    : "Local catalog loaded · chat execution unchanged"}
+              </p>
             </div>
             <div>
               <label
@@ -274,11 +333,11 @@ export default function EndUserChat() {
                 onChange={event => setModelId(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-white/10 bg-[#07111f] px-3 py-3 text-sm text-white"
               >
-                {modelOptions[providerId as keyof typeof modelOptions].map(
-                  option => (
-                    <option key={option}>{option}</option>
-                  )
-                )}
+                {selectorModelOptions.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
             <section
