@@ -43,3 +43,22 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 
 **Status:** COMPLETED
 **Boundary:** This entry records synchronization verification only; it does not alter project governance, canonical-content status, or owner-gated decisions.
+
+## 2026-08-21 — A4 typed interface drafts
+
+**Maintainer:** Current project coordinator
+**Executor:** AgentOS Autonomous
+**Backlog task:** A4 — Add and review typed interface drafts
+**Status:** COMPLETED
+
+**Preflight.** The canonical repository `/home/ubuntu/projects/agentos-3b88b539` was clean on `main` tracking `origin/main`. The backlog-designated isolated worktree `/home/ubuntu/agentos-autonomous-worktree/repo` was not present, so the canonical shared repository was used for the durable deliverable and `/tmp/agentos-a4-specs` was used only as a disposable read-only extraction area. No external credentials, live provider calls, MCP activation, schedules, deployment, publication, monetization changes, or architecture sign-off were required.
+
+**Inputs reviewed.** `AUTONOMOUS_TASK_BACKLOG.md`; `AUTONOMOUS_TASK_PROGRESS_LOG.md`; and the archived canonical Session 002 (schema design), Session 003 (context assembly), Session 004 (provider abstraction), Session 006 (IPC contract), Session 013 (agent loop), and Session 026 (referral attribution) records inside `AgentOSzipfinal.zip`. The archive was read but not modified or unpacked into the repository.
+
+**Files added.** `contracts/agentos-core-types.ts` defines TypeScript drafts for provider and model records, agent profiles, integration state, context state, artifacts, tools, credential-connection metadata, execution state, streamed agent events, and privacy-safe attribution state. `tests/validate-agentos-core-types.mjs` is a dependency-free structural validator covering ten required interfaces, seven required union types, expected integration states, execution and pause-event shapes, and plaintext-secret-field prohibitions.
+
+**Validation.** `node --check tests/validate-agentos-core-types.mjs` passed. `node tests/validate-agentos-core-types.mjs` passed, reporting all required interfaces, unions, and secret-boundary checks. `git diff --check` passed. The local TypeScript compiler was not installed, so no compilation claim is made; validation is explicitly structural and dependency-free.
+
+**Boundary.** These are local contract drafts only. They do not implement provider connections, persist secret values, activate referral routing, create a frontend/backend runtime, or claim production, security, or release readiness.
+
+**Follow-up.** The next safe backlog task is B2: draft deterministic local mock adapters that consume these contracts without external network calls.
