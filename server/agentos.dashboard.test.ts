@@ -1,0 +1,191 @@
+import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DashboardAccessibilityProbe } from "../client/src/components/DashboardAccessibilityProbe";
+import {
+  dashboardA11yContract,
+  dashboardNavItems,
+} from "../client/src/lib/dashboardContracts";
+import {
+  AppendOnlyRecoveryLog,
+  CONNECTION_STATES,
+  attributionEvents,
+  buildReferralPreview,
+  executeRecovery,
+  integrationAdapters,
+  createMockDatasetStates,
+  nextConnectionState,
+  nextMockDataState,
+  providers,
+  recoveryAction,
+  recoveryEvents,
+  summarizeTraffic,
+} from "../client/src/lib/agentosMock";
+
+describe("AgentOS dashboard safety invariants", () => {
+  it("enforces the declared connection state order", () => {
+    expect(CONNECTION_STATES).toEqual([
+      "unknown",
+      "checking",
+      "available",
+      "needs_connection",
+      "limited",
+      "degraded",
+      "offline",
+    ]);
+    expect(nextConnectionState("unknown")).toBe("checking");
+    expect(nextConnectionState("degraded")).toBe("offline");
+    expect(nextConnectionState("offline")).toBe("offline");
+  });
+
+  it("keeps live affiliate routing disabled in the preload catalog", () => {
+    expect(
+      providers.every(provider => provider.liveRoutingEnabled === false)
+    ).toBe(true);
+  });
+
+  it("allows only the two attribution event types", () => {
+    expect(
+      attributionEvents.every(event =>
+        ["model_switch", "referral_click"].includes(event.type)
+      )
+    ).toBe(true);
+    expect(
+      attributionEvents.every(
+        event => !("projectId" in event) && !("threadId" in event)
+      )
+    ).toBe(true);
+  });
+
+  it("keeps recovery events append-only and free of prompt or secret fields", () => {
+    expect(
+      recoveryEvents.every(
+        event =>
+          event.containsPrompt === false && event.containsSecret === false
+      )
+    ).toBe(true);
+    expect(recoveryAction("rate_limit")).toContain("local route");
+    expect(recoveryAction("referral_failure")).toContain("Continue core task");
+  });
+
+  it("exposes cost and health metadata for every provider selector record", () => {
+    expect(
+      providers.every(provider =>
+        ["free", "credits", "paid"].includes(provider.costTier)
+      )
+    ).toBe(true);
+    expect(
+      providers.every(
+        provider =>
+          typeof provider.health.latencyMs === "number" &&
+          typeof provider.health.uptimePct === "number"
+      )
+    ).toBe(true);
+  });
+
+  it("types every phase-two adapter with an owner approval gate", () => {
+    expect(integrationAdapters.length).toBeGreaterThan(0);
+    expect(
+      integrationAdapters.every(
+        adapter =>
+          adapter.ownerApprovalRequired === true && adapter.contract.length > 0
+      )
+    ).toBe(true);
+  });
+
+  it("executes a safe recovery result for every declared failure scenario", () => {
+    const kinds = [
+      "rate_limit",
+      "quota_exhausted",
+      "provider_offline",
+      "capability_mismatch",
+      "permission_denied",
+      "tool_timeout",
+      "partial_stream",
+      "artifact_conflict",
+      "referral_failure",
+    ] as const;
+    for (const kind of kinds) {
+      const result = executeRecovery(kind);
+      expect(result.kind).toBe(kind);
+      expect(result.action.length).toBeGreaterThan(10);
+    }
+  });
+
+  it("appends sanitized recovery entries without mutating prior snapshots", () => {
+    const log = new AppendOnlyRecoveryLog(recoveryEvents);
+    const before = log.snapshot();
+    log.append({
+      id: "new",
+      kind: "tool_timeout",
+      provider: "Ollama Local",
+      action: "Retry idempotent action",
+      status: "resolved",
+      timestamp: "now",
+    });
+    const after = log.snapshot();
+    expect(after).toHaveLength(before.length + 1);
+    expect(before).toHaveLength(recoveryEvents.length);
+    expect(after.at(-1)).toMatchObject({
+      containsPrompt: false,
+      containsSecret: false,
+    });
+  });
+
+  it("keeps the dashboard interaction contract keyboard- and screen-reader-oriented", () => {
+    expect(dashboardNavItems).toHaveLength(5);
+    expect(dashboardNavItems.map(item => item.label)).toContain(
+      "Recovery + policy"
+    );
+    expect(dashboardA11yContract.providerSelectLabel).toBe(
+      "Choose provider route"
+    );
+    expect(dashboardA11yContract.liveRegionPoliteness).toBe("polite");
+    expect(dashboardA11yContract.loadingStatusRole).toBe("status");
+    expect(dashboardA11yContract.recoveryAlertRole).toBe("alert");
+  });
+
+  it("cycles and creates meaningful mock dataset states", () => {
+    expect(nextMockDataState("ready")).toBe("loading");
+    expect(nextMockDataState("loading")).toBe("empty");
+    expect(nextMockDataState("empty")).toBe("error");
+    expect(nextMockDataState("error")).toBe("ready");
+    expect(createMockDatasetStates("error")).toEqual({
+      providers: "error",
+      affiliates: "error",
+      adapters: "error",
+      recovery: "error",
+    });
+  });
+
+  it("renders the dashboard accessibility probe with real DOM semantics", () => {
+    const markup = renderToStaticMarkup(
+      createElement(DashboardAccessibilityProbe)
+    );
+    expect(markup).toContain('aria-label="AgentOS control plane navigation"');
+    expect(markup).toContain('aria-label="Choose provider route"');
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain("Run mock health check");
+    expect(markup).toContain('href="/providers"');
+  });
+
+  it("derives deterministic traffic metrics", () => {
+    expect(summarizeTraffic()).toEqual({
+      clicks: 922,
+      signups: 218,
+      conversionRate: 0.236,
+    });
+  });
+
+  it("does not construct referral parameters without consent or eligibility", () => {
+    const eligible = providers.find(provider => provider.id === "taskade")!;
+    const ineligible = providers.find(provider => provider.id === "ollama")!;
+    expect(buildReferralPreview(eligible, "declined")).toBeNull();
+    expect(buildReferralPreview(ineligible, "granted")).toBeNull();
+    expect(buildReferralPreview(eligible, "granted")).toMatchObject({
+      containsProjectData: false,
+      containsThreadData: false,
+      opensNetwork: false,
+    });
+  });
+});
