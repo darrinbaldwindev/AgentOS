@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -216,7 +216,7 @@ export async function purgeExpiredPrivateConversations(
     .where(
       and(
         eq(privateConversations.userId, userId),
-        lt(privateConversations.expiresAt, now)
+        lte(privateConversations.expiresAt, now)
       )
     );
   for (const conversation of expired) {

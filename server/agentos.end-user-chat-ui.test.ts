@@ -93,6 +93,8 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain("Message history");
     expect(markup).toContain("Saved private conversations");
     expect(markup).toContain("No saved private conversations yet.");
+    expect(markup).not.toContain("Expires ");
+    expect(markup).not.toContain("Clear all saved history");
     expect(markup).toContain("expire 30 days after the latest saved message");
     expect(markup).toContain("No messages in this session yet.");
     expect(markup).toContain("Ready for your next message");

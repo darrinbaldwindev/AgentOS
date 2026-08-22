@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
 
 const store = vi.hoisted(() => ({
+  now: new Date("2026-08-22T00:00:00.000Z"),
   conversations: new Map<
     number,
     Array<{
@@ -23,13 +24,17 @@ vi.mock("./db", () => ({
   appendRecoveryRecord: vi.fn(),
   listAttributionRecords: vi.fn(),
   listRecoveryRecords: vi.fn(),
-  listPrivateConversations: vi.fn(
-    async (userId: number) => store.conversations.get(userId) ?? []
+  listPrivateConversations: vi.fn(async (userId: number) =>
+    (store.conversations.get(userId) ?? []).filter(
+      conversation => conversation.expiresAt.getTime() > store.now.getTime()
+    )
   ),
   getPrivateConversation: vi.fn(
     async (userId: number, conversationId: string) =>
       (store.conversations.get(userId) ?? []).find(
-        conversation => conversation.conversationId === conversationId
+        conversation =>
+          conversation.conversationId === conversationId &&
+          conversation.expiresAt.getTime() > store.now.getTime()
       )
   ),
   listPrivateConversationMessages: vi.fn(
@@ -203,6 +208,25 @@ describe("AgentOS private conversations", () => {
     expect(await caller.agentos.conversations.list()).toEqual([]);
     expect(await otherUser.agentos.conversations.list()).toHaveLength(1);
     expect(otherConversation).toMatchObject({ userId: 72 });
+  });
+
+  it("treats a conversation at the exact expiry boundary as unavailable", async () => {
+    const caller = appRouter.createCaller(context(81));
+    const exactExpiryId = "00000000-0000-4000-8000-000000000081";
+    store.conversations.set(81, [
+      {
+        conversationId: exactExpiryId,
+        userId: 81,
+        providerId: "ollama",
+        modelId: "agentos-default",
+        expiresAt: new Date(store.now),
+      },
+    ]);
+
+    expect(await caller.agentos.conversations.list()).toEqual([]);
+    expect(
+      await caller.agentos.conversations.get({ conversationId: exactExpiryId })
+    ).toEqual({ conversation: null, messages: [] });
   });
 
   it("denies unauthenticated private conversation access and disallows system roles", async () => {

@@ -385,4 +385,11 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Append the task and canonical handoff without creating a mirror
 - [x] Implement the selected task within documented governance and privacy boundaries
 - [x] Run required verification and update shared evidence
-- [ ] Save a recoverable checkpoint for TD-20260822-003
+- [x] Save a recoverable checkpoint for TD-20260822-003
+
+## Next private-history hardening cycle
+
+- [x] Inspect current private-history contracts, UI behavior, and test coverage for a bounded safe gap
+- [x] Append one canonical executor-ready task and handoff without creating a mirror
+- [x] Implement the selected hardening improvement with direct router, rendered, and interaction coverage
+- [x] Run full verification, record shared evidence, and save a recoverable checkpoint

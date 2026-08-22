@@ -464,13 +464,14 @@ describe("EndUserChat conversation reset interaction", () => {
     ).toHaveLength(1);
   });
 
-  it("returns to a fresh session when a selected saved conversation is no longer available", async () => {
+  it("returns to a fresh session when a selected expired or deleted conversation is unavailable", async () => {
     conversationState.list.data = [
       {
         conversationId: conversationState.conversationId,
         userId: 1,
         providerId: "ollama",
         modelId: "agentos-default",
+        expiresAt: new Date("2026-08-22T00:00:00.000Z"),
       },
     ];
     conversationState.get.data = {
