@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
   localRefetch: vi.fn(),
+  catalogRefetch: vi.fn(),
 }));
 
 vi.mock("@/components/DashboardLayout", () => ({
@@ -50,6 +51,29 @@ vi.mock("@/lib/trpc", () => ({
             refetch: testState.localRefetch,
           }),
         },
+        catalog: {
+          useQuery: () => ({
+            data: {
+              providers: [
+                { id: "ollama", name: "Ollama Local", connection: "available" },
+              ],
+              models: [
+                {
+                  id: "ollama-default",
+                  providerId: "ollama",
+                  name: "Ollama Local Default",
+                  capabilities: ["chat", "streaming", "json", "local"],
+                  contextTokens: 8192,
+                  freeTier: true,
+                  connection: "available",
+                },
+              ],
+            },
+            isLoading: false,
+            error: null,
+            refetch: testState.catalogRefetch,
+          }),
+        },
       },
     },
   },
@@ -72,7 +96,29 @@ describe("AgentOS owner guidance interaction", () => {
 
     expect(testState.localRefetch).toHaveBeenCalledTimes(1);
     expect(
-      renderer.root.findAllByProps({ role: "region" })[0]?.props["aria-label"]
-    ).toBe("Local provider health and recovery guidance");
+      renderer.root.findAllByProps({
+        "aria-label": "Local provider health and recovery guidance",
+      })
+    ).toHaveLength(1);
+  });
+
+  it("refreshes the owner-only local capability matrix without provider activity", async () => {
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(Home));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Refresh local capability matrix" })
+        .props.onClick();
+    });
+
+    expect(testState.catalogRefetch).toHaveBeenCalledTimes(1);
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": "Local model capability comparison",
+      })
+    ).toHaveLength(1);
   });
 });

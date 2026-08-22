@@ -58,13 +58,22 @@ describe("AgentOS governed local orchestration", () => {
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    await expect(
-      appRouter
-        .createCaller(createContext("admin"))
-        .agentos.orchestration.catalog()
-    ).resolves.toMatchObject({
+    const catalog = await appRouter
+      .createCaller(createContext("admin"))
+      .agentos.orchestration.catalog();
+    expect(catalog).toMatchObject({
       agents: expect.any(Array),
       integrations: expect.any(Array),
+    });
+    expect(catalog.affiliateRoutingEnabled).toBe(false);
+    expect(
+      catalog.models.find(model => model.id === "ollama-default")
+    ).toMatchObject({
+      providerId: "ollama",
+      capabilities: ["chat", "streaming", "json", "local"],
+      contextTokens: 8192,
+      freeTier: true,
+      connection: "available",
     });
   });
 

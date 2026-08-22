@@ -349,3 +349,17 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Enable the user-authorized GitHub integration for this task
 - [x] Verify read-only access to `darrinbaldwindev/AgentOS` and complete the repository comparison
+
+## GitHub connection, historical artifact import, and dashboard gap implementation
+
+- [x] Inspect current local and GitHub Git histories and define a safe push strategy without overwriting remote history
+- [x] Import the GitHub capability-comparison matrix as a historical, non-runtime reference artifact
+- [x] Identify a bounded, evidence-backed dashboard feature gap and define its governance, test, and verification requirements
+- [x] Implement the selected gap while preserving RBAC, private-conversation, attribution, and no-live-provider boundaries
+- [x] Run full tests, TypeScript validation, production build, and responsive review; update shared evidence
+- [ ] Commit the verified active codebase and push it to `darrinbaldwindev/AgentOS`
+
+## Owner-only local capability comparison
+
+- [x] Render an owner-gated capability comparison from the existing local mock catalog without exposing it to end users
+- [x] Add rendered and direct router coverage for capability data, access control, no-live-provider disclosure, and loading/error states

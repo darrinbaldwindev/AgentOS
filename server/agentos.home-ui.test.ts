@@ -23,6 +23,40 @@ const localHealthQueryState = vi.hoisted(() => ({
   error: null as unknown,
 }));
 
+const localCatalogQueryState = vi.hoisted(() => ({
+  data: {
+    mode: "local_mock" as const,
+    providers: [
+      {
+        id: "ollama",
+        name: "Ollama Local",
+        connection: "available",
+        capabilities: ["chat", "streaming", "json", "local"],
+        privacy: "local",
+        cost: "free",
+        affiliateStatus: "none",
+      },
+    ],
+    models: [
+      {
+        id: "ollama-default",
+        providerId: "ollama",
+        name: "Ollama Local Default",
+        capabilities: ["chat", "streaming", "json", "local"],
+        contextTokens: 8192,
+        freeTier: true,
+        connection: "available",
+      },
+    ],
+    agents: [],
+    integrations: [],
+    affiliateRoutingEnabled: false as const,
+  } as unknown,
+  isLoading: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}));
+
 vi.mock("@/components/DashboardLayout", () => ({
   default: ({ children }: { children: unknown }) =>
     createElement("div", null, children),
@@ -47,6 +81,9 @@ vi.mock("@/lib/trpc", () => ({
       orchestration: {
         health: {
           useQuery: () => localHealthQueryState,
+        },
+        catalog: {
+          useQuery: () => localCatalogQueryState,
         },
       },
     },
@@ -81,6 +118,12 @@ describe("AgentOS Home accessibility surface", () => {
     );
     expect(markup).toContain("Wait 30 seconds before retrying.");
     expect(markup).toContain("no live provider calls");
+    expect(markup).toContain("Local capability comparison");
+    expect(markup).toContain('aria-label="Local model capability comparison"');
+    expect(markup).toContain("Ollama Local Default");
+    expect(markup).toContain(
+      "Capability fit is evaluated before affiliate metadata."
+    );
   });
 
   it("renders accessible loading and error guidance without attempting provider activity", () => {
@@ -102,6 +145,22 @@ describe("AgentOS Home accessibility surface", () => {
     expect(errorMarkup).toContain('role="alert"');
     expect(errorMarkup).toContain(
       "Local provider guidance is unavailable. No provider action was attempted."
+    );
+  });
+
+  it("renders capability-matrix loading and error states without provider activity", () => {
+    localCatalogQueryState.data = undefined;
+    localCatalogQueryState.isLoading = true;
+    localCatalogQueryState.error = null;
+    expect(renderToStaticMarkup(createElement(Home))).toContain(
+      "Loading local capability matrix…"
+    );
+
+    localCatalogQueryState.isLoading = false;
+    localCatalogQueryState.error = { message: "fixture unavailable" };
+    const errorMarkup = renderToStaticMarkup(createElement(Home));
+    expect(errorMarkup).toContain(
+      "Local capability matrix is unavailable. No provider action was attempted."
     );
   });
 });

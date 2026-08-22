@@ -244,6 +244,12 @@ export default function Home() {
       enabled: isAuthenticated && hasControlAccess,
     }
   );
+  const localCatalogQuery = trpc.agentos.orchestration.catalog.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated && hasControlAccess,
+    }
+  );
   const attributionQuery = trpc.agentos.attribution.list.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -492,6 +498,103 @@ export default function Home() {
                 </CollectionState>
               </CardContent>
             </Card>
+
+            {hasControlAccess ? (
+              <Card className="border-white/10 bg-white/[0.035] text-white shadow-none">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 border-b border-white/10 px-5 py-4">
+                  <div>
+                    <CardTitle className="text-base font-medium">
+                      Local capability comparison
+                    </CardTitle>
+                    <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                      owner view · deterministic local catalog · no live calls
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label="Refresh local capability matrix"
+                    disabled={localCatalogQuery.isLoading}
+                    onClick={() => localCatalogQuery.refetch()}
+                    className="border-white/10 bg-white/5 text-[10px] text-slate-200 hover:bg-white/10 hover:text-white"
+                  >
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Refresh matrix
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-5">
+                  {localCatalogQuery.isLoading ? (
+                    <p
+                      role="status"
+                      className="font-mono text-[10px] uppercase tracking-[0.14em] text-cyan-100"
+                    >
+                      Loading local capability matrix…
+                    </p>
+                  ) : localCatalogQuery.error ? (
+                    <p role="alert" className="text-xs text-rose-200">
+                      Local capability matrix is unavailable. No provider action
+                      was attempted.
+                    </p>
+                  ) : localCatalogQuery.data?.models.length ? (
+                    <div
+                      role="region"
+                      aria-label="Local model capability comparison"
+                      className="grid gap-3 sm:grid-cols-2"
+                    >
+                      {localCatalogQuery.data.models.map(model => {
+                        const provider = localCatalogQuery.data?.providers.find(
+                          item => item.id === model.providerId
+                        );
+                        return (
+                          <article
+                            key={model.id}
+                            className="rounded-lg border border-white/10 bg-black/10 p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium text-slate-100">
+                                  {model.name}
+                                </p>
+                                <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500">
+                                  {provider?.name ?? model.providerId} ·{" "}
+                                  {model.connection.replaceAll("_", " ")}
+                                </p>
+                              </div>
+                              <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-cyan-100">
+                                {model.contextTokens.toLocaleString()} ctx
+                              </span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {model.capabilities.map(capability => (
+                                <span
+                                  key={capability}
+                                  className="rounded-full bg-white/[0.06] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-300"
+                                >
+                                  {capability}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                              {model.freeTier
+                                ? "Free-tier flag recorded in the local fixture."
+                                : "No free-tier flag recorded in the local fixture."}
+                            </p>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      No local capability rows are configured.
+                    </p>
+                  )}
+                  <p className="mt-4 text-xs leading-5 text-slate-500">
+                    Capability fit is evaluated before affiliate metadata. This
+                    matrix is local fixture data and never activates a provider.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <Card className="border-cyan-200/20 bg-cyan-200/[0.04] text-white shadow-none">
               <CardHeader className="border-b border-cyan-200/10 px-5 py-4">
