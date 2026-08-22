@@ -363,3 +363,10 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Render an owner-gated capability comparison from the existing local mock catalog without exposing it to end users
 - [x] Add rendered and direct router coverage for capability data, access control, no-live-provider disclosure, and loading/error states
+
+## Local agent-role log audit and Task Discovery dry run
+
+- [x] Inventory available AgentOS roles, their prompts, canonical logs, and local record pointers
+- [x] Verify where each role currently reads and writes coordination records
+- [x] Run a governed Task Discovery dry run without implementing application work or altering protected configuration
+- [x] Report role configuration status, record synchronization state, and dry-run output
