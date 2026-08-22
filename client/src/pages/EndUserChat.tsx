@@ -28,6 +28,15 @@ export function getEndUserChatStatus(isTyping: boolean): string {
   return isTyping ? "AgentOS is typing" : "Ready for your next message";
 }
 
+export function getPrivateConversationExpiryLabel(
+  expiresAt: Date | string | null | undefined
+): string {
+  const date =
+    expiresAt instanceof Date ? expiresAt : new Date(expiresAt ?? "");
+  if (Number.isNaN(date.getTime())) return "Expiry date unavailable";
+  return `Expires ${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 export function getEndUserRoutePreview(
   provider: Pick<Provider, "name" | "state">,
   modelId: string
@@ -757,6 +766,11 @@ export default function EndUserChat() {
                           </span>
                           <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em] text-slate-600">
                             saved private conversation
+                          </span>
+                          <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em] text-slate-500">
+                            {getPrivateConversationExpiryLabel(
+                              conversation.expiresAt
+                            )}
                           </span>
                         </span>
                         <ArchiveRestore className="h-3.5 w-3.5 shrink-0 text-cyan-200/70" />

@@ -122,6 +122,18 @@ describe("AgentOS private conversations", () => {
     expect(created).toMatchObject({ userId: 41, providerId: "ollama" });
     if (!created) throw new Error("Expected private conversation");
 
+    const savedRows = await caller.agentos.conversations.list();
+    expect(savedRows).toMatchObject([
+      {
+        conversationId: created.conversationId,
+        userId: 41,
+        expiresAt: expect.any(Date),
+      },
+    ]);
+
+    const otherCaller = appRouter.createCaller(context(42));
+    expect(await otherCaller.agentos.conversations.list()).toEqual([]);
+
     await caller.agentos.conversations.append({
       conversationId: created.conversationId,
       role: "user",

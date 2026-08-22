@@ -23,6 +23,7 @@ const conversationState = vi.hoisted(() => {
           userId: 1,
           providerId: "ollama",
           modelId: "agentos-default",
+          expiresAt: new Date("2026-09-20T00:00:00.000Z"),
         },
       ],
       isLoading: false,
@@ -205,6 +206,13 @@ describe("EndUserChat conversation reset interaction", () => {
     await act(async () => {
       renderer = TestRenderer.create(createElement(EndUserChat));
     });
+
+    expect(
+      renderer.root
+        .findAllByType("span")
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain("Expires 2026-09-20 00:00 UTC");
 
     await act(async () => {
       renderer.root

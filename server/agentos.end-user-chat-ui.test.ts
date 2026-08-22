@@ -157,6 +157,7 @@ describe("AgentOS end-user chat surface", () => {
         conversationId: "00000000-0000-0000-0000-000000000071",
         providerId: "ollama",
         modelId: "agentos-default",
+        expiresAt: new Date("2026-09-20T00:00:00.000Z"),
       },
     ];
     conversationQueryState.list.isLoading = false;
@@ -169,6 +170,7 @@ describe("AgentOS end-user chat surface", () => {
       'aria-label="Delete saved private conversation 00000000-0000-0000-0000-000000000071"'
     );
     expect(markup).toContain("Clear all saved history");
+    expect(markup).toContain("Expires 2026-09-20 00:00 UTC");
     expect(markup).toContain("Owner telemetry, recovery records");
     expect(markup).not.toContain("Affiliate telemetry");
   });

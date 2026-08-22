@@ -377,4 +377,12 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Remove only retired mirror-read and mirror-write directives while preserving role boundaries and the canonical-only record model
 - [x] Create shared configuration-audit evidence and append a canonical execution result without altering historical worktree records
 - [x] Verify active prompt consistency, historical-worktree preservation, and ledger completion
-- [ ] Save a recoverable checkpoint for TD-20260822-002
+- [x] Save a recoverable checkpoint for TD-20260822-002
+
+## Next governed Task Discovery and executor cycle
+
+- [x] Re-read the corrected canonical queue and identify one new evidence-backed executor-ready task
+- [x] Append the task and canonical handoff without creating a mirror
+- [x] Implement the selected task within documented governance and privacy boundaries
+- [x] Run required verification and update shared evidence
+- [ ] Save a recoverable checkpoint for TD-20260822-003
