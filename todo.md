@@ -457,6 +457,41 @@ Append-only history: new skill formalization requested by the user after the fin
 - [ ] Create or update the authorized daily schedules in the approved sequence
 - [ ] Verify role-owned schedule status, record the configuration, and save a recoverable checkpoint
 
+## Shared Files & Sources reconciliation for canonical AgentOS roles
+
+- [x] Prepare owner-designated canonical role records for project-file synchronization
+- [x] Submit the shared-file synchronization for owner confirmation
+- [x] Verify synchronized project-file access and role-chat availability
+- [x] Record the remaining role-owned schedule context requirement
+
+## AgentOS multi-agent incident diagnosis and recovery
+
+- [x] Collect read-only evidence from canonical records, shared-file bindings, role prompts, and visible schedule state
+- [x] Identify authority, synchronization, and role-context failures causing the agent issues
+- [x] Define a minimal safe recovery procedure and blocked-action safeguards
+- [x] Record evidence and deliver the diagnosis with required owner actions
+
+## Cross-chat AgentOS shared-file access recovery
+
+- [x] Create a project-shared canonical authority manifest that role chats can verify without relying on this sandbox’s absolute source path
+- [x] Update role guidance to use the loaded project Files & Sources binding and preserve no-action safeguards
+- [x] Submit updated shared role files for owner confirmation and verify cross-chat-accessible file alignment
+- [x] Record the recovery result and retain role-owned schedule creation as a separate context-bound step
+
+## Cross-project role incident reconciliation
+
+- [x] Reconcile the Autonomous and Coordinator blocked reports against the canonical project state
+- [x] Verify publication of project-scoped role guidance to the canonical shared Files & Sources bundle
+- [x] Define the owner-controlled replacement-chat and schedule recovery procedure
+- [x] Record the incident decision and deliver the safe recovery instructions
+
+## Conflicting Task Discovery authority handoff reconciliation
+
+- [x] Compare the incoming Task Discovery handoff with verified canonical evidence in this project
+- [x] Classify namespace, record, worktree, and owner-approval conflicts without adopting replacements
+- [x] Prepare the minimal owner decision that preserves no-action safeguards
+- [x] Record conflict evidence and deliver the blocked-state recovery decision
+
 ## Read-only agentos-9f48286b environment and workspace-binding inspection
 
 - [x] Inspect current project configuration and non-secret environment-variable presence
