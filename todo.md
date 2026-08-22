@@ -357,7 +357,7 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Identify a bounded, evidence-backed dashboard feature gap and define its governance, test, and verification requirements
 - [x] Implement the selected gap while preserving RBAC, private-conversation, attribution, and no-live-provider boundaries
 - [x] Run full tests, TypeScript validation, production build, and responsive review; update shared evidence
-- [ ] Commit the verified active codebase and push it to `darrinbaldwindev/AgentOS`
+- [x] Commit the verified active codebase and push it to `darrinbaldwindev/AgentOS`
 
 ## Owner-only local capability comparison
 
