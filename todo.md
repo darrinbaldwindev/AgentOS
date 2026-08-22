@@ -254,7 +254,7 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Integrate private conversation restoration and deletion controls into the end-user chat workspace
 - [x] Add direct persistence, RBAC, retention, deletion, and rendered interaction tests
 - [x] Run migration, full verification, responsive review, and record shared privacy evidence
-- [ ] Save a recoverable checkpoint for the persistent conversation and retention phase
+- [x] Save a recoverable checkpoint for the persistent conversation and retention phase
 
 ## Owner guidance interaction evidence repair
 
