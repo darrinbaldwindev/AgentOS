@@ -428,3 +428,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Evaluate fallback risks and the exact owner authorization required before any temporary use
 - [x] Define safe owner-controlled steps to initialize a new agentos-a9b23ca8 authority configuration
 - [x] Deliver decision options and exact next steps without adopting or changing paths
+
+## Single canonical AgentOS project designation guidance
+
+- [x] Confirm the current project’s canonical repository and shared-record locations
+- [x] Define owner decisions and role/schedule alignment steps for one canonical project
+- [x] Prepare a copy-ready designation instruction and migration safeguards
+- [x] Deliver the step-by-step canonical-project designation procedure
