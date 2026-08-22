@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "generatedFromProjectLocalEvidence": true,
+  "evidenceCutoff": "2026-08-21",
+  "generatedOn": "2026-08-22",
+  "activationPolicy": "No entry in this file authorizes provider activation, referral routing, redirects, credential use, or affiliate enrollment. Re-verify official terms and obtain owner approval before any such action.",
+  "statusVocabulary": [
+    "verified_project_record",
+    "pending",
+    "expired",
+    "non_affiliate_integration",
+    "verify_before_activation"
+  ],
+  "entries": [
+    {
+      "providerId": "openrouter",
+      "name": "OpenRouter",
+      "status": "non_affiliate_integration",
+      "affiliateProgramRecorded": false,
+      "routingRecommendation": "no_referral_bonus",
+      "evidence": ["archived REGISTRY_MANIFEST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "groq",
+      "name": "Groq",
+      "status": "non_affiliate_integration",
+      "affiliateProgramRecorded": false,
+      "routingRecommendation": "no_referral_bonus",
+      "evidence": ["archived REGISTRY_MANIFEST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "perplexity",
+      "name": "Perplexity",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived REGISTRY_MANIFEST.json (2026-08-21)", "archived BRIEF_2026-08-21.md"]
+    },
+    {
+      "providerId": "github",
+      "name": "GitHub",
+      "status": "non_affiliate_integration",
+      "affiliateProgramRecorded": false,
+      "routingRecommendation": "no_referral_bonus",
+      "evidence": ["archived REGISTRY_MANIFEST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "together_ai",
+      "name": "Together AI",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "unconfirmed_third_party_claim",
+      "routingRecommendation": "block_referral_routing",
+      "evidence": ["archived REGISTRY_MANIFEST.json (2026-08-21)", "archived BRIEF_2026-08-21.md"]
+    },
+    {
+      "providerId": "anthropic",
+      "name": "Anthropic",
+      "status": "non_affiliate_integration",
+      "affiliateProgramRecorded": "enterprise_partner_only",
+      "routingRecommendation": "exclude_from_individual_referral_routing",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "replicate",
+      "name": "Replicate",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "exclude_from_referral_routing_due_to_one_time_structure",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "mistral",
+      "name": "Mistral AI",
+      "status": "non_affiliate_integration",
+      "affiliateProgramRecorded": "enterprise_partner_only",
+      "routingRecommendation": "exclude_from_individual_referral_routing",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "vercel_v0",
+      "name": "Vercel v0",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "elevenlabs",
+      "name": "ElevenLabs",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "n8n",
+      "name": "n8n",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "framer",
+      "name": "Framer",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "fireflies",
+      "name": "Fireflies.ai",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "conditional_only_after_owner_scope_review",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "synthflow",
+      "name": "Synthflow",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "exclude_from_referral_routing_under_recorded_threshold",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)", "project-local ai_agent_affiliate_programs.csv"]
+    },
+    {
+      "providerId": "otter",
+      "name": "Otter.ai",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "exclude_from_referral_routing_under_recorded_threshold",
+      "evidence": ["archived TIER2_SHORTLIST.json (2026-08-21)"]
+    },
+    {
+      "providerId": "taskade",
+      "name": "Taskade AI Agents",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived BRIEF_2026-08-21.md", "project-local ai_agent_affiliate_programs.csv"]
+    },
+    {
+      "providerId": "botpress",
+      "name": "Botpress",
+      "status": "verified_project_record",
+      "affiliateProgramRecorded": true,
+      "routingRecommendation": "owner_reapproval_and_current_terms_verification_required_before_activation",
+      "evidence": ["archived BRIEF_2026-08-21.md", "project-local ai_agent_affiliate_programs.csv"]
+    },
+    {
+      "providerId": "chatbase",
+      "name": "Chatbase",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "relevance_ai",
+      "name": "Relevance AI",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "agentworks",
+      "name": "AgentWorks",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "manus",
+      "name": "Manus",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "tidio_lyro",
+      "name": "Tidio AI (Lyro)",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "dynamiq",
+      "name": "Dynamiq",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "flowgent",
+      "name": "FlowGent",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    },
+    {
+      "providerId": "ai_agent_store",
+      "name": "AI Agent Store",
+      "status": "verify_before_activation",
+      "affiliateProgramRecorded": "candidate_claim_only",
+      "routingRecommendation": "do_not_activate",
+      "evidence": ["project-local ai_agent_affiliate_programs.csv", "Affiliate Chat.md provenance list"]
+    }
+  ],
+  "unresolvedEvidenceGaps": [
+    "No current live official-term re-verification was performed in this reconciliation.",
+    "The project-local CSV contains commission claims but no source URL, verification date, consent record, enrollment state, or eligibility proof.",
+    "The structured archive list does not include all CSV candidates, so candidate-only rows remain verify-before-activation.",
+    "No entry may be converted into referral routing, an external redirect, or a provider connection from this artifact alone."
+  ]
+}
