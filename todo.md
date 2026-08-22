@@ -442,3 +442,24 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Run a read-only alignment preflight across the canonical role configuration
 - [x] Prepare a copy-ready owner designation and safe schedule/chat transition instructions
 - [x] Deliver the designation, verified preflight, and transition steps without modifying schedules or chats
+
+## Owner-authorized canonical AgentOS transition
+
+- [x] Append the owner baseline that designates agentos-9f48286b as the sole canonical project
+- [x] Verify canonical role configuration and prepare one-time role alignment checks
+- [x] Identify the required parameters before any recurring schedule changes
+- [x] Record evidence and report the remaining cross-chat schedule-context limitation
+
+## Owner-approved daily AgentOS schedules
+
+- [x] Verify canonical role-task contexts and existing schedule ownership
+- [x] Prepare self-contained daily configurations for Task Discovery, Autonomous, and Coordinator
+- [ ] Create or update the authorized daily schedules in the approved sequence
+- [ ] Verify role-owned schedule status, record the configuration, and save a recoverable checkpoint
+
+## Read-only agentos-9f48286b environment and workspace-binding inspection
+
+- [x] Inspect current project configuration and non-secret environment-variable presence
+- [x] Inspect workspace and shared-file bindings for the active project
+- [x] Compare observed bindings with canonical AgentOS record paths
+- [x] Deliver non-secret environment and workspace-binding findings
