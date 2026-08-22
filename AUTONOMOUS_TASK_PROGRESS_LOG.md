@@ -98,3 +98,22 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 **Boundary.** These are local test fixtures only. They do not activate or endorse affiliate programs, rank a real provider, make a referral claim, contact a provider, or establish a frontend/backend runtime.
 
 **Follow-up.** The next safe backlog task is B5: add a deterministic local API mock specification for catalog, health, route resolution, model switching, consent, dry-run redirects, and recovery.
+
+## 2026-08-21 — B5 deterministic local API mock specification
+
+**Maintainer:** Current project coordinator
+**Executor:** AgentOS Autonomous
+**Backlog task:** B5 — Add a local API mock specification
+**Status:** COMPLETED
+
+**Preflight.** The canonical repository `/home/ubuntu/projects/agentos-3b88b539` was clean on `main` tracking `origin/main`. The A4 contracts, B2 mock adapters, and B3 capability-first fixtures were present. B5 was selected as the next safe backlog task. No live provider, credential, schedule, deployment, publication, referral activation, or external network access was required.
+
+**Inputs reviewed.** `AUTONOMOUS_TASK_BACKLOG.md`; existing local contracts, mock adapters, and frontend fixtures; and archived Session 005 (routing engine) and Session 043 (recovery) records from `AgentOSzipfinal.zip`. The archive was read from a disposable temporary extraction and not modified or unpacked into the repository.
+
+**Files added.** `api/LOCAL_MOCK_API.md` documents a local in-process API contract for catalog, health, capability-first route resolution, model switching, consent, dry-run redirects, and recovery. `api/agentos-local-mock-api.mjs` implements the deterministic behavior harness with seven route shapes, stable response headers and correlation identifiers, synthetic data only, no consent persistence, and dry-run redirect suppression. `tests/agentos-local-mock-api.test.mjs` verifies endpoint coverage, deterministic behavior, capability-first route preview, model and consent non-persistence, redirect suppression, recovery boundaries, controlled errors, and prohibited network/environment-source patterns.
+
+**Validation.** Syntax checks for the local API module and test module passed. `node tests/agentos-local-mock-api.test.mjs` passed, reporting verification of the endpoint surface, deterministic behavior, capability-first routing, dry-run safeguards, recovery boundaries, and local-only source checks. The B3 fixture suite, B2 mock-adapter suite, and A4 core-type validator also passed. `git diff --check` passed.
+
+**Boundary.** This is an in-process fixture contract, not a network server. It does not contact providers, resolve credentials, persist consent, open redirects, write a database, create background work, or claim real provider, routing, recovery, security, production, or release behavior.
+
+**Follow-up.** The next safe backlog task is B6: draft append-only local recovery event schemas that exclude prompts, secrets, repository contents, and private artifact data from attribution events.
