@@ -333,3 +333,19 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Reconcile the shared and worktree progress-log histories through dated append-only corrections
 - [x] Update both agent prompts and the synchronization protocol to use the selected repository baseline
 - [x] Verify the shared coordination record and report the active Task Discovery-to-Autonomous workflow
+
+## GitHub repository access check
+
+- [x] Inspect active repository Git metadata and configured remotes without modifying them
+- [x] Report verified GitHub connection status and any access limitation
+
+## Provided GitHub AgentOS repository comparison
+
+- [x] Inspect the provided GitHub repository and active local project read-only
+- [x] Compare repository identity, layout, and baseline suitability after approved GitHub visibility or connector access is available
+- [x] Report verified findings and any owner decision required before connecting or changing remotes
+
+## GitHub connector enablement for read-only comparison
+
+- [x] Enable the user-authorized GitHub integration for this task
+- [x] Verify read-only access to `darrinbaldwindev/AgentOS` and complete the repository comparison
