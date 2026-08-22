@@ -458,6 +458,27 @@ Append-only history: new skill formalization requested by the user after the fin
 - [ ] Create or update the authorized daily schedules in the approved sequence
 - [ ] Verify role-owned schedule status, record the configuration, and save a recoverable checkpoint
 
+## Replacement AgentOS role blocked-state recovery
+
+- [ ] Collect each replacement role’s exact blocked evidence and shared-file visibility state
+- [ ] Identify the project-context or shared-file publication failure without bypassing safeguards
+- [ ] Apply the minimal owner-approved visibility recovery and re-run role alignment checks
+- [ ] Verify role alignment, complete role-owned schedules, and document the recovery
+
+## Project-scoped role boundary recovery for unavailable repository mounts
+
+- [x] Reconcile the role preflight outcomes and document the cross-chat repository limitation
+- [x] Define project-scoped role boundaries that do not require unavailable repository mounts
+- [x] Publish revised role guidance and owner-gated repository escalation rules
+- [ ] Verify role alignment and report remaining repository-dependent constraints
+
+## Fresh three-agent AgentOS coordination model
+
+- [x] Confirm shared-file authority and repository-boundary rules for new role chats
+- [x] Define non-overlapping shared-record coordination and repository-dependent execution rules
+- [x] Draft copy-ready prompts for new Task Discovery, Autonomous, and Coordinator chats
+- [x] Save reusable templates and deliver the creation sequence
+
 ## Shared Files & Sources reconciliation for canonical AgentOS roles
 
 - [x] Prepare owner-designated canonical role records for project-file synchronization
