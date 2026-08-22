@@ -455,22 +455,22 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Verify canonical role-task contexts and existing schedule ownership
 - [x] Prepare self-contained daily configurations for Task Discovery, Autonomous, and Coordinator
 - [x] Prepare role-owned schedule setup guidance with approved timing, timezone conversion, delivery, and review expiry
-- [ ] Create or update the authorized daily schedules in the approved sequence
-- [ ] Verify role-owned schedule status, record the configuration, and save a recoverable checkpoint
+- [x] Create the authorized daily read-only reporting schedules in their role contexts
+- [x] Verify role-owned schedule status and record the configuration
 
 ## Replacement AgentOS role blocked-state recovery
 
-- [ ] Collect each replacement role’s exact blocked evidence and shared-file visibility state
-- [ ] Identify the project-context or shared-file publication failure without bypassing safeguards
-- [ ] Apply the minimal owner-approved visibility recovery and re-run role alignment checks
-- [ ] Verify role alignment, complete role-owned schedules, and document the recovery
+- [x] Collect each replacement role’s exact blocked evidence and shared-file visibility state
+- [x] Identify the project-context or shared-file publication failure without bypassing safeguards
+- [x] Apply the minimal owner-approved visibility recovery and re-run role alignment checks
+- [x] Verify role alignment, complete role-owned schedules, and document the recovery
 
 ## Project-scoped role boundary recovery for unavailable repository mounts
 
 - [x] Reconcile the role preflight outcomes and document the cross-chat repository limitation
 - [x] Define project-scoped role boundaries that do not require unavailable repository mounts
 - [x] Publish revised role guidance and owner-gated repository escalation rules
-- [ ] Verify role alignment and report remaining repository-dependent constraints
+- [x] Verify role alignment and report remaining repository-dependent constraints
 
 ## Fresh three-agent AgentOS coordination model
 
@@ -478,6 +478,40 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Define non-overlapping shared-record coordination and repository-dependent execution rules
 - [x] Draft copy-ready prompts for new Task Discovery, Autonomous, and Coordinator chats
 - [x] Save reusable templates and deliver the creation sequence
+
+## Fresh AgentOS role onboarding verification
+
+- [x] Collect the new role chats’ read-only alignment reports
+- [x] Confirm shared-file authority, role separation, and current task eligibility
+- [x] Create and verify approved role-owned daily schedules in the aligned role contexts
+- [x] Record the completed onboarding and operating-status evidence
+
+## Daily 10:15 AgentOS alignment reporting
+
+- [x] Define simultaneous read-only alignment scope and non-overlap safeguards
+- [x] Prepare role-specific daily alignment-report schedule instructions
+- [x] Create the authorized role-owned daily reporting schedules in their respective chats
+- [x] Verify daily reporting status and document separate task proposal/execution safeguards
+
+## AgentOS Main owner-authorized schedule creation
+
+- [x] Confirm finalized role-specific prompts, timing, delivery, and review expiry
+- [x] Supersede AgentOS Main schedule creation in favor of the owner-selected role-owned approach
+- [x] Verify the three role-owned schedule statuses, timing, expiry, and prompt separation
+- [x] Record the owner-authorized role-owned configuration and operating status
+
+## Owner-selected role-owned daily schedule completion
+
+- [x] Provide each aligned role chat its self-contained schedule-creation instruction
+- [x] Collect each role-owned schedule confirmation and inspect reported schedule status
+- [x] Record the aligned three-schedule configuration and preserve expiry safeguards
+- [x] Verify operating status and deliver the completed schedule onboarding result
+
+## Role-owned schedule status evidence
+
+- [x] Collect exact title, timing, timezone/UTC conversion, expiry, and enabled-state reports from all three role chats
+- [x] Verify the Task Discovery daily alignment schedule evidence
+- [x] Collect Autonomous and Coordinator schedule evidence from their own role chats
 
 ## Shared Files & Sources reconciliation for canonical AgentOS roles
 
