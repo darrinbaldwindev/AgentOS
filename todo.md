@@ -300,7 +300,7 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Preserve the active local session and give safe feedback if confirmed active deletion fails
 - [x] Add interaction coverage for active deletion failure and successful retry boundaries
 - [x] Run full verification and record shared privacy evidence
-- [ ] Save a recoverable checkpoint for active private-conversation deletion failure hardening
+- [x] Save a recoverable checkpoint for active private-conversation deletion failure hardening
 
 ## Owner guidance interaction evidence repair
 
