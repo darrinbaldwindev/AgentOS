@@ -267,7 +267,15 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Add a confirmation-gated end-user workspace control that clears only the caller’s saved history and starts a fresh local session
 - [x] Add direct persistence, router, rendered, and interaction tests for clear-all isolation, cancellation, and completion
 - [x] Run full verification, review desktop/mobile layouts, and record privacy evidence
-- [ ] Save a recoverable checkpoint for the clear-all private history control
+- [x] Save a recoverable checkpoint for the clear-all private history control
+
+## Clear-all private history failure hardening
+
+- [x] Inspect existing destructive-action error handling and clear-all interaction coverage
+- [x] Preserve saved history and provide accessible failure feedback when clear-all storage deletion fails
+- [x] Add interaction coverage for failure, cancellation, and successful completion states
+- [x] Run full verification and update shared privacy evidence
+- [ ] Save a recoverable checkpoint for the clear-all failure-hardening phase
 
 ## Owner guidance interaction evidence repair
 

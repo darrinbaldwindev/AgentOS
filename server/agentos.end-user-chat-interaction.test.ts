@@ -36,6 +36,7 @@ const conversationState = vi.hoisted(() => {
       isLoading: false,
       error: null,
     },
+    clearAllShouldFail: false,
   };
 });
 
@@ -165,6 +166,9 @@ vi.mock("@/lib/trpc", () => ({
         clearAll: {
           useMutation: () => ({
             mutateAsync: vi.fn(async () => {
+              if (conversationState.clearAllShouldFail) {
+                throw new Error("storage unavailable");
+              }
               const deletedCount = conversationState.list.data.length;
               conversationState.list.data = [];
               return deletedCount;
@@ -387,5 +391,47 @@ describe("EndUserChat conversation reset interaction", () => {
         .map(node => node.children.join(" "))
         .join(" ")
     ).toContain("2 saved private conversations were permanently deleted.");
+  });
+
+  it("preserves saved history and reports a safe error when clear-all storage fails", async () => {
+    conversationState.list.data = [
+      {
+        conversationId: "33333333-3333-4333-8333-333333333333",
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.clearAllShouldFail = true;
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Clear all saved private conversations" })
+        .props.onClick();
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Delete all permanently")
+        ?.props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "Saved private history could not be cleared. Nothing was removed."
+    );
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": "Clear all saved private conversations",
+      })
+    ).toHaveLength(1);
+    conversationState.clearAllShouldFail = false;
   });
 });

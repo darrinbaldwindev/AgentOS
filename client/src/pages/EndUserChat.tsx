@@ -312,13 +312,25 @@ export default function EndUserChat() {
   };
 
   const handleClearAllConversations = async () => {
-    const deletedCount = await clearAllConversationsMutation.mutateAsync();
-    handleNewConversation();
-    setNotice(
-      deletedCount === 1
-        ? "One saved private conversation was permanently deleted."
-        : `${deletedCount} saved private conversations were permanently deleted.`
-    );
+    try {
+      const deletedCount = await clearAllConversationsMutation.mutateAsync();
+      if (deletedCount < 1) {
+        setConfirmClearAll(false);
+        setNotice("No saved private conversations were removed.");
+        return;
+      }
+      handleNewConversation();
+      setNotice(
+        deletedCount === 1
+          ? "One saved private conversation was permanently deleted."
+          : `${deletedCount} saved private conversations were permanently deleted.`
+      );
+    } catch {
+      setConfirmClearAll(false);
+      setNotice(
+        "Saved private history could not be cleared. Nothing was removed."
+      );
+    }
   };
 
   const handleSend = async (content: string) => {
