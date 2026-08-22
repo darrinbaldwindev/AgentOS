@@ -435,3 +435,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Define owner decisions and role/schedule alignment steps for one canonical project
 - [x] Prepare a copy-ready designation instruction and migration safeguards
 - [x] Deliver the step-by-step canonical-project designation procedure
+
+## Canonical designation and AgentOS role alignment preflight
+
+- [x] Confirm the canonical repository, shared records, and daily role prompts are accessible
+- [x] Run a read-only alignment preflight across the canonical role configuration
+- [x] Prepare a copy-ready owner designation and safe schedule/chat transition instructions
+- [x] Deliver the designation, verified preflight, and transition steps without modifying schedules or chats
