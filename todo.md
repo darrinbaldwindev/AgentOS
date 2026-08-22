@@ -393,3 +393,24 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Append one canonical executor-ready task and handoff without creating a mirror
 - [x] Implement the selected hardening improvement with direct router, rendered, and interaction coverage
 - [x] Run full verification, record shared evidence, and save a recoverable checkpoint
+
+## Read-only AgentOS schedule and role-overlap audit
+
+- [x] Inspect updated project role instructions and configured AgentOS schedules without making changes
+- [x] Compare role ownership, record authority, and task handoffs for overlap risks
+- [x] Define a precise non-overlapping handoff protocol and copy-ready role boundaries
+- [x] Record read-only audit evidence and deliver findings without changing schedules or role assignments
+
+## AgentOS Coordinator charter
+
+- [x] Confirm the coordinator’s non-overlap boundaries against the completed read-only audit
+- [x] Draft a copy-ready AgentOS Coordinator charter with explicit handoff safeguards
+- [x] Save the charter as a canonical shared project deliverable without changing scheduled-agent records
+- [x] Deliver the recommended model and copy block
+
+## Daily-operation charters for AgentOS Task Discovery and Autonomous
+
+- [x] Inspect current role prompts, shared coordination rules, and daily-schedule audit evidence
+- [x] Define role-specific daily-run eligibility, duplicate prevention, and handoff safeguards
+- [x] Create separate copy-ready daily-operation charters without changing existing schedules or task ownership
+- [x] Deliver the ordered daily role model and charter files
