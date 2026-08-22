@@ -306,3 +306,9 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Add an owner-only local guidance refresh interaction and direct component interaction test
 - [x] Rerun verification and update the shared owner guidance evidence record
+
+## Task Discovery agent handoff design
+
+- [x] Inspect the canonical AgentOS Autonomous task records and discovery inputs
+- [x] Draft copy-ready Task Discovery agent instructions with governed append-only handoff rules
+- [x] Explain the canonical file update process, required task schema, and execution boundaries
