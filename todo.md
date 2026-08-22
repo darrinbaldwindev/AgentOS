@@ -256,6 +256,19 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Run migration, full verification, responsive review, and record shared privacy evidence
 - [x] Save a recoverable checkpoint for the persistent conversation and retention phase
 
+## Autonomous post-retention privacy control
+
+- [x] Inspect existing private-conversation privacy controls, tests, shared evidence, and task ledger
+- [x] Select a concrete local privacy-control improvement before editing application code
+
+## User-scoped clear-all private conversation control
+
+- [x] Implement a user-scoped hard-delete-all private conversations helper and authenticated procedure with no owner override
+- [x] Add a confirmation-gated end-user workspace control that clears only the caller’s saved history and starts a fresh local session
+- [x] Add direct persistence, router, rendered, and interaction tests for clear-all isolation, cancellation, and completion
+- [x] Run full verification, review desktop/mobile layouts, and record privacy evidence
+- [ ] Save a recoverable checkpoint for the clear-all private history control
+
 ## Owner guidance interaction evidence repair
 
 - [x] Add an owner-only local guidance refresh interaction and direct component interaction test

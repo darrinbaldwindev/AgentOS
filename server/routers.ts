@@ -20,6 +20,7 @@ import {
   appendAttributionRecord,
   appendRecoveryRecord,
   createPrivateConversation,
+  deleteAllPrivateConversations,
   deletePrivateConversation,
   getPrivateConversation,
   listPrivateConversationMessages,
@@ -222,6 +223,9 @@ export const appRouter = router({
         .mutation(({ ctx, input }) =>
           deletePrivateConversation(ctx.user.id, input.conversationId)
         ),
+      clearAll: protectedProcedure.mutation(({ ctx }) =>
+        deleteAllPrivateConversations(ctx.user.id)
+      ),
     }),
 
     controlChat: ownerOrAdminProcedure

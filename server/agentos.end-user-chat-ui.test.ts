@@ -63,6 +63,9 @@ vi.mock("@/lib/trpc", () => ({
         delete: {
           useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
         },
+        clearAll: {
+          useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+        },
       },
     },
     useUtils: () => ({
@@ -146,5 +149,24 @@ describe("AgentOS end-user chat surface", () => {
     expect(errorMarkup).toContain("Saved conversation history is unavailable.");
     expect(errorMarkup).not.toContain("Recovery + policy");
     expect(errorMarkup).not.toContain("Affiliate telemetry");
+  });
+
+  it("offers caller-only clear-all controls only when private history exists", () => {
+    conversationQueryState.list.data = [
+      {
+        conversationId: "00000000-0000-0000-0000-000000000071",
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationQueryState.list.isLoading = false;
+    conversationQueryState.list.error = null;
+    const markup = renderToStaticMarkup(createElement(EndUserChat));
+    expect(markup).toContain(
+      'aria-label="Clear all saved private conversations"'
+    );
+    expect(markup).toContain("Clear all saved history");
+    expect(markup).toContain("Owner telemetry, recovery records");
+    expect(markup).not.toContain("Affiliate telemetry");
   });
 });

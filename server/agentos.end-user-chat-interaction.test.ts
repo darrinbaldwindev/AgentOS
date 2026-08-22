@@ -162,6 +162,16 @@ vi.mock("@/lib/trpc", () => ({
             isPending: false,
           }),
         },
+        clearAll: {
+          useMutation: () => ({
+            mutateAsync: vi.fn(async () => {
+              const deletedCount = conversationState.list.data.length;
+              conversationState.list.data = [];
+              return deletedCount;
+            }),
+            isPending: false,
+          }),
+        },
       },
     },
     useUtils: () => ({
@@ -314,5 +324,68 @@ describe("EndUserChat conversation reset interaction", () => {
         .map(node => node.children.join(" "))
         .join(" ")
     ).toContain("Private conversation permanently deleted.");
+  });
+
+  it("requires confirmation before clearing all saved private conversations", async () => {
+    conversationState.list.data = [
+      {
+        conversationId: "11111111-1111-4111-8111-111111111111",
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+      {
+        conversationId: "22222222-2222-4222-8222-222222222222",
+        userId: 1,
+        providerId: "together",
+        modelId: "meta-llama-3.1-8b",
+      },
+    ];
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Clear all saved private conversations" })
+        .props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByType("p")
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain("Permanently delete every saved private conversation");
+
+    await act(async () => {
+      renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Cancel")
+        ?.props.onClick();
+    });
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": "Clear all saved private conversations",
+      })
+    ).toHaveLength(1);
+
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Clear all saved private conversations" })
+        .props.onClick();
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Delete all permanently")
+        ?.props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain("2 saved private conversations were permanently deleted.");
   });
 });

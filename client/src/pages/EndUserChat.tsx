@@ -106,6 +106,7 @@ export default function EndUserChat() {
     string | null
   >(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [conversationKey, setConversationKey] = useState(0);
   const conversationEpochRef = useRef(0);
   const pendingEpochRef = useRef<number | null>(null);
@@ -167,6 +168,17 @@ export default function EndUserChat() {
   const deleteConversationMutation =
     trpc.agentos.conversations.delete.useMutation({
       onSuccess: () => utils.agentos.conversations.list.invalidate(),
+    });
+  const clearAllConversationsMutation =
+    trpc.agentos.conversations.clearAll.useMutation({
+      onSuccess: () => {
+        utils.agentos.conversations.list.invalidate();
+        if (activeConversationId) {
+          utils.agentos.conversations.get.invalidate({
+            conversationId: activeConversationId,
+          });
+        }
+      },
     });
 
   useEffect(() => {
@@ -266,6 +278,7 @@ export default function EndUserChat() {
     pendingConversationIdRef.current = null;
     setActiveConversationId(null);
     setConfirmDelete(false);
+    setConfirmClearAll(false);
     setConversationKey(current => current + 1);
     setNotice(
       "New private conversation ready. Owner telemetry remains unavailable here."
@@ -280,6 +293,7 @@ export default function EndUserChat() {
     setMessages([]);
     setIsTyping(false);
     setConfirmDelete(false);
+    setConfirmClearAll(false);
     setActiveConversationId(conversationId);
     setNotice("Restoring your private conversation…");
   };
@@ -295,6 +309,16 @@ export default function EndUserChat() {
     } else {
       setNotice("That private conversation is no longer available.");
     }
+  };
+
+  const handleClearAllConversations = async () => {
+    const deletedCount = await clearAllConversationsMutation.mutateAsync();
+    handleNewConversation();
+    setNotice(
+      deletedCount === 1
+        ? "One saved private conversation was permanently deleted."
+        : `${deletedCount} saved private conversations were permanently deleted.`
+    );
   };
 
   const handleSend = async (content: string) => {
@@ -563,6 +587,34 @@ export default function EndUserChat() {
                   </div>
                 </div>
               ) : null}
+              {confirmClearAll ? (
+                <div
+                  role="alert"
+                  className="mt-3 space-y-2 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] p-3"
+                >
+                  <p className="text-xs leading-5 text-rose-100/90">
+                    Permanently delete every saved private conversation and all
+                    of their saved messages?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleClearAllConversations}
+                      disabled={clearAllConversationsMutation.isPending}
+                      className="rounded-md bg-rose-200 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-rose-950 disabled:opacity-60"
+                    >
+                      Delete all permanently
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmClearAll(false)}
+                      className="rounded-md border border-white/10 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <div
                 className="mt-3 max-h-40 space-y-2 overflow-y-auto"
                 aria-label="Saved private conversations"
@@ -606,6 +658,19 @@ export default function EndUserChat() {
                   </p>
                 )}
               </div>
+              {savedConversationsQuery.data?.length ? (
+                <button
+                  type="button"
+                  aria-label="Clear all saved private conversations"
+                  onClick={() => {
+                    setConfirmDelete(false);
+                    setConfirmClearAll(true);
+                  }}
+                  className="mt-3 inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.12em] text-rose-200/80 hover:text-rose-100"
+                >
+                  <Trash2 className="h-3 w-3" /> Clear all saved history
+                </button>
+              ) : null}
             </section>
             <section
               aria-labelledby="user-message-history"

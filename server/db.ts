@@ -418,3 +418,32 @@ export async function deletePrivateConversation(
     );
   return true;
 }
+
+/**
+ * Permanently removes only the caller's still-active private conversations.
+ * Conversation content is neither returned nor copied into an audit record.
+ */
+export async function deleteAllPrivateConversations(
+  userId: number,
+  now = new Date()
+): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  await purgeExpiredPrivateConversations(userId, now);
+  const rows = await db
+    .select({ conversationId: privateConversations.conversationId })
+    .from(privateConversations)
+    .where(
+      and(
+        eq(privateConversations.userId, userId),
+        gt(privateConversations.expiresAt, now)
+      )
+    );
+  let deletedCount = 0;
+  for (const row of rows) {
+    if (await deletePrivateConversation(userId, row.conversationId, now)) {
+      deletedCount += 1;
+    }
+  }
+  return deletedCount;
+}

@@ -79,6 +79,14 @@ vi.mock("./db", () => ({
       return true;
     }
   ),
+  deleteAllPrivateConversations: vi.fn(async (userId: number) => {
+    const owned = store.conversations.get(userId) ?? [];
+    store.conversations.set(userId, []);
+    owned.forEach(conversation =>
+      store.messages.delete(conversation.conversationId)
+    );
+    return owned.length;
+  }),
 }));
 
 import { appRouter } from "./routers";
@@ -163,11 +171,36 @@ describe("AgentOS private conversations", () => {
     ).toBe(false);
   });
 
+  it("hard-deletes all and only the caller's saved private conversations", async () => {
+    const caller = appRouter.createCaller(context(71));
+    const otherUser = appRouter.createCaller(context(72));
+    await caller.agentos.conversations.create({
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+    await caller.agentos.conversations.create({
+      providerId: "together",
+      modelId: "meta-llama-3.1-8b",
+    });
+    const otherConversation = await otherUser.agentos.conversations.create({
+      providerId: "ollama",
+      modelId: "agentos-default",
+    });
+
+    expect(await caller.agentos.conversations.clearAll()).toBe(2);
+    expect(await caller.agentos.conversations.list()).toEqual([]);
+    expect(await otherUser.agentos.conversations.list()).toHaveLength(1);
+    expect(otherConversation).toMatchObject({ userId: 72 });
+  });
+
   it("denies unauthenticated private conversation access and disallows system roles", async () => {
     const anonymous = appRouter.createCaller(context(null));
     await expect(anonymous.agentos.conversations.list()).rejects.toMatchObject({
       code: "UNAUTHORIZED",
     });
+    await expect(
+      anonymous.agentos.conversations.clearAll()
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
 
     const caller = appRouter.createCaller(context(61));
     const created = await caller.agentos.conversations.create({
