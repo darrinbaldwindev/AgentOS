@@ -284,7 +284,15 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Preserve active-session behavior and provide safe failure feedback when direct deletion is unavailable
 - [x] Add router, rendered, and interaction tests for direct deletion, cancellation, failure, and isolation
 - [x] Run full verification and record shared privacy evidence
-- [ ] Save a recoverable checkpoint for direct saved-history deletion without restore
+- [x] Save a recoverable checkpoint for direct saved-history deletion without restore
+
+## Private conversation restore-failure recovery
+
+- [x] Inspect restore queries, retention-expiry behavior, and current unavailable-record handling
+- [x] Return to a fresh local session with safe feedback when a selected conversation is unavailable or expired
+- [x] Add rendered and interaction coverage for unavailable and storage-error restore outcomes without message exposure
+- [x] Run full verification and record shared privacy evidence
+- [ ] Save a recoverable checkpoint for private conversation restore-failure recovery
 
 ## Owner guidance interaction evidence repair
 

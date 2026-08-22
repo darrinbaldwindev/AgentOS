@@ -34,7 +34,7 @@ const conversationState = vi.hoisted(() => {
         messages: [] as Array<Record<string, unknown>>,
       },
       isLoading: false,
-      error: null,
+      error: null as Error | null,
     },
     clearAllShouldFail: false,
     deleteShouldFail: false,
@@ -392,6 +392,84 @@ describe("EndUserChat conversation reset interaction", () => {
         "aria-label": `Delete saved private conversation ${directDeleteId}`,
       })
     ).toHaveLength(1);
+  });
+
+  it("returns to a fresh session when a selected saved conversation is no longer available", async () => {
+    conversationState.list.data = [
+      {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.get.data = {
+      conversation: null,
+      messages: [],
+    };
+    conversationState.get.error = null;
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findAllByProps({ "aria-pressed": false })[0]
+        .props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "That saved private conversation is no longer available. A new private conversation is ready."
+    );
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": "Delete active private conversation",
+      })
+    ).toHaveLength(0);
+  });
+
+  it("hides storage-error details and starts a fresh session when restoration fails", async () => {
+    conversationState.list.data = [
+      {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.get.data = undefined as unknown as {
+      conversation: Record<string, unknown> | null;
+      messages: Array<Record<string, unknown>>;
+    };
+    conversationState.get.error = new Error("storage unavailable");
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findAllByProps({ "aria-pressed": false })[0]
+        .props.onClick();
+    });
+    const notices = renderer.root
+      .findAllByProps({ "aria-live": "polite" })
+      .map(node => node.children.join(" "))
+      .join(" ");
+    expect(notices).toContain(
+      "That saved private conversation is no longer available. A new private conversation is ready."
+    );
+    expect(notices).not.toContain("storage unavailable");
+    conversationState.get.error = null;
+    conversationState.get.data = {
+      conversation: null,
+      messages: [],
+    };
   });
 
   it("deletes a selected saved conversation without restoring it first", async () => {

@@ -105,6 +105,7 @@ export default function EndUserChat() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
+  const [isRestoringConversation, setIsRestoringConversation] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [pendingSavedDeleteId, setPendingSavedDeleteId] = useState<
@@ -198,10 +199,39 @@ export default function EndUserChat() {
       restored.conversation.providerId as keyof typeof modelOptions
     );
     setModelId(restored.conversation.modelId);
+    setIsRestoringConversation(false);
     setNotice(
       "Private conversation restored. Saved messages are retained for 30 days after the latest saved message."
     );
   }, [activeConversationId, activeConversationQuery.data]);
+  useEffect(() => {
+    if (!activeConversationId || !isRestoringConversation) return;
+    const restored = activeConversationQuery.data;
+    const restoreUnavailable = Boolean(
+      activeConversationQuery.error || (restored && !restored.conversation)
+    );
+    if (!restoreUnavailable) return;
+    const reset = resetConversationState(conversationEpochRef.current);
+    conversationEpochRef.current = reset.nextEpoch;
+    pendingEpochRef.current = reset.pendingEpoch;
+    pendingConversationIdRef.current = null;
+    setMessages(reset.messages);
+    setIsTyping(reset.isTyping);
+    setActiveConversationId(null);
+    setIsRestoringConversation(false);
+    setConfirmDelete(false);
+    setConfirmClearAll(false);
+    setPendingSavedDeleteId(null);
+    setConversationKey(current => current + 1);
+    setNotice(
+      "That saved private conversation is no longer available. A new private conversation is ready."
+    );
+  }, [
+    activeConversationId,
+    activeConversationQuery.data,
+    activeConversationQuery.error,
+    isRestoringConversation,
+  ]);
   const chatMutation = trpc.agentos.chat.useMutation({
     onSuccess: response => {
       if (
@@ -280,6 +310,7 @@ export default function EndUserChat() {
     setIsTyping(reset.isTyping);
     pendingConversationIdRef.current = null;
     setActiveConversationId(null);
+    setIsRestoringConversation(false);
     setConfirmDelete(false);
     setConfirmClearAll(false);
     setPendingSavedDeleteId(null);
@@ -300,6 +331,7 @@ export default function EndUserChat() {
     setConfirmClearAll(false);
     setPendingSavedDeleteId(null);
     setActiveConversationId(conversationId);
+    setIsRestoringConversation(true);
     setNotice("Restoring your private conversation…");
   };
 
