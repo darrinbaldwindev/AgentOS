@@ -165,6 +165,9 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain(
       'aria-label="Clear all saved private conversations"'
     );
+    expect(markup).toContain(
+      'aria-label="Delete saved private conversation 00000000-0000-0000-0000-000000000071"'
+    );
     expect(markup).toContain("Clear all saved history");
     expect(markup).toContain("Owner telemetry, recovery records");
     expect(markup).not.toContain("Affiliate telemetry");

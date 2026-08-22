@@ -275,7 +275,16 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Preserve saved history and provide accessible failure feedback when clear-all storage deletion fails
 - [x] Add interaction coverage for failure, cancellation, and successful completion states
 - [x] Run full verification and update shared privacy evidence
-- [ ] Save a recoverable checkpoint for the clear-all failure-hardening phase
+- [x] Save a recoverable checkpoint for the clear-all failure-hardening phase
+
+## Direct saved-history deletion without restore
+
+- [x] Inspect saved-history list, individual deletion behavior, and existing user-scoped router guarantees
+- [x] Add confirmation-gated direct deletion for a selected saved conversation without loading its message content
+- [x] Preserve active-session behavior and provide safe failure feedback when direct deletion is unavailable
+- [x] Add router, rendered, and interaction tests for direct deletion, cancellation, failure, and isolation
+- [x] Run full verification and record shared privacy evidence
+- [ ] Save a recoverable checkpoint for direct saved-history deletion without restore
 
 ## Owner guidance interaction evidence repair
 

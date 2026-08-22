@@ -37,6 +37,8 @@ const conversationState = vi.hoisted(() => {
       error: null,
     },
     clearAllShouldFail: false,
+    deleteShouldFail: false,
+    deleteCalls: [] as string[],
   };
 });
 
@@ -159,7 +161,13 @@ vi.mock("@/lib/trpc", () => ({
         },
         delete: {
           useMutation: () => ({
-            mutateAsync: vi.fn(async () => true),
+            mutateAsync: vi.fn(async input => {
+              conversationState.deleteCalls.push(input.conversationId);
+              if (conversationState.deleteShouldFail) {
+                throw new Error("storage unavailable");
+              }
+              return true;
+            }),
             isPending: false,
           }),
         },
@@ -328,6 +336,153 @@ describe("EndUserChat conversation reset interaction", () => {
         .map(node => node.children.join(" "))
         .join(" ")
     ).toContain("Private conversation permanently deleted.");
+  });
+
+  it("allows a user to cancel direct saved-list deletion without restoring or deleting messages", async () => {
+    const directDeleteId = "22222222-2222-4222-8222-222222222222";
+    conversationState.list.data = [
+      {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+      {
+        conversationId: directDeleteId,
+        userId: 1,
+        providerId: "together",
+        modelId: "meta-llama-3.1-8b",
+      },
+    ];
+    conversationState.get.data = {
+      conversation: null,
+      messages: [],
+    };
+    conversationState.deleteCalls = [];
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({
+          "aria-label": `Delete saved private conversation ${directDeleteId}`,
+        })
+        .props.onClick();
+    });
+    expect(
+      renderer.root
+        .findAllByType("p")
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "Permanently delete this saved conversation without opening its messages?"
+    );
+
+    await act(async () => {
+      renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Cancel")
+        ?.props.onClick();
+    });
+    expect(conversationState.deleteCalls).toEqual([]);
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": `Delete saved private conversation ${directDeleteId}`,
+      })
+    ).toHaveLength(1);
+  });
+
+  it("deletes a selected saved conversation without restoring it first", async () => {
+    const directDeleteId = "33333333-3333-4333-8333-333333333333";
+    conversationState.list.data = [
+      {
+        conversationId: directDeleteId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.get.data = {
+      conversation: null,
+      messages: [],
+    };
+    conversationState.deleteCalls = [];
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({
+          "aria-label": `Delete saved private conversation ${directDeleteId}`,
+        })
+        .props.onClick();
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Delete without restoring")
+        ?.props.onClick();
+    });
+    expect(conversationState.deleteCalls).toEqual([directDeleteId]);
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "Saved private conversation permanently deleted without restoring it."
+    );
+  });
+
+  it("preserves the saved-list entry and reports a safe error when direct deletion fails", async () => {
+    const directDeleteId = "44444444-4444-4444-8444-444444444444";
+    conversationState.list.data = [
+      {
+        conversationId: directDeleteId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.deleteShouldFail = true;
+    conversationState.deleteCalls = [];
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findByProps({
+          "aria-label": `Delete saved private conversation ${directDeleteId}`,
+        })
+        .props.onClick();
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Delete without restoring")
+        ?.props.onClick();
+    });
+    expect(conversationState.deleteCalls).toEqual([directDeleteId]);
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "Saved private conversation could not be deleted. Nothing was removed."
+    );
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": `Delete saved private conversation ${directDeleteId}`,
+      })
+    ).toHaveLength(1);
+    conversationState.deleteShouldFail = false;
   });
 
   it("requires confirmation before clearing all saved private conversations", async () => {

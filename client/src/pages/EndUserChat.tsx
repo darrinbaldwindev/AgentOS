@@ -107,6 +107,9 @@ export default function EndUserChat() {
   >(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [pendingSavedDeleteId, setPendingSavedDeleteId] = useState<
+    string | null
+  >(null);
   const [conversationKey, setConversationKey] = useState(0);
   const conversationEpochRef = useRef(0);
   const pendingEpochRef = useRef<number | null>(null);
@@ -279,6 +282,7 @@ export default function EndUserChat() {
     setActiveConversationId(null);
     setConfirmDelete(false);
     setConfirmClearAll(false);
+    setPendingSavedDeleteId(null);
     setConversationKey(current => current + 1);
     setNotice(
       "New private conversation ready. Owner telemetry remains unavailable here."
@@ -294,6 +298,7 @@ export default function EndUserChat() {
     setIsTyping(false);
     setConfirmDelete(false);
     setConfirmClearAll(false);
+    setPendingSavedDeleteId(null);
     setActiveConversationId(conversationId);
     setNotice("Restoring your private conversation…");
   };
@@ -329,6 +334,28 @@ export default function EndUserChat() {
       setConfirmClearAll(false);
       setNotice(
         "Saved private history could not be cleared. Nothing was removed."
+      );
+    }
+  };
+
+  const handleDeleteSavedConversation = async () => {
+    if (!pendingSavedDeleteId) return;
+    try {
+      const deleted = await deleteConversationMutation.mutateAsync({
+        conversationId: pendingSavedDeleteId,
+      });
+      setPendingSavedDeleteId(null);
+      if (deleted) {
+        setNotice(
+          "Saved private conversation permanently deleted without restoring it."
+        );
+      } else {
+        setNotice("That private conversation is no longer available.");
+      }
+    } catch {
+      setPendingSavedDeleteId(null);
+      setNotice(
+        "Saved private conversation could not be deleted. Nothing was removed."
       );
     }
   };
@@ -627,6 +654,34 @@ export default function EndUserChat() {
                   </div>
                 </div>
               ) : null}
+              {pendingSavedDeleteId ? (
+                <div
+                  role="alert"
+                  className="mt-3 space-y-2 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] p-3"
+                >
+                  <p className="text-xs leading-5 text-rose-100/90">
+                    Permanently delete this saved conversation without opening
+                    its messages?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDeleteSavedConversation}
+                      disabled={deleteConversationMutation.isPending}
+                      className="rounded-md bg-rose-200 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-rose-950 disabled:opacity-60"
+                    >
+                      Delete without restoring
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingSavedDeleteId(null)}
+                      className="rounded-md border border-white/10 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-slate-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <div
                 className="mt-3 max-h-40 space-y-2 overflow-y-auto"
                 aria-label="Saved private conversations"
@@ -642,27 +697,47 @@ export default function EndUserChat() {
                   </p>
                 ) : savedConversationsQuery.data?.length ? (
                   savedConversationsQuery.data.map(conversation => (
-                    <button
-                      type="button"
+                    <div
                       key={conversation.conversationId}
-                      onClick={() =>
-                        handleRestoreConversation(conversation.conversationId)
-                      }
-                      aria-pressed={
-                        activeConversationId === conversation.conversationId
-                      }
-                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/10 p-3 text-left hover:bg-white/[0.04]"
+                      className="flex items-center gap-2"
                     >
-                      <span>
-                        <span className="block text-xs text-slate-200">
-                          {conversation.providerId} / {conversation.modelId}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRestoreConversation(conversation.conversationId)
+                        }
+                        aria-pressed={
+                          activeConversationId === conversation.conversationId
+                        }
+                        className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/10 p-3 text-left hover:bg-white/[0.04]"
+                      >
+                        <span>
+                          <span className="block text-xs text-slate-200">
+                            {conversation.providerId} / {conversation.modelId}
+                          </span>
+                          <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em] text-slate-600">
+                            saved private conversation
+                          </span>
                         </span>
-                        <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.1em] text-slate-600">
-                          saved private conversation
-                        </span>
-                      </span>
-                      <ArchiveRestore className="h-3.5 w-3.5 shrink-0 text-cyan-200/70" />
-                    </button>
+                        <ArchiveRestore className="h-3.5 w-3.5 shrink-0 text-cyan-200/70" />
+                      </button>
+                      {activeConversationId !== conversation.conversationId ? (
+                        <button
+                          type="button"
+                          aria-label={`Delete saved private conversation ${conversation.conversationId}`}
+                          onClick={() => {
+                            setConfirmDelete(false);
+                            setConfirmClearAll(false);
+                            setPendingSavedDeleteId(
+                              conversation.conversationId
+                            );
+                          }}
+                          className="shrink-0 rounded-md border border-rose-300/20 p-2 text-rose-200/80 hover:bg-rose-300/[0.08] hover:text-rose-100"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      ) : null}
+                    </div>
                   ))
                 ) : (
                   <p className="rounded-lg border border-dashed border-white/10 p-3 text-xs leading-5 text-slate-600">
