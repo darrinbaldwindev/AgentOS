@@ -370,3 +370,11 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Verify where each role currently reads and writes coordination records
 - [x] Run a governed Task Discovery dry run without implementing application work or altering protected configuration
 - [x] Report role configuration status, record synchronization state, and dry-run output
+
+## Shared role-prompt reconciliation — TD-20260822-002
+
+- [x] Re-read the canonical role protocol, active repository pointer, and stale launch-prompt instructions
+- [x] Remove only retired mirror-read and mirror-write directives while preserving role boundaries and the canonical-only record model
+- [x] Create shared configuration-audit evidence and append a canonical execution result without altering historical worktree records
+- [x] Verify active prompt consistency, historical-worktree preservation, and ledger completion
+- [ ] Save a recoverable checkpoint for TD-20260822-002
