@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AgentOS self-contained offline fallback UI sample. No network connections or provider actions are performed.">
+  <title>AgentOS — Offline Fallback Sample</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #08101f;
+      --surface: #101b31;
+      --surface-raised: #15233e;
+      --border: #2a3a5d;
+      --text: #f3f7ff;
+      --muted: #a9b6cf;
+      --focus: #7dd3fc;
+      --good: #4ade80;
+      --warning: #fbbf24;
+      --danger: #fb7185;
+      --info: #a78bfa;
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at top, #142243 0, var(--canvas) 48%); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .skip-link { background: var(--focus); color: #07101e; font-weight: 800; left: 1rem; padding: .6rem .8rem; position: absolute; top: -4rem; z-index: 10; }
+    .skip-link:focus { top: 1rem; }
+    .shell { margin: 0 auto; max-width: 1180px; padding: 1.25rem; }
+    .topbar, .section-heading, .toolbar, .item-topline, .card-actions, .status-row { align-items: center; display: flex; gap: .75rem; justify-content: space-between; }
+    .topbar { border-bottom: 1px solid var(--border); padding: .5rem 0 1rem; }
+    .brand { align-items: center; display: flex; gap: .75rem; }
+    .brand-mark { align-items: center; background: linear-gradient(135deg, #7dd3fc, #a78bfa); border-radius: 10px; color: #07101e; display: inline-flex; font-weight: 900; height: 2.35rem; justify-content: center; width: 2.35rem; }
+    .eyebrow { color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; margin: 0; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(1.35rem, 4vw, 2.1rem); margin-bottom: .25rem; }
+    h2 { font-size: 1.2rem; margin-bottom: 0; }
+    h3 { font-size: 1rem; margin-bottom: .25rem; }
+    .lede, .muted { color: var(--muted); }
+    .lede { max-width: 72ch; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.5fr) minmax(270px, .8fr); margin-top: 1rem; }
+    .card { background: color-mix(in srgb, var(--surface) 92%, black); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+    .primary-card { min-height: 28rem; }
+    .notice { border-left: 4px solid var(--warning); margin: 1rem 0; padding: 1rem; }
+    .notice strong { color: #fde68a; }
+    .notice p { margin-bottom: .5rem; }
+    .status { align-items: center; border-radius: 999px; display: inline-flex; font-size: .82rem; font-weight: 800; gap: .4rem; padding: .25rem .6rem; white-space: nowrap; }
+    .status::before { background: currentColor; border-radius: 50%; content: ""; display: inline-block; height: .52rem; width: .52rem; }
+    .available { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+    .rate-limited, .warning { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning); }
+    .offline, .error { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+    .degraded, .info { background: color-mix(in srgb, var(--info) 14%, transparent); color: #c4b5fd; }
+    .provider-list, .recovery-list { display: grid; gap: .75rem; list-style: none; margin: 0; padding: 0; }
+    .provider { background: var(--surface-raised); border: 1px solid transparent; border-radius: 10px; padding: .85rem; }
+    .provider.selected { border-color: var(--focus); }
+    .provider button { background: transparent; border: 0; color: inherit; text-align: left; width: 100%; }
+    .provider small { color: var(--muted); display: block; margin-top: .2rem; }
+    .toolbar { border: 1px solid var(--border); border-radius: 12px; flex-wrap: wrap; justify-content: flex-start; padding: .7rem; }
+    .toolbar label { color: var(--muted); font-size: .88rem; }
+    select { background: #0b1529; border: 1px solid var(--border); border-radius: 8px; color: var(--text); min-height: 2.4rem; padding: 0 .65rem; }
+    .button { background: #1f3b65; border: 1px solid #3c5c8d; border-radius: 8px; color: var(--text); font-weight: 750; min-height: 2.45rem; padding: .55rem .75rem; }
+    .button:hover { background: #2a4d7e; }
+    .button.secondary { background: transparent; border-color: var(--border); }
+    .button.danger { background: #6b1e35; border-color: #a83a5a; }
+    .context-panel { background: #211b11; border: 1px solid #6f5721; border-radius: 10px; margin-top: 1rem; padding: 1rem; }
+    .context-panel[hidden], .detail-panel[hidden] { display: none; }
+    .detail-panel { background: #0b1529; border: 1px dashed #46577a; border-radius: 10px; margin-top: 1rem; padding: .85rem; }
+    .detail-panel dl { display: grid; gap: .45rem; grid-template-columns: auto 1fr; margin: 0; }
+    .detail-panel dt { color: var(--muted); }
+    .detail-panel dd { margin: 0; }
+    .stream-card { border-color: #69558e; }
+    .stream-state { color: #ddd6fe; font-weight: 750; }
+    .action-list { display: grid; gap: .5rem; }
+    .action-list button { text-align: left; }
+    .sr-only { height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    #announcer { background: #0b1529; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); margin-top: 1rem; min-height: 2.5rem; padding: .6rem .75rem; }
+    footer { color: var(--muted); font-size: .85rem; padding: 1.5rem 0 .5rem; }
+    @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } .status-row { align-items: flex-start; flex-direction: column; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#fallback-workspace">Skip to fallback workspace</a>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <div>
+          <p class="eyebrow">Self-contained offline sample</p>
+          <h1>AgentOS fallback workspace</h1>
+        </div>
+      </div>
+      <span class="status offline" aria-label="Offline mode active">Offline mode</span>
+    </header>
+
+    <main id="fallback-workspace" tabindex="-1">
+      <p class="lede">This sample demonstrates accessible recovery states using local fixture data. It never connects to a provider, stores credentials, opens a redirect, or sends telemetry.</p>
+
+      <section class="notice card" aria-labelledby="context-warning-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Context safety</p>
+            <h2 id="context-warning-title">Context window is nearly full</h2>
+          </div>
+          <span class="status warning">Action recommended</span>
+        </div>
+        <p><strong>28,480 of 32,768 tokens are allocated.</strong> The next response may exceed the selected model’s context limit. Review a compacted preview before continuing.</p>
+        <div class="card-actions">
+          <button class="button" type="button" id="toggle-context" aria-expanded="false" aria-controls="context-panel">Review compacted preview</button>
+          <button class="button secondary" type="button" id="dismiss-context">Keep current context</button>
+        </div>
+        <div class="context-panel" id="context-panel" hidden>
+          <h3>Compaction preview</h3>
+          <p class="muted">A local summary would preserve active goals, selected model, recovery state, and verified artifacts. No prompt contents are displayed in this sample.</p>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card primary-card" aria-labelledby="providers-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Integration health</p>
+              <h2 id="providers-title">Choose a recovery path</h2>
+            </div>
+            <span class="muted" id="provider-count">3 local fixtures</span>
+          </div>
+
+          <div class="toolbar" role="toolbar" aria-label="Fallback controls">
+            <label for="capability-select">Required capability</label>
+            <select id="capability-select">
+              <option value="general">General response</option>
+              <option value="tools">Tool use</option>
+              <option value="vision">Vision</option>
+              <option value="json">Structured JSON</option>
+            </select>
+            <button class="button" id="resolve-route" type="button">Preview local route</button>
+            <button class="button secondary" id="show-health" type="button">Announce health summary</button>
+          </div>
+
+          <ul class="provider-list" id="provider-list" aria-label="Provider health choices">
+            <li class="provider selected" data-provider="local" tabindex="0">
+              <button type="button" aria-pressed="true">
+                <span class="item-topline"><strong>Local Runtime</strong><span class="status available">Available</span></span>
+                <small>Private local fixture · tools and structured output supported</small>
+              </button>
+            </li>
+            <li class="provider" data-provider="free" tabindex="0">
+              <button type="button" aria-pressed="false">
+                <span class="item-topline"><strong>Free Community Gateway</strong><span class="status rate-limited">Rate limited</span></span>
+                <small>Retry in 60 seconds · ranked fallback available</small>
+              </button>
+            </li>
+            <li class="provider" data-provider="cloud" tabindex="0">
+              <button type="button" aria-pressed="false">
+                <span class="item-topline"><strong>Verified Credit Provider</strong><span class="status degraded">Degraded</span></span>
+                <small>Capability fit remains visible; affiliate status never determines this preview</small>
+              </button>
+            </li>
+          </ul>
+
+          <aside class="detail-panel" id="provider-detail" aria-live="polite">
+            <h3>Local Runtime selected</h3>
+            <dl><dt>Health</dt><dd>Available</dd><dt>Recovery option</dt><dd>Continue with the offline-safe local fixture.</dd><dt>Network action</dt><dd>None</dd></dl>
+          </aside>
+        </section>
+
+        <aside class="card stream-card" aria-labelledby="stream-title">
+          <p class="eyebrow">Streaming recovery</p>
+          <h2 id="stream-title">Response stream interrupted</h2>
+          <p class="stream-state" id="stream-state">Partial output is preserved locally.</p>
+          <p class="muted">Choose an explicit recovery action. This sample does not retry automatically.</p>
+          <div class="action-list" role="group" aria-label="Stream recovery actions">
+            <button class="button" type="button" data-recovery="resume">Resume from last confirmed boundary</button>
+            <button class="button secondary" type="button" data-recovery="switch">Preview compatible fallback</button>
+            <button class="button secondary" type="button" data-recovery="save">Keep partial output and stop</button>
+          </div>
+
+          <hr aria-hidden="true" style="border-color: var(--border); border-width: 1px 0 0; margin: 1rem 0;">
+          <p class="eyebrow">Keyboard support</p>
+          <ul class="muted">
+            <li>Use <kbd>Tab</kbd> to move between controls.</li>
+            <li>Use <kbd>Enter</kbd> or <kbd>Space</kbd> to select a provider.</li>
+            <li>Use <kbd>Arrow Up</kbd> and <kbd>Arrow Down</kbd> to move within provider choices.</li>
+          </ul>
+        </aside>
+      </div>
+      <p id="announcer" role="status" aria-live="polite">Offline fallback workspace is ready. Local Runtime is selected.</p>
+    </main>
+    <footer>Replacement prototype created because the originally referenced B1 UI source files were not present in the supplied project materials. All labels and states are local fixtures.</footer>
+  </div>
+
+  <script>
+    (() => {
+      const providers = Array.from(document.querySelectorAll('.provider'));
+      const announcer = document.getElementById('announcer');
+      const detail = document.getElementById('provider-detail');
+      const contextButton = document.getElementById('toggle-context');
+      const contextPanel = document.getElementById('context-panel');
+      const contextDismiss = document.getElementById('dismiss-context');
+      const capabilitySelect = document.getElementById('capability-select');
+      const streamState = document.getElementById('stream-state');
+
+      const providerDetails = {
+        local: ['Local Runtime selected', 'Available', 'Continue with the offline-safe local fixture.'],
+        free: ['Free Community Gateway selected', 'Rate limited', 'Wait 60 seconds or preview the local fallback.'],
+        cloud: ['Verified Credit Provider selected', 'Degraded', 'Use a capability-first fallback preview; no referral action is taken.']
+      };
+
+      function announce(message) { announcer.textContent = message; }
+      function selectProvider(item) {
+        providers.forEach((provider) => {
+          const selected = provider === item;
+          provider.classList.toggle('selected', selected);
+          provider.querySelector('button').setAttribute('aria-pressed', String(selected));
+        });
+        const [title, health, recovery] = providerDetails[item.dataset.provider];
+        detail.innerHTML = `<h3>${title}</h3><dl><dt>Health</dt><dd>${health}</dd><dt>Recovery option</dt><dd>${recovery}</dd><dt>Network action</dt><dd>None</dd></dl>`;
+        announce(`${title}. Health: ${health}. ${recovery}`);
+      }
+
+      providers.forEach((provider, index) => {
+        provider.querySelector('button').addEventListener('click', () => selectProvider(provider));
+        provider.addEventListener('keydown', (event) => {
+          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          let targetIndex = index;
+          if (event.key === 'ArrowDown') targetIndex = (index + 1) % providers.length;
+          if (event.key === 'ArrowUp') targetIndex = (index - 1 + providers.length) % providers.length;
+          if (event.key === 'Home') targetIndex = 0;
+          if (event.key === 'End') targetIndex = providers.length - 1;
+          providers[targetIndex].focus();
+          selectProvider(providers[targetIndex]);
+        });
+      });
+
+      contextButton.addEventListener('click', () => {
+        const expanded = contextButton.getAttribute('aria-expanded') === 'true';
+        contextButton.setAttribute('aria-expanded', String(!expanded));
+        contextPanel.hidden = expanded;
+        contextButton.textContent = expanded ? 'Review compacted preview' : 'Hide compacted preview';
+        announce(expanded ? 'Compaction preview hidden.' : 'Compaction preview shown.');
+      });
+      contextDismiss.addEventListener('click', () => announce('Context warning retained. Current context remains unchanged.'));
+      document.getElementById('resolve-route').addEventListener('click', () => announce(`Local route preview ready for ${capabilitySelect.options[capabilitySelect.selectedIndex].text}. Affiliate status was not used.`));
+      document.getElementById('show-health').addEventListener('click', () => announce('Health summary: Local Runtime available; Free Community Gateway rate limited; Verified Credit Provider degraded.'));
+      document.querySelectorAll('[data-recovery]').forEach((button) => button.addEventListener('click', () => {
+        const messages = { resume: 'Recovery selected: resume from the last confirmed boundary.', switch: 'Recovery selected: preview a compatible local fallback.', save: 'Recovery selected: preserve partial output locally and stop.' };
+        streamState.textContent = messages[button.dataset.recovery];
+        announce(messages[button.dataset.recovery]);
+      }));
+    })();
+  </script>
+</body>
+</html>
