@@ -338,6 +338,68 @@ describe("EndUserChat conversation reset interaction", () => {
     ).toContain("Private conversation permanently deleted.");
   });
 
+  it("preserves the active private conversation and hides storage details when active deletion fails", async () => {
+    conversationState.list.data = [
+      {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+    ];
+    conversationState.get.data = {
+      conversation: {
+        conversationId: conversationState.conversationId,
+        userId: 1,
+        providerId: "ollama",
+        modelId: "agentos-default",
+      },
+      messages: [{ role: "assistant", content: "still private" }],
+    };
+    conversationState.get.error = null;
+    conversationState.deleteShouldFail = true;
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(createElement(EndUserChat));
+    });
+
+    await act(async () => {
+      renderer.root
+        .findAllByProps({ "aria-pressed": false })[0]
+        .props.onClick();
+    });
+    await act(async () => {
+      renderer.root
+        .findByProps({ "aria-label": "Delete active private conversation" })
+        .props.onClick();
+    });
+    await act(async () => {
+      await renderer.root
+        .findAllByType("button")
+        .find(node => node.children.join(" ") === "Delete permanently")
+        ?.props.onClick();
+    });
+    const renderedText = renderer.root
+      .findAllByType("p")
+      .map(node => node.children.join(" "))
+      .join(" ");
+    expect(renderedText).toContain("still private");
+    expect(
+      renderer.root
+        .findAllByProps({ "aria-live": "polite" })
+        .map(node => node.children.join(" "))
+        .join(" ")
+    ).toContain(
+      "Private conversation could not be deleted. Nothing was removed."
+    );
+    expect(
+      renderer.root.findAllByProps({
+        "aria-label": "Delete active private conversation",
+      })
+    ).toHaveLength(1);
+    conversationState.deleteShouldFail = false;
+  });
+
   it("allows a user to cancel direct saved-list deletion without restoring or deleting messages", async () => {
     const directDeleteId = "22222222-2222-4222-8222-222222222222";
     conversationState.list.data = [

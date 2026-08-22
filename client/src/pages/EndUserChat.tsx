@@ -337,14 +337,22 @@ export default function EndUserChat() {
 
   const handleDeleteConversation = async () => {
     if (!activeConversationId) return;
-    const deleted = await deleteConversationMutation.mutateAsync({
-      conversationId: activeConversationId,
-    });
-    if (deleted) {
-      handleNewConversation();
-      setNotice("Private conversation permanently deleted.");
-    } else {
-      setNotice("That private conversation is no longer available.");
+    try {
+      const deleted = await deleteConversationMutation.mutateAsync({
+        conversationId: activeConversationId,
+      });
+      if (deleted) {
+        handleNewConversation();
+        setNotice("Private conversation permanently deleted.");
+      } else {
+        setConfirmDelete(false);
+        setNotice("That private conversation is no longer available.");
+      }
+    } catch {
+      setConfirmDelete(false);
+      setNotice(
+        "Private conversation could not be deleted. Nothing was removed."
+      );
     }
   };
 

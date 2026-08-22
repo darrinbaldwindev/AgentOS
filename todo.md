@@ -292,7 +292,15 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Return to a fresh local session with safe feedback when a selected conversation is unavailable or expired
 - [x] Add rendered and interaction coverage for unavailable and storage-error restore outcomes without message exposure
 - [x] Run full verification and record shared privacy evidence
-- [ ] Save a recoverable checkpoint for private conversation restore-failure recovery
+- [x] Save a recoverable checkpoint for private conversation restore-failure recovery
+
+## Active private-conversation deletion failure hardening
+
+- [x] Inspect active-conversation deletion, confirmation, and storage-failure behavior
+- [x] Preserve the active local session and give safe feedback if confirmed active deletion fails
+- [x] Add interaction coverage for active deletion failure and successful retry boundaries
+- [x] Run full verification and record shared privacy evidence
+- [ ] Save a recoverable checkpoint for active private-conversation deletion failure hardening
 
 ## Owner guidance interaction evidence repair
 
