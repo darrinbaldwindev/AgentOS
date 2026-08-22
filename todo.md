@@ -324,5 +324,12 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Inspect canonical shared records, execution mirrors, and current project evidence read-only
 - [x] Identify and validate one evidence-backed executor-ready task without implementing it
-- [ ] Reconcile the discovered progress-log conflict after the project coordinator selects the authoritative history
+- [x] Reconcile the discovered progress-log conflict after the project coordinator selects the authoritative history
 - [x] Verify record synchronization state and capture the first Task Discovery log output
+
+## Owner-approved AgentOS execution baseline
+
+- [x] Record `/home/ubuntu/agentos-affiliate-dashboard` as the active execution baseline and classify the isolated worktree as historical reference
+- [x] Reconcile the shared and worktree progress-log histories through dated append-only corrections
+- [x] Update both agent prompts and the synchronization protocol to use the selected repository baseline
+- [x] Verify the shared coordination record and report the active Task Discovery-to-Autonomous workflow
