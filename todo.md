@@ -454,6 +454,7 @@ Append-only history: new skill formalization requested by the user after the fin
 
 - [x] Verify canonical role-task contexts and existing schedule ownership
 - [x] Prepare self-contained daily configurations for Task Discovery, Autonomous, and Coordinator
+- [x] Prepare role-owned schedule setup guidance with approved timing, timezone conversion, delivery, and review expiry
 - [ ] Create or update the authorized daily schedules in the approved sequence
 - [ ] Verify role-owned schedule status, record the configuration, and save a recoverable checkpoint
 
