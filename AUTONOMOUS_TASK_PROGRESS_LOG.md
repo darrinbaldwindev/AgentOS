@@ -79,3 +79,22 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 **Boundary.** These adapters are offline fixtures only. They do not make network requests, resolve keys, call providers, test real connections, alter routing, or claim runtime, security, production, or release readiness.
 
 **Follow-up.** The next safe backlog task is B3: draft frontend test fixtures that keep affiliate status secondary to capability fit and use only local deterministic data.
+
+## 2026-08-21 — B3 capability-first frontend fixtures
+
+**Maintainer:** Current project coordinator
+**Executor:** AgentOS Autonomous
+**Backlog task:** B3 — Draft frontend test fixtures
+**Status:** COMPLETED
+
+**Preflight.** The canonical repository `/home/ubuntu/projects/agentos-3b88b539` was clean on `main` tracking `origin/main`. The local core-contract draft and B2 mock adapters were present. B3 was selected as the next safe backlog task. No external service, live provider, credential, background schedule, deployment, publication, or affiliate-network action was required.
+
+**Inputs reviewed.** `AUTONOMOUS_TASK_BACKLOG.md`, the local core contracts and mock adapters, and the project-local `ai_agent_affiliate_programs.csv` as bounded catalog context. All added provider and program values are explicitly synthetic fixture data and do not claim live eligibility, program terms, availability, pricing, or quotas.
+
+**Files added.** `fixtures/frontend-provider-fixtures.mjs` supplies immutable provider and model fixtures for a local model, a free provider, an affiliate-supported provider, a non-affiliate integration, an unverified program, and an expired program. It includes provider-health transition fixtures covering `available`, `needs_connection`, `limited`, `offline`, `permission_denied`, `rate_limited`, `degraded`, and `error`. Its `rankCapabilityFit` helper scores only capability satisfaction, model activity, and health; affiliate metadata is returned for display but intentionally excluded from scoring. `tests/frontend-provider-fixtures.test.mjs` verifies category coverage, model references, state-transition coverage, deterministic ranking, capability-first behavior, fixture immutability, and local-only source safeguards.
+
+**Validation.** Syntax checks for the fixture and test modules passed. `node tests/frontend-provider-fixtures.test.mjs` passed, reporting category coverage, health transitions, deterministic ranking, capability-first behavior, and local-only safeguards. The B2 mock-adapter suite and A4 core-type validator also passed. `git diff --check` passed.
+
+**Boundary.** These are local test fixtures only. They do not activate or endorse affiliate programs, rank a real provider, make a referral claim, contact a provider, or establish a frontend/backend runtime.
+
+**Follow-up.** The next safe backlog task is B5: add a deterministic local API mock specification for catalog, health, route resolution, model switching, consent, dry-run redirects, and recovery.
