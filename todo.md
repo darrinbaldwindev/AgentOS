@@ -643,3 +643,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Inspect the active repository and select one bounded, evidence-backed Main code task
 - [x] Implement the selected task with required tests and local verification
 - [x] Publish shared evidence, preserve recovery safeguards, and save a checkpoint
+
+## AgentOS Main bounded hardening cycle 2
+
+- [x] Inspect the active repository and select the next safe, evidence-backed hardening task
+- [x] Implement the selected bounded hardening change with focused coverage
+- [x] Run full static, test, build, and rendered verification
+- [x] Publish shared evidence, preserve recovery safeguards, and save a checkpoint

@@ -84,7 +84,7 @@ import EndUserChat, {
 } from "../client/src/pages/EndUserChat";
 
 describe("AgentOS end-user chat surface", () => {
-  it("preserves catalog model identifiers that differ from local fallback IDs", () => {
+  it("keeps execution model identifiers stable when catalog identifiers differ", () => {
     expect(
       getEndUserSelectorModelOptions("ollama", {
         id: "ollama",
@@ -97,9 +97,31 @@ describe("AgentOS end-user chat surface", () => {
       })
     ).toEqual([
       {
-        id: "catalog-specific-model",
-        label: "Catalog-specific model",
+        id: "agentos-default",
+        label: "agentos-default",
       },
+      {
+        id: "llama-local",
+        label: "llama-local",
+      },
+    ]);
+
+    expect(
+      getEndUserSelectorModelOptions("ollama", {
+        id: "ollama",
+        models: [
+          {
+            id: "agentos-default",
+            name: "Catalog label for the execution model",
+          },
+        ],
+      })
+    ).toEqual([
+      {
+        id: "agentos-default",
+        label: "Catalog label for the execution model",
+      },
+      { id: "llama-local", label: "llama-local" },
     ]);
 
     expect(getEndUserSelectorModelOptions("ollama")).toEqual([
@@ -127,7 +149,8 @@ describe("AgentOS end-user chat surface", () => {
     expect(markup).toContain('aria-label="Start a new conversation"');
     expect(markup).toContain("New conversation");
     expect(markup).toContain("Local catalog loaded · chat execution unchanged");
-    expect(markup).toContain("Ollama Local Default");
+    expect(markup).toContain('value="agentos-default"');
+    expect(markup).not.toContain("Ollama Local Default");
     expect(markup).toContain("Local route preview");
     expect(markup).toContain(
       "Ollama Local / agentos-default is ready in the local mock preview. Chat execution remains unchanged."
