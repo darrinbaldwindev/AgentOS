@@ -604,10 +604,10 @@ Append-only history: new skill formalization requested by the user after the fin
 
 ## Autonomous next resilience cycle
 
-- [ ] Inspect canonical recovery records, current scorecard gaps, and local task eligibility
-- [ ] Implement the highest-value safe, locally verifiable resilience improvement
-- [ ] Publish append-only recovery evidence and any scorecard update
-- [ ] Verify safeguards, save a rollback point, and report the next bounded recommendation
+- [x] Inspect canonical recovery records, current scorecard gaps, and local task eligibility
+- [x] Determine that no repository-dependent implementation is locally eligible until the acting role receives its own direct mount
+- [x] Publish append-only recovery evidence and the owner-selected role-context activation handoff
+- [x] Verify safeguards, preserve a rollback point, and report the direct-mount recommendation
 
 ## Repository-enabled role-context activation
 
@@ -615,3 +615,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Publish the exact platform-facing activation handoff for Task Discovery and Autonomous
 - [x] Verify shared preflight material publication and record the remaining platform activation gate
 - [x] Deliver the role-specific next actions without substituting repository paths
+
+## Shared progress-log publication discrepancy recovery
+
+- [x] Record the verified source-versus-project-file progress-log mismatch without overwriting history
+- [x] Publish a separate non-destructive shared activation follow-up record
+- [x] Verify the shared activation packet and supplementary follow-up record are hash-aligned
+- [x] Report the remaining progress-log publication limitation and direct-mount next action
