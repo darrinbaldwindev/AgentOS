@@ -636,3 +636,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Determine that no supported isolated repository-context provisioning method is available from AgentOS Main
 - [x] Verify that Task Discovery and Autonomous preflights remain blocked because no direct mounts exist
 - [x] Record the outcome and provide the next role instructions
+
+## Owner-reassigned AgentOS Main bounded continuation
+
+- [x] Review supported role-context alternatives and record a recommended cross-chat repository-sharing model
+- [x] Inspect the active repository and select one bounded, evidence-backed Main code task
+- [x] Implement the selected task with required tests and local verification
+- [x] Publish shared evidence, preserve recovery safeguards, and save a checkpoint

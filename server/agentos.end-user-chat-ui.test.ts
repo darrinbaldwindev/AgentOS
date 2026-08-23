@@ -79,9 +79,35 @@ vi.mock("@/lib/trpc", () => ({
   },
 }));
 
-import EndUserChat from "../client/src/pages/EndUserChat";
+import EndUserChat, {
+  getEndUserSelectorModelOptions,
+} from "../client/src/pages/EndUserChat";
 
 describe("AgentOS end-user chat surface", () => {
+  it("preserves catalog model identifiers that differ from local fallback IDs", () => {
+    expect(
+      getEndUserSelectorModelOptions("ollama", {
+        id: "ollama",
+        models: [
+          {
+            id: "catalog-specific-model",
+            name: "Catalog-specific model",
+          },
+        ],
+      })
+    ).toEqual([
+      {
+        id: "catalog-specific-model",
+        label: "Catalog-specific model",
+      },
+    ]);
+
+    expect(getEndUserSelectorModelOptions("ollama")).toEqual([
+      { id: "agentos-default", label: "agentos-default" },
+      { id: "llama-local", label: "llama-local" },
+    ]);
+  });
+
   it("is separate from owner telemetry and recovery controls", () => {
     const markup = renderToStaticMarkup(createElement(EndUserChat));
     expect(markup).toContain("user workspace");

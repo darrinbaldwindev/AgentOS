@@ -97,8 +97,8 @@ export function getEndUserSelectorModelOptions(
     modelOptions[providerId as keyof typeof modelOptions] ??
     modelOptions.ollama;
   if (catalogProvider?.models.length) {
-    return catalogProvider.models.map((model, index) => ({
-      id: fallbackIds[index] ?? fallbackIds[0],
+    return catalogProvider.models.map(model => ({
+      id: model.id,
       label: model.name,
     }));
   }
@@ -154,6 +154,10 @@ export default function EndUserChat() {
     providerId,
     selectedCatalogProvider
   );
+  useEffect(() => {
+    if (selectorModelOptions.some(option => option.id === modelId)) return;
+    setModelId(selectorModelOptions[0]?.id ?? modelOptions.ollama[0]);
+  }, [modelId, selectorModelOptions]);
   const utils = trpc.useUtils();
   const savedConversationsQuery = trpc.agentos.conversations.list.useQuery(
     undefined,

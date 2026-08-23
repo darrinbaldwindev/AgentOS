@@ -270,12 +270,12 @@ describe("EndUserChat conversation reset interaction", () => {
       .map(node => node.children.join(" "))
       .join(" ");
     expect(previewText).toContain(
-      "Together AI / meta-llama-3.1-8b may need a retry or a different route. No provider action has been attempted."
+      "Together AI / together-default may need a retry or a different route. No provider action has been attempted."
     );
     expect(
       renderer.root.findByProps({ "aria-label": "Choose end-user model" }).props
         .value
-    ).toBe("meta-llama-3.1-8b");
+    ).toBe("together-default");
     expect(
       renderer.root.findAllByType("option").map(node => node.children.join(" "))
     ).toContain("Together Catalog Default");
