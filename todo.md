@@ -567,3 +567,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Define the supported repository-capability recovery procedure and safeguards
 - [x] Publish an owner-approved bounded recovery handoff for the acting role contexts
 - [x] Verify publication and report the next role actions without changing schedules
+
+## Repository resilience, access, backup, and incident logging
+
+- [x] Inspect current repository recovery points, shared-record access, backup readiness, and incident-log controls
+- [x] Define safe options for role access, backup scope, and issue-triggered recovery response
+- [x] Implement only approved local resilience records and repository safeguards without fabricating cross-chat mounts
+- [x] Verify recovery evidence, preserve a rollback point, and report remaining platform or owner prerequisites
