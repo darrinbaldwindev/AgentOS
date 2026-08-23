@@ -629,3 +629,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Evaluate non-destructive synchronization options without removing append-only history
 - [x] Apply a non-destructive publication finding that preserves the role-context activation record separately
 - [x] Verify shared-record integrity, preserve a rollback point, and report the direct-mount next action
+
+## Direct repository-context provisioning attempt
+
+- [x] Inspect available project and role-context provisioning mechanisms
+- [x] Determine that no supported isolated repository-context provisioning method is available from AgentOS Main
+- [x] Verify that Task Discovery and Autonomous preflights remain blocked because no direct mounts exist
+- [x] Record the outcome and provide the next role instructions
