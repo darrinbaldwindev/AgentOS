@@ -93,7 +93,7 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 
 **Files added.** `fixtures/frontend-provider-fixtures.mjs` supplies immutable provider and model fixtures for a local model, a free provider, an affiliate-supported provider, a non-affiliate integration, an unverified program, and an expired program. It includes provider-health transition fixtures covering `available`, `needs_connection`, `limited`, `offline`, `permission_denied`, `rate_limited`, `degraded`, and `error`. Its `rankCapabilityFit` helper scores only capability satisfaction, model activity, and health; affiliate metadata is returned for display but intentionally excluded from scoring. `tests/frontend-provider-fixtures.test.mjs` verifies category coverage, model references, state-transition coverage, deterministic ranking, capability-first behavior, fixture immutability, and local-only source safeguards.
 
-**Validation.** Syntax checks for the fixture and test modules passed. `node tests/frontend-provider-fixtures.test.mjs` passed, reporting category coverage, health transitions, deterministic ranking, capability-first behavior, and local-only safeguards. The B2 mock-adapter suite and A4 core-type validator also passed. `git diff --check` passed.
+**Validation.** Syntax checks for the fixture and test modules passed. `node tests/frontend-provider-fixtures.test.mjs` passed, reporting category coverage, health transitions, deterministic ranking, capability-first behavior, fixture immutability, and local-only safeguards. The B2 mock-adapter suite and A4 core-type validator also passed. `git diff --check` passed.
 
 **Boundary.** These are local test fixtures only. They do not activate or endorse affiliate programs, rank a real provider, make a referral claim, contact a provider, or establish a frontend/backend runtime.
 
@@ -112,8 +112,23 @@ Verification confirmed that local `HEAD`, `origin/main`, and the remote `refs/he
 
 **Files added.** `api/LOCAL_MOCK_API.md` documents a local in-process API contract for catalog, health, capability-first route resolution, model switching, consent, dry-run redirects, and recovery. `api/agentos-local-mock-api.mjs` implements the deterministic behavior harness with seven route shapes, stable response headers and correlation identifiers, synthetic data only, no consent persistence, and dry-run redirect suppression. `tests/agentos-local-mock-api.test.mjs` verifies endpoint coverage, deterministic behavior, capability-first route preview, model and consent non-persistence, redirect suppression, recovery boundaries, controlled errors, and prohibited network/environment-source patterns.
 
-**Validation.** Syntax checks for the local API module and test module passed. `node tests/agentos-local-mock-api.test.mjs` passed, reporting verification of the endpoint surface, deterministic behavior, capability-first routing, dry-run safeguards, recovery boundaries, and local-only source checks. The B3 fixture suite, B2 mock-adapter suite, and A4 core-type validator also passed. `git diff --check` passed.
+**Validation.** Syntax checks for the local API module and test module passed. `node tests/agentos-local-mock-api.test.mjs` passed, reporting verification of the endpoint surface, deterministic behavior, capability-first routing, dry-run safeguards, recovery boundaries, controlled errors, and prohibited network/environment-source patterns. The B3 fixture suite, B2 mock-adapter suite, and A4 core-type validator also passed. `git diff --check` passed.
 
 **Boundary.** This is an in-process fixture contract, not a network server. It does not contact providers, resolve credentials, persist consent, open redirects, write a database, create background work, or claim real provider, routing, recovery, security, production, or release behavior.
 
 **Follow-up.** The next safe backlog task is B6: draft append-only local recovery event schemas that exclude prompts, secrets, repository contents, and private artifact data from attribution events.
+
+## 2026-08-24 — B6 privacy-safe recovery event schemas
+
+**Maintainer:** Current project coordinator
+**Executor:** AgentOS Autonomous
+**Backlog task:** B6 — Draft recovery event schemas
+**Status:** COMPLETED
+
+**Preflight.** The GitHub repository `darrinbaldwindev/AgentOS` was reviewed and the autonomous backlog identified B6 as the next safe task. The task required no external credentials, live providers, MCP activation, background schedules, deployment, publication, monetization changes, or architecture sign-off.
+
+**Files added.** `schemas/recovery-events.mjs` defines versioned, append-only event construction/validation for execution, model switch, fallback selection, provider status, consent, referral click, redirect failure, tool failure, and recovery action. It explicitly rejects prompts, secrets, API keys, credentials, repository contents, private artifact payloads, and raw referral URLs. `tests/recovery-events.test.mjs` verifies all event types, safe statuses, immutability, invalid-schema rejection, and prohibited-field rejection using dependency-free Node assertions.
+
+**Validation boundary.** The test source is dependency-free and intended for `node tests/recovery-events.test.mjs`; this GitHub-only execution did not provide a local shell, so runtime execution and `git diff --check` could not be independently performed here. No production, security, or release claim is made.
+
+**Follow-up.** The next safe backlog task is B1: refine the self-contained fallback UI for accessibility, provider health labels, context-overflow warnings, keyboard navigation, and explicit streaming recovery states.
