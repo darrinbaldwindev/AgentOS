@@ -560,3 +560,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Inspect the owner-provided historical Manus material as non-authoritative evidence
 - [x] Compare any relevant historical findings with the current canonical shared records
 - [x] Preserve only verified, non-duplicative archival conclusions and report the result
+
+## Repository-capability recovery for AgentOS roles
+
+- [x] Inspect canonical authority, execution-capability, and role-context evidence
+- [x] Define the supported repository-capability recovery procedure and safeguards
+- [x] Publish an owner-approved bounded recovery handoff for the acting role contexts
+- [x] Verify publication and report the next role actions without changing schedules
