@@ -622,3 +622,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Publish a separate non-destructive shared activation follow-up record
 - [x] Verify the shared activation packet and supplementary follow-up record are hash-aligned
 - [x] Report the remaining progress-log publication limitation and direct-mount next action
+
+## Shared progress-log publication diagnosis
+
+- [x] Inspect the project-file publication state and the supported update semantics
+- [x] Evaluate non-destructive synchronization options without removing append-only history
+- [x] Apply a non-destructive publication finding that preserves the role-context activation record separately
+- [x] Verify shared-record integrity, preserve a rollback point, and report the direct-mount next action
