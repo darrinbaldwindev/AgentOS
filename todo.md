@@ -574,3 +574,9 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Define safe options for role access, backup scope, and issue-triggered recovery response
 - [x] Implement only approved local resilience records and repository safeguards without fabricating cross-chat mounts
 - [x] Verify recovery evidence, preserve a rollback point, and report remaining platform or owner prerequisites
+
+## GitHub known-good source mirror
+
+- [x] Verify the GitHub recovery branch has no conflicting remote-only commits
+- [x] Fast-forward the approved recovery branch to the verified resilience checkpoint
+- [x] Record matching local and remote commit evidence with source-only recovery limits
