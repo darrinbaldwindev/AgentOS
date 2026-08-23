@@ -594,3 +594,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Implement the next safe repository-hardening controls without bypassing role-mount boundaries
 - [x] Publish a weighted resilience scorecard with explicit owner and platform prerequisites
 - [x] Verify evidence, preserve a rollback point, and report measurable readiness progress
+
+## Next-stage repository resilience hardening
+
+- [x] Inspect the current scorecard, recovery records, and remaining safe-to-close gaps
+- [x] Implement the next safe recovery-readiness and evidence controls
+- [x] Publish updated resilience scoring with explicit unclosed owner and platform gates
+- [x] Verify shared-record alignment, preserve a rollback point, and report progress
