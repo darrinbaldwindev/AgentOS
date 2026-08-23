@@ -587,3 +587,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Append a clearly labeled simulated minor issue and its verified closure
 - [x] Verify shared-record publication, recovery evidence, and no-change safeguards
 - [x] Save a recoverable checkpoint and report the simulation result
+
+## Repository resilience scorecard and next-stage hardening
+
+- [x] Assess current resilience controls, recovery evidence, and remaining gaps
+- [x] Implement the next safe repository-hardening controls without bypassing role-mount boundaries
+- [x] Publish a weighted resilience scorecard with explicit owner and platform prerequisites
+- [x] Verify evidence, preserve a rollback point, and report measurable readiness progress
