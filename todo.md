@@ -554,3 +554,9 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Inspect workspace and shared-file bindings for the active project
 - [x] Compare observed bindings with canonical AgentOS record paths
 - [x] Deliver non-secret environment and workspace-binding findings
+
+## Historical AgentOS material review
+
+- [x] Inspect the owner-provided historical Manus material as non-authoritative evidence
+- [x] Compare any relevant historical findings with the current canonical shared records
+- [x] Preserve only verified, non-duplicative archival conclusions and report the result
