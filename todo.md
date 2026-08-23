@@ -601,3 +601,17 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Implement the next safe recovery-readiness and evidence controls
 - [x] Publish updated resilience scoring with explicit unclosed owner and platform gates
 - [x] Verify shared-record alignment, preserve a rollback point, and report progress
+
+## Autonomous next resilience cycle
+
+- [ ] Inspect canonical recovery records, current scorecard gaps, and local task eligibility
+- [ ] Implement the highest-value safe, locally verifiable resilience improvement
+- [ ] Publish append-only recovery evidence and any scorecard update
+- [ ] Verify safeguards, save a rollback point, and report the next bounded recommendation
+
+## Repository-enabled role-context activation
+
+- [x] Inspect the existing repository-capability recovery and role-preflight records
+- [x] Publish the exact platform-facing activation handoff for Task Discovery and Autonomous
+- [x] Verify shared preflight material publication and record the remaining platform activation gate
+- [x] Deliver the role-specific next actions without substituting repository paths
