@@ -580,3 +580,10 @@ Append-only history: new skill formalization requested by the user after the fin
 - [x] Verify the GitHub recovery branch has no conflicting remote-only commits
 - [x] Fast-forward the approved recovery branch to the verified resilience checkpoint
 - [x] Record matching local and remote commit evidence with source-only recovery limits
+
+## Append-only incident-response simulation
+
+- [x] Inspect the incident protocol and recovery-record baseline
+- [x] Append a clearly labeled simulated minor issue and its verified closure
+- [x] Verify shared-record publication, recovery evidence, and no-change safeguards
+- [x] Save a recoverable checkpoint and report the simulation result
