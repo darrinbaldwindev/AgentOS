@@ -17,4 +17,4 @@
 - [x] CORE-002-I1: Add a local-only run inspector that returns a compact non-secret read model for one workspace/agent/run, its append-only event types, and its Overseer recommendation state.
 - [x] CORE-002-I2: Reject missing/unknown runs and omit prompts, mission inputs, metadata payloads, credentials, raw URLs, workspace contents, and artifact payloads from the inspection result.
 - [x] CORE-002-I3: Add direct run-inspector and demo integration coverage, then rerun the complete deterministic suite.
-- [ ] CORE-002-I4: Open a dependent review pull request that requires PR #3 and PR #4 to merge first; do not merge automatically.
+- [x] CORE-002-I4: Open a dependent review pull request that requires PR #3 and PR #4 to merge first; do not merge automatically.
