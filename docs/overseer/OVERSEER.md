@@ -151,3 +151,17 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Owner decision required:** Darrin or the designated AgentOS coordinator should confirm the canonical sequence: first run and record the narrow persistence-contract test; then implement/verify the local runtime-shell and end-to-end acceptance path; then decide the disposition and lineage of PRs #3–#5. This record neither authorizes test execution nor approves merge, deployment, provider activation, production operation, or release.
 
 **Audit boundary:** Static source, branch, issue, and pull-request evidence only. No application code, test, build, provider, credential, connector, migration, deployment, data, or repository-setting action was performed.
+
+## Daily open-pull-request review update — 2026-08-24T20:02:13+10:00
+
+**Scope:** Complete accessible open-pull-request queue refreshed under `darrinbaldwindev`; AgentOS PR #1 reviewed at documentation head `4ac7bb06d9c42e162a04f7ce03f4663ff5d49a7b` against its prior reviewed log revision and default `main` at `8dbf6647881ef32bfb7d9e05cc9a00ab7fe40032`.
+
+**Material change:** PR #1’s authorized log now contains the persistence-direction update recorded above. It accurately distinguishes the new Node test harness and narrow in-memory persistence-contract test from independently reproduced runtime evidence. This is a material documentation/review-scope change, not proof that AgentOS Issue #2’s end-to-end acceptance path is complete.
+
+**Finding:** The persistence test artifact is **unverified by this read-only Overseer review**. The current checkpoint continues to identify the runtime shell boundary, durable checkpoint/change-log integration, and stronger end-to-end tests as in progress. Existing CORE-002 PRs #3–#5 remain open at their previously reviewed revisions and retain their lineage and local-validation owner gates.
+
+**Notification:** One deduplicated, affected-PR-only notice was posted to [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5395616438). It states the exact revision, classification, owner decision, permitted/prohibited actions, reassessment evidence, links, and response field. No notice was posted to any issue, email, Slack, or other channel.
+
+**Owner decision:** Darrin or the designated AgentOS coordinator should confirm whether the updated log is accepted as the current record and retain the bounded sequence of a reproducible persistence test followed by runtime-shell and full deterministic vertical-path evidence. No merge, close, rebase, approval, execution, deployment, provider activation, credential use, or production action is authorized by this entry.
+
+**Audit boundary:** Static repository, pull-request, issue, and documentation evidence only. No project code, tests, builds, migrations, deployments, credentials, or external provider calls were executed.
