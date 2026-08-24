@@ -104,3 +104,11 @@ A lightweight read-only change scan should occur daily, with a deeper cross-repo
 The initial Overseer-log pull request, [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1), remains **OPEN**, non-draft, and `CLEAN` for merge at head `49a3f231ead6fe7c390a80c84ce5bcd33ee05590` against base `86a92877f35fe47102856713a910a329675c2c4d`. At the time of this check it had no review decision, reviews, or comments.
 
 The request remains documentation-only and changes only `docs/overseer/OVERSEER.md`. No AgentOS application code, configuration, CI/CD, migrations, task/continuity records, provider behavior, schedule, deployment, data, or external integration was changed by this status check.
+
+## Follow-up testability review — 2026-08-24T06:43:44Z
+
+A new [AgentOS PR #3 — CORE-002: add deterministic local test runner](https://github.com/darrinbaldwindev/AgentOS/pull/3) is open at `468b4e128c4fb00ced0ff0b601639a6e50ce7e8a`, is non-draft and `CLEAN`, and changes five files: a local Node test runner, direct runner coverage, an updated recovery-event status assertion, a bounded task record, and a TODO record. Static inspection shows that the runner discovers `tests/*.test.mjs`, sorts the list, executes each file sequentially with the current Node executable, aggregates nonzero child statuses, and rejects an empty suite. The updated recovery-event assertion names the full allowlist, including `recovered`, rather than retaining a stale fixed count.
+
+No GitHub checks or review records are currently reported for PR #3. The task record claims that all 18 deterministic test files passed, but this Overseer follow-up did not execute untrusted repository code and therefore cannot independently verify that claim. The material decision is whether to authorize a narrow review/merge path based on reproducible local evidence, or require additional independent validation and/or a separately approved CI check. `CLEAN` mergeability is not evidence of the claimed test result, integration coverage, provider safety, deployment readiness, or production behavior.
+
+A draft governance notification template was prepared inside Manus only. No test-runner code, test, branch, pull request, provider, credential, deployment, or external communication was changed by this record.
