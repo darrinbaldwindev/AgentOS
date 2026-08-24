@@ -118,3 +118,22 @@ A draft governance notification template was prepared inside Manus only. No test
 Two new CORE-002 pull requests are active. [AgentOS PR #4](https://github.com/darrinbaldwindev/AgentOS/pull/4) is open, non-draft, and `CLEAN` at `e7e4599dce2b636df6fd4478c73f77a28e790c00`; it adds a local deterministic vertical-slice demo and associated runner/tests across eight files. [AgentOS PR #5](https://github.com/darrinbaldwindev/AgentOS/pull/5) is open, non-draft, and `CLEAN` at `1f84ca31267e47c3bb284d9ef80b29079e45170e`; it extends the same lineage with `runtime/run-inspector.mjs` and related tests across eleven files. Neither pull request reports GitHub checks or formal reviews. This Overseer scan did not execute repository code, so local claims remain unverified and the relationship/supersession decision across PRs #3–#5 remains owner-gated.
 
 The authorized governance notices were posted to [PR #4](https://github.com/darrinbaldwindev/AgentOS/pull/4#issuecomment-5392429401) and [PR #5](https://github.com/darrinbaldwindev/AgentOS/pull/5#issuecomment-5392429632). The notices do not approve, merge, deploy, or expand the CORE-002 scope.
+
+## Portfolio continuity audit — 2026-08-24T10:00:00Z
+
+### OVERSEER-20260824-004
+
+- **Severity:** MEDIUM
+- **Area:** continuity / status reporting
+- **Finding:** Two current canonical-looking AgentOS records materially disagree about repository maturity. `PROJECT_STATUS_2026-08-24.md` says AgentOS is "not yet the product runtime" and that repository evidence is strongest in specified, prototyped, and verified categories. By contrast, `AGENTOS_CHECKPOINT.md` at `main` `4d4778fb70c86e0ea8528c1dcab4ac1077bacd0d` records core state primitives, a provider-independent `AgentRuntime`, deterministic mock provider, tool registry, recovery/handoff, policy auditing, mission orchestration, continuity protocol, agent-capability eligibility, and connectivity health as completed. The current tree also contains dedicated runtime modules and tests, while the five most recent main commits add the provider-neutral adapter/executor, provider boundary, and Overseer-hierarchy reconciliation.
+- **Evidence:** `CONTINUITY_PROTOCOL.md` establishes code/tests, runtime state, change log, and checkpoint as canonical sources and requires code/runtime to win when a checkpoint conflicts with another record. `AGENTOS_CHECKPOINT.md` identifies the runtime shell, durable checkpoint/change-log integration, and stronger end-to-end tests as still in progress. `PROJECT_STATUS_2026-08-24.md` is therefore a stale or insufficient standalone current-state summary, not evidence of production readiness.
+- **Why it matters:** A contributor who reads only the narrative status may underestimate what exists; a contributor who reads only the checkpoint/runtime tree may overstate the project’s production, security, provider, deployment, or release maturity. The older `AGENTOS_HANDOVER.md` also identifies a different `agents/continuity_log/` canonical-record model, preserving branch/record ambiguity.
+- **Recommendation:** Darrin or the designated AgentOS coordinator should publish one current maturity statement and branch/record map. It should identify the implementation baseline, distinguish implemented local/mock capabilities from independently unverified production capabilities, retain the open shell/persistence/end-to-end gates, and point fresh clones to the approved recovery/onboarding contract. Preserve historical records; do not rewrite the handover or relocate history without an owner-approved plan.
+- **Suggested owner:** Darrin / AgentOS Primary Coordinator
+- **Status:** NEEDS DECISION
+- **Confidence:** HIGH
+- **External notification:** None. The active AgentOS PRs #3–#5 already have current deduplicated notices for their own unverified local-review evidence, and this documentation-state finding does not alter their exact heads or require an unrelated pull-request comment.
+
+### Audit boundary
+
+This entry is a static, read-only comparison of repository records and tree state. It does not execute runtime code, tests, builds, providers, credentials, migrations, deployments, or production actions, and it does not approve merge, release, or production readiness.
