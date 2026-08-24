@@ -5,6 +5,7 @@ import { createRecoveryController } from '../runtime/recovery-handoff.mjs';
 import { createToolRegistry } from '../runtime/tool-registry.mjs';
 import { executeAgentLoop } from '../runtime/agent-loop.mjs';
 import { createOverseer } from '../runtime/overseer.mjs';
+import { inspectRun } from '../runtime/run-inspector.mjs';
 
 export async function runLocalDeterministicDemo() {
   const store = createStateStore();
@@ -58,8 +59,7 @@ export async function runLocalDeterministicDemo() {
 
   const run = store.list('run')[0];
   const audit = createOverseer({ store }).auditRun(run.id);
-  const eventTypes = store.list('event').map((event) => event.eventType);
-  const recommendation = store.get('artifact', audit.changeLogId);
+  const inspection = inspectRun({ store, runId: run.id });
 
   return Object.freeze({
     schemaVersion: 1,
@@ -68,15 +68,15 @@ export async function runLocalDeterministicDemo() {
     stepCount: planResult.stepCount,
     checkpointCreated: planResult.results[0].checkpoint === 'demo-start',
     recovery: Object.freeze({
-      completed: run.status === 'completed',
-      recovered: run.recovered === true,
+      completed: inspection.run.status === 'completed',
+      recovered: inspection.run.recovered,
       finalProviderId: planResult.results[1].providerId,
     }),
-    eventTypes: Object.freeze([...eventTypes]),
+    eventTypes: inspection.eventTypes,
     overseer: Object.freeze({
       severity: audit.audit.severity,
       findingCodes: Object.freeze(audit.audit.findings.map((finding) => finding.code)),
-      ownerActionRequired: recommendation.ownerActionRequired,
+      ownerActionRequired: inspection.overseer.ownerActionRequired,
     }),
   });
 }
