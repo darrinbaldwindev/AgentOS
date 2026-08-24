@@ -10,4 +10,4 @@
 - [x] CORE-002-D1: Add a local-only CLI entry point that runs one bounded mock mission using the existing workspace, agent, run, tool, provider-handoff, and Overseer contracts.
 - [x] CORE-002-D2: Render a compact non-secret summary of mission result, append-only event types, recovery status, and Overseer recommendation without mutating a workspace or calling an external adapter.
 - [x] CORE-002-D3: Add direct deterministic tests for demo summary shape and failure/recovery visibility, then rerun the complete local test command.
-- [ ] CORE-002-D4: Publish a dependent pull request that explicitly requires PR #3 to merge first; do not merge either pull request automatically.
+- [x] CORE-002-D4: Publish a dependent pull request that explicitly requires PR #3 to merge first; do not merge either pull request automatically.

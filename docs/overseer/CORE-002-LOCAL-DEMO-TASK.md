@@ -1,6 +1,6 @@
 # CORE-002 Local Deterministic Demo Task
 
-**Status:** `VERIFIED — DEPENDENT REVIEW PULL REQUEST PENDING`  
+**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`  
 **Executor:** AgentOS Overseer  
 **Branch:** `agent/overseer/core-002-local-demo`  
 **Dependency:** PR #3, `CORE-002: add deterministic local test runner`, must merge before this branch can be rebased safely onto `main`.
@@ -24,3 +24,7 @@ Run `node scripts/demo-local-mission.mjs` from the repository root. The output i
 ## Verification result
 
 The demo rendered a verified two-step local-mock mission with a deterministic checkpoint, primary-provider failure, fallback recovery, append-only event types, and an Overseer recommendation. `node scripts/run-tests.mjs` then passed all 19 deterministic test files.
+
+## Review handoff
+
+Pull request: [#4 — CORE-002: add local deterministic vertical-slice demo](https://github.com/darrinbaldwindev/AgentOS/pull/4). It depends on [PR #3](https://github.com/darrinbaldwindev/AgentOS/pull/3); merge PR #3 first, rebase this branch onto the updated `main`, then review PR #4. Neither pull request is automatically mergeable by this task.
