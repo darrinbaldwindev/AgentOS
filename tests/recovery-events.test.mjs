@@ -16,7 +16,11 @@ const base = {
 };
 
 assert.equal(RECOVERY_EVENT_TYPES.length, 9);
-assert.equal(SAFE_STATUS_VALUES.length, 10);
+assert.deepEqual(SAFE_STATUS_VALUES, [
+  'started', 'completed', 'failed', 'cancelled', 'limited', 'offline',
+  'degraded', 'rate_limited', 'permission_denied', 'declined', 'recovered',
+]);
+assert.equal(SAFE_STATUS_VALUES.includes('recovered'), true);
 
 const event = createRecoveryEvent({ ...base, metadata: { reason: 'provider_limit', retryCount: 0 } });
 assert.equal(validateRecoveryEvent(event).valid, true);
