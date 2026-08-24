@@ -137,3 +137,17 @@ The authorized governance notices were posted to [PR #4](https://github.com/darr
 ### Audit boundary
 
 This entry is a static, read-only comparison of repository records and tree state. It does not execute runtime code, tests, builds, providers, credentials, migrations, deployments, or production actions, and it does not approve merge, release, or production readiness.
+
+## Direction-gate evidence update — 2026-08-24T20:02:13+10:00
+
+**Repository state reviewed:** `main` at `8dbf6647881ef32bfb7d9e05cc9a00ab7fe40032`, compared with the prior continuity-audit baseline at `4d4778fb70c86e0ea8528c1dcab4ac1077bacd0d` and the prior persistence-migration record at `16a74358498eaac71331b52aa4d24f4ffebad5d6`.
+
+**Verified facts:** The current default branch adds a root `package.json` with a `node --test tests/**/*.test.mjs` harness and `tests/persistence-contract.test.mjs`. The static test fixture constructs the canonical persistence bridge over the in-memory `createStateStore()` and asserts `create`, `get`, `list`, and `update` behavior for an agent record. This follows the new persistence-migration record’s stated goal of one durable-state vocabulary. The current checkpoint continues to name the runtime shell boundary, durable checkpoint/change-log integration, and stronger end-to-end tests as in progress.
+
+**Assessment:** This is a **partial, directionally aligned advancement** of the first executable-runtime gate. It adds a reproducible test entry point and a narrow persistence-contract test, but it does not itself demonstrate the CORE-001 acceptance path: workspace/agent/run/event/artifact persistence through a local runtime shell; real capability probes; a bounded task; deterministic provider execution; persisted recovery after simulated provider failure; and an Overseer recommendation/change-log event. This Overseer review did not execute the new test harness or any project code; no GitHub check result was available in the refreshed review queue. Accordingly, the test’s intended behavior is a contributor/source claim until independently reproduced.
+
+**Direction impact:** `OVERSEER-20260824-004` remains **NEEDS DECISION**. The recommended near-term focus is unchanged: complete one bounded deterministic vertical-path proof and update the current maturity record to distinguish a committed local test harness from independently reproduced runtime evidence. The existing overlapping CORE-002 pull requests #3–#5 remain open at their previously reviewed heads; no new pull-request-specific finding or duplicate external notice is warranted from this default-branch update.
+
+**Owner decision required:** Darrin or the designated AgentOS coordinator should confirm the canonical sequence: first run and record the narrow persistence-contract test; then implement/verify the local runtime-shell and end-to-end acceptance path; then decide the disposition and lineage of PRs #3–#5. This record neither authorizes test execution nor approves merge, deployment, provider activation, production operation, or release.
+
+**Audit boundary:** Static source, branch, issue, and pull-request evidence only. No application code, test, build, provider, credential, connector, migration, deployment, data, or repository-setting action was performed.
