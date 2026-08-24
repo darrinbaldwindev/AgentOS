@@ -1,6 +1,6 @@
 # CORE-002 Bounded Testability Task
 
-**Status:** `VERIFIED — REVIEW PULL REQUEST PENDING`  
+**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`  
 **Executor:** AgentOS Overseer  
 **Branch:** `agent/overseer/core-002-testability`
 
@@ -26,6 +26,10 @@ Run `node scripts/run-tests.mjs` from the repository root. It discovers and exec
 ## Verification result
 
 The command completed successfully against all 18 deterministic test files. The recovery-event test now asserts the full current allowlist, including the `recovered` state consumed by the provider-handoff proof. The runner’s direct test covers sorted discovery, all-success aggregation, failure aggregation, and empty-suite rejection.
+
+## Review handoff
+
+Pull request: [#3 — CORE-002: add deterministic local test runner](https://github.com/darrinbaldwindev/AgentOS/pull/3). It is intentionally open for owner review and has not been merged into `main`.
 
 ## Owner gate
 
