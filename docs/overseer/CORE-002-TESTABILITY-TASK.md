@@ -1,7 +1,7 @@
 # CORE-002 Bounded Testability Task
 
-**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`  
-**Executor:** AgentOS Overseer  
+**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`
+**Executor:** AgentOS Overseer
 **Branch:** `agent/overseer/core-002-testability`
 
 ## Objective
