@@ -3,10 +3,11 @@
 
 import { OVERSEER_ID } from './overseer-bootstrap.mjs';
 
-export function createOverseerSession({ persistence, router, execute }) {
+export function createOverseerSession({ persistence, router, execute, auditor = null }) {
   if (!persistence || !router || typeof router.select !== 'function' || typeof execute !== 'function') {
     throw new TypeError('persistence, router.select and execute are required');
   }
+  if (auditor && typeof auditor.auditRun !== 'function') throw new TypeError('auditor.auditRun is required');
 
   async function send({ missionId, message, task }) {
     const overseer = await persistence.get('agent', OVERSEER_ID);
@@ -23,11 +24,16 @@ export function createOverseerSession({ persistence, router, execute }) {
     await persistence.create('event', {
       missionId,
       agentId: OVERSEER_ID,
+      runId: result?.runId,
       eventType: 'overseer.turn.completed',
       modelId: route.selected.id ?? route.selected.name,
       routeReason: route.reason,
     });
-    return Object.freeze({ result, route });
+
+    let audit = null;
+    if (auditor && result?.runId) audit = await auditor.auditRun(result.runId);
+
+    return Object.freeze({ result, route, audit });
   }
 
   return Object.freeze({ send });
