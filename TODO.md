@@ -11,3 +11,10 @@
 - [x] CORE-002-D2: Render a compact non-secret summary of mission result, append-only event types, recovery status, and Overseer recommendation without mutating a workspace or calling an external adapter.
 - [x] CORE-002-D3: Add direct deterministic tests for demo summary shape and failure/recovery visibility, then rerun the complete local test command.
 - [x] CORE-002-D4: Publish a dependent pull request that explicitly requires PR #3 to merge first; do not merge either pull request automatically.
+
+## CORE-002 safe run inspection
+
+- [x] CORE-002-I1: Add a local-only run inspector that returns a compact non-secret read model for one workspace/agent/run, its append-only event types, and its Overseer recommendation state.
+- [x] CORE-002-I2: Reject missing/unknown runs and omit prompts, mission inputs, metadata payloads, credentials, raw URLs, workspace contents, and artifact payloads from the inspection result.
+- [x] CORE-002-I3: Add direct run-inspector and demo integration coverage, then rerun the complete deterministic suite.
+- [x] CORE-002-I4: Open a dependent review pull request that requires PR #3 and PR #4 to merge first; do not merge automatically.
