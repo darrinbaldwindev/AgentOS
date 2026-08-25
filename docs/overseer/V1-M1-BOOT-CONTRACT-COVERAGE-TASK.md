@@ -1,8 +1,10 @@
 # Version 1 M1 — Direct Boot-to-Observation Contract Coverage
 
-**Status:** `VERIFIED — REVIEW PULL REQUEST PENDING`  
-**Branch:** `agent/overseer/v1-m1-contract-coverage`  
+**Status:** `VERIFIED — OWNER REVIEW PENDING`
+**Branch:** `agent/overseer/v1-m1-contract-coverage`
 **Base:** `e06f8f55795594fb6a4160e5ec24aa37308db3c4` at branch creation.
+**Current rebase base:** `74d48a129467679c83f44ccc193a2df34e43e97a`.
+**Pull request:** [#6 — test: cover Version 1 boot-to-observation contracts](https://github.com/darrinbaldwindev/AgentOS/pull/6)
 
 ## Objective
 
@@ -26,9 +28,9 @@ No test uses a real repository, workspace, network request, provider SDK, creden
 |---|---|
 | `git diff --check` | Passed |
 | Focused M1 test files | Passed |
-| `node scripts/run-tests.mjs` | Passed — 32 deterministic test files |
-| `npm test` | Passed — 33 tests, 0 failures |
+| `node scripts/run-tests.mjs` | Passed after rebase onto current canonical `main` |
+| `npm test` | Passed after rebase — 40 tests, 0 failures |
 
 ## Review handoff
 
-The next step is to commit, push, and open one owner-review pull request. It must be reviewed before merge; it does not authorize the M2 durable-state work, a repository adapter, or any external integration.
+The owner-review pull request is open and has been rebased onto current canonical `main`, then fully revalidated. It must be reviewed before merge; it does not authorize the M2 durable-state work, a repository adapter, or any external integration.

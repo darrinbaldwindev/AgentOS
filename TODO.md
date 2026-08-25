@@ -24,4 +24,4 @@
 - [x] V1-M1-T1: Add deterministic fake-adapter coverage for AgentOS boot continuity/eligibility, Overseer bootstrap/activation, and boot event persistence.
 - [x] V1-M1-T2: Add deterministic coverage for Overseer session/pipeline routing, available-model selection, provider adapter/executor fail-closed behavior, and bounded payload forwarding.
 - [x] V1-M1-T3: Add a static no-live-side-effect regression check covering the eight boot-to-observation modules and rerun the complete local suite.
-- [ ] V1-M1-T4: Publish the bounded M1 test-coverage pull request for owner review; do not merge directly into `main`.
+- [x] V1-M1-T4: Publish the bounded M1 test-coverage pull request for owner review; do not merge directly into `main`.
