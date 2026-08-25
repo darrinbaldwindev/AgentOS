@@ -1,8 +1,8 @@
 # CORE-002 Local Deterministic Demo Task
 
-**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`  
-**Executor:** AgentOS Overseer  
-**Branch:** `agent/overseer/core-002-local-demo`  
+**Status:** `VERIFIED — OPEN FOR OWNER REVIEW`
+**Executor:** AgentOS Overseer
+**Branch:** `agent/overseer/core-002-local-demo`
 **Dependency:** PR #3, `CORE-002: add deterministic local test runner`, must merge before this branch can be rebased safely onto `main`.
 
 ## Objective
