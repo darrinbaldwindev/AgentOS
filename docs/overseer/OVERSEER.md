@@ -345,3 +345,13 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Assessment:** The PR #6 static contract tests remain partial coverage; their reported commands remain contributor claims. No exact Issue #2 end-to-end evidence package, owner maturity decision, review, or check evidence was found. No notification was repeated on PR #6 because its relevant head, review, comment, and gate evidence were unchanged.
 
 **Boundary:** No code/test execution, source change, merge, provider/credential action, deployment, release, or external notice beyond the authorized affected-PR notification occurred.
+
+## Portfolio scan — new canonical architecture records — 2026-08-27
+
+**Verified default-branch delta:** AgentOS `main` advanced through `431d62c`, `f521dd4`, `8c4ed072`, `0c6124f`, and `4d7413e`, adding only candidate/provider research and product-entitlement, capability-gate, and project-provisioning architecture records. The new documents identify future target policy and explicitly retain provider availability/terms and external capabilities as subject to independent revalidation; the provisioning record states autonomous repository creation is not currently implemented.
+
+**M1 classification:** This new documentation does not change A-02/A-07. It does not evidence the required Issue #2 deterministic entity/artifact lineage, bounded tool use, complete lifecycle, recovery/handoff, or persisted Overseer recommendation/change-log event. It does not authorize runtime execution, provider/credential access, repository creation, scheduling, commercial action, implementation, merge, deployment, release, or production action.
+
+**Notification:** The material default-branch architecture delta was reported to the affected documentation PR at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5427986507 under Darrin’s standing PR-only authorization.
+
+**Successor:** A-07 remains the active exact-evidence intake hold. A future architecture-to-roadmap reconciliation requires a separately bounded owner decision and must not widen the current M1 acceptance scope.
