@@ -259,3 +259,19 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Success criterion:** A bounded planning artifact is useful and reproducible while every AgentOS control-plane boundary remains intact. A successful planning pilot is not approval for an adapter or product integration.
 
 **Next review trigger:** A-02 evidence closure, an explicit Darrin maturity decision, or a materially changed AgentOS runtime/control-plane revision. **Status:** A-03 assigned, inactive pending A-02.
+
+## Reference intake — local AI model orchestration material — 2026-08-26T15:35:05+10:00
+
+**Source classification:** User-supplied reference material at `/home/ubuntu/upload/pasted_content.txt`. It describes LM Studio, Ollama (with Open WebUI), and Jan as possible local model-management and chat/workspace tools. The supplied feature, continuity, local-file-indexing, model-swapping, API-compatibility, and interoperability statements are **owner-provided claims / unverified reference information**, not an independently reproduced capability assessment or an adoption decision.
+
+| Referenced category | Potential future relevance | Current AgentOS classification |
+|---|---|---|
+| Local model manager/server (for example, Ollama or LM Studio) | May inform the later local-provider adapter experiment. | Conditional provider-test input only; not AgentOS state, mission, audit, capability, or continuity authority. |
+| Local chat/workspace interface (for example, LM Studio, Open WebUI, or Jan) | May assist a human maintainer’s private exploration. | Outside the AgentOS runtime/control plane; no repository indexing, document ingestion, or local file sharing is authorized by this intake. |
+| Mid-conversation model switching and saved chat history | May be useful for a maintainer interface. | Advisory context only; AgentOS must retain canonical mission/run/event/artifact lineage and provider-handoff evidence. |
+
+**Reconciled assessment:** The material is directionally compatible with the existing A-03 Stage 5 concept of a **separately owner-gated, fixed-fixture local-provider adapter experiment**. It does not alter the dependency ordering: first close A-02 using exact-revision M1 deterministic vertical-slice evidence or an explicit Darrin maturity decision; then perform only the already-defined read-only OpenCode planning pilot. Local-orchestrator evaluation remains later, non-production, and separately authorized.
+
+**No-action boundary:** This reference intake does not authorize downloading or installing models/tools, operating a local server, indexing any repository or local files, entering credentials, connecting OpenCode/Aider/OpenHands/OpenManus, changing AgentOS code/configuration, executing tests, using a provider, or creating an adapter. No such action occurred.
+
+**Task-chain status:** A-03 remains **assigned and inactive pending A-02**. The next review trigger is unchanged: A-02 evidence closure, an explicit Darrin maturity decision, or a materially changed AgentOS runtime/control-plane revision. The future local-provider experiment must additionally name the exact tool/model/runtime, hardware/operating boundary, fixture set, context/window limit, isolated networking and mount policy, redacted configuration method, no-secret verification, reproducible run record, and rollback/cleanup path.
