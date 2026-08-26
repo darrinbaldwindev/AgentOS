@@ -315,3 +315,23 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Return condition:** A-06 returns the matrix and recommended successor to Manus. A-02 remains the project’s implementation gate until exact runtime evidence or Darrin’s maturity decision exists.
 
 **Next review trigger:** PR #6 revision/check/review change, Issue #2 update, A-06 closure, or Darrin maturity decision.
+
+## A-06 return — M1 acceptance-evidence gap triage — 2026-08-26
+
+**Scope and exact evidence:** Read-only mapping of Issue #2 (`CORE-001`) to PR #6 head `5a8e0907ac7819f1411a59ff28921c47efe3d847`; no commands or project runtime were executed. PR #6 is test/documentation-only and changes `TODO.md`, `docs/overseer/V1-M1-BOOT-CONTRACT-COVERAGE-TASK.md`, `tests/m1-boot-and-lifecycle.test.mjs`, `tests/m1-no-live-side-effects.test.mjs`, and `tests/m1-session-routing-provider.test.mjs`.
+
+| Issue #2 requirement | Static result at PR #6 head | A-02 closure evidence still required |
+|---|---|---|
+| Project → Workspace → Agent → Run → Event → Artifact | Boot-event persistence only; no full entity chain. | One deterministic stored entity/artifact lineage. |
+| Deterministic local runtime | Fake adapter/executor contract coverage. | Exact intended-M1 local execution record. |
+| Bounded tool execution | No PR #6 coverage. | Tool policy, invocation, result/event, and refusal evidence. |
+| Plan → execute → verify → finish | Forwarding envelope only; no four-state workflow. | One deterministic workflow trace. |
+| Run/recovery state | Bootstrap restore, not run recovery. | Interruption, persisted recovery, and terminal trace. |
+| Alternate-provider recovery | Unavailable-provider rejection, not handoff. | Failure/handoff preserving mission state. |
+| Overseer recommendation/change-log | `overseer.turn.completed` only. | Persisted recommendation/change-log event. |
+
+**Finding:** **A-06 complete — A-02 is unchanged.** PR #6 gives partial static contract coverage only. Its reported command outcomes are contributor claims not independently rerun; `CLEAN` is not validation or acceptance proof.
+
+**Successor task / precise hold:** **A-07 — exact M1 evidence-package intake.** On an Issue #2/PR #6 revision, credible reproducible evidence package, or Darrin maturity decision, inspect only the new exact evidence against the seven rows above and return an accept/partial/missing matrix. Do not rerun code/tests, change source, merge, deploy, or access any provider/credential.
+
+**Next review trigger:** Exact M1 evidence package, PR #6/Issue #2 change, A-07 return, or Darrin maturity decision.
