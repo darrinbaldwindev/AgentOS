@@ -183,3 +183,22 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Reassessment condition:** Provide reproducible evidence for `5a8e0907ac7819f1411a59ff28921c47efe3d847`, including `git diff --check`, focused and intended-suite commands, runtime versions, exit codes, and local-only boundary observations; or record Darrin’s explicit alternate decision. This record does not approve any merge or operational action.
 
 **Audit boundary:** Static repository, pull-request, issue, and documentation evidence only. No project code, tests, builds, migrations, deployments, credentials, provider calls, schedule change, connector change, or production action was performed.
+
+## Project timeline and current milestone — 2026-08-26T11:02:51+10:00
+
+**Scope and evidence:** Deep static review of default `main` at `66d443bad47d540a8ed3aa342e5e4615377e8d29`, the recent default-branch history, 140 tracked files (48 source-path, 29 test-path, 44 documentation-path), open Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2), and open PRs [#1](https://github.com/darrinbaldwindev/AgentOS/pull/1) and [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6). No project command, test, build, provider, credential, deployment, or production action was run.
+
+| Timeline point | Verified observation | Status |
+|---|---|---|
+| 24–25 Aug | CORE-002 sequence and subsequent CORE-003 commits added local test/contract evidence, explicit evidence classification, evidence-aware Overseer decisions, a local runtime-shell capability boundary, and its test. | Static evidence only; no independent runtime execution. |
+| Current | `main` now ends at `66d443ba` (*CORE-003 test runtime shell capability eligibility*). PR #6 remains an open five-file M1 test/documentation PR at `5a8e0907`; its check status and claimed local validation remain unverified here. | In progress. |
+
+**Current milestone:** Demonstrate the first deterministic local AgentOS vertical slice defined by Issue #2: persisted Project → Workspace → Agent → Run → Event → Artifact state; bounded task execution through a deterministic provider; simulated recovery/handoff; and an Overseer audit/recommendation event.
+
+**Held blockers:** A canonical maturity/branch-record statement is still needed because the status record calls the project specification/prototype-heavy while the checkpoint lists substantial runtime components as completed. The runtime shell, durable persistence integration, stronger end-to-end proof, and independently reproducible exact-revision validation remain incomplete or unverified. GitHub check rollup is unavailable to this review.
+
+**Owner decision:** Darrin or the AgentOS coordinator must name the current maturity record and decide the approved evidence package for the vertical-slice milestone. No merge, rebase, provider activation, credential use, deployment, or release is authorized by this entry.
+
+**Next Overseer instruction:** Maintain this timeline append-only. On a material commit, PR, issue, or check change, record date, exact revision, verified fact versus claim, current milestone, blocker status, owner decision, and reassessment condition. Do not execute project code or mutate paths other than this log without separate authority.
+
+**Confidence:** High for repository/PR/issue metadata; limited for runtime behavior and check status.
