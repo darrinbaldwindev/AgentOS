@@ -301,3 +301,17 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Option C:** Retain the reconciliation privately until Darrin selects an AgentOS maturity record and canonical control-plane implementation scope.
 
 **No option is selected by this record.** A-05 is blocked pending Darrin’s explicit selection. H-03 remains independently blocked on naming the Headless reconciliation-plan owner.
+
+## Manus dispatcher assignment — A-06 acceptance-evidence gap triage — 2026-08-26
+
+**Current task:** **A-06 — Compare the exact current PR #6 contract-test scope against Issue #2’s deterministic M1 vertical-slice acceptance requirements.** This is a bounded static-evidence task issued by Manus under the mandatory project task loop; it does not replace A-02 or infer runtime proof.
+
+**Required output:** A compact matrix that maps each M1 acceptance requirement to the exact PR #6 source/test path or marks it **requires independent runtime evidence**. It must distinguish contract coverage, contributor claim, missing static evidence, and runtime-only evidence. It must record current main and PR head revisions, reported check availability, and the precise evidence needed to close A-02.
+
+**Permitted scope:** Read-only GitHub metadata, issue, PR, changed-file, and static-test inspection; append-only evidence/task-log record. A bounded subreview may be delegated only for static changed-path comparison and must return exact paths, revision, and confidence to Manus.
+
+**Prohibited scope:** No code/test/run, build, provider/model access, credential/network use, repository mutation, merge, deployment, release, or external notice.
+
+**Return condition:** A-06 returns the matrix and recommended successor to Manus. A-02 remains the project’s implementation gate until exact runtime evidence or Darrin’s maturity decision exists.
+
+**Next review trigger:** PR #6 revision/check/review change, Issue #2 update, A-06 closure, or Darrin maturity decision.
