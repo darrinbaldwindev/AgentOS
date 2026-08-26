@@ -233,3 +233,29 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Task A-02:** Reassess the exact revision evidence package when it is supplied. If no package exists, retain the single owner decision request above and mark the vertical slice blocked; do not duplicate PR #6 contract-test review.
 
 **Status:** A-01 closed; A-02 active and blocked on exact-revision end-to-end evidence or Darrin’s maturity-record decision.
+
+## Task-chain update — A-03 external-tool evaluation gate — 2026-08-26T15:19:39+10:00
+
+**Authority and scope:** Darrin’s continuous task-chain instruction. This is a documentation-only, conditional evaluation gate. It does not authorize installation, execution, configuration, credential entry, connector access, code changes, test execution, deployment, merge, or external automation for OpenHands, OpenCode, Aider, OpenManus, Ollama, or any other framework.
+
+**Evidence:** AgentOS `main` records the first real milestone as a local provider-independent vertical slice with workspace/run/tool-event observation, simulated recovery/handoff, and Overseer audit output. The current checkpoint still identifies runtime shell, durable checkpoint/change-log integration, and stronger end-to-end evidence as in progress. AgentOS PR [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) at `5a8e0907ac7819f1411a59ff28921c47efe3d847` is test/documentation scope only; it does not independently prove the complete runtime milestone.
+
+### Task A-03 — External-tool evaluation gate
+
+**Dependency:** A-02 must first be closed with exact-revision evidence of the required M1 local vertical slice, or Darrin must explicitly choose a different maturity record. Until then, A-03 is **assigned but inactive**.
+
+**First permitted evaluation, after dependency closure:** A read-only OpenCode planning/review pilot against a disposable AgentOS clone or exported diff. The pilot must use no credentials, connectors, code edits, shell execution, repository mutation, provider account, or external side effect.
+
+**Required evidence before considering any framework adapter:**
+
+1. AgentOS remains the source of truth for mission/run/event/artifact lineage, provider handoff, capability policy, and Overseer records.
+2. The evaluated tool’s effective capability/mount/command configuration is captured, including denied permissions.
+3. The evaluation uses fixtures or a disposable copy and emits no credential, telemetry, or external-service data.
+4. A human can reproduce and inspect the inputs, output plan, and resulting no-mutation state.
+5. Any future OpenHands sandbox, Aider write, local-model, or browser-use experiment is separately owner-gated.
+
+**Explicit exclusions:** No tool becomes the AgentOS core runtime; no default browser automation; no host-Docker socket exposure; no writable real checkout; no autonomous commit, test, merge, deployment, issue creation, external notification, or provider-key reuse.
+
+**Success criterion:** A bounded planning artifact is useful and reproducible while every AgentOS control-plane boundary remains intact. A successful planning pilot is not approval for an adapter or product integration.
+
+**Next review trigger:** A-02 evidence closure, an explicit Darrin maturity decision, or a materially changed AgentOS runtime/control-plane revision. **Status:** A-03 assigned, inactive pending A-02.
