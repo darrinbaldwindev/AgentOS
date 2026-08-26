@@ -202,3 +202,13 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Next Overseer instruction:** Maintain this timeline append-only. On a material commit, PR, issue, or check change, record date, exact revision, verified fact versus claim, current milestone, blocker status, owner decision, and reassessment condition. Do not execute project code or mutate paths other than this log without separate authority.
 
 **Confidence:** High for repository/PR/issue metadata; limited for runtime behavior and check status.
+
+## Active task assignment — Wave 1 (A-01) — 2026-08-26T13:50:47+10:00
+
+**Authority and scope:** Darrin’s continuous-task-chain instruction. This is a read-only evidence task; it does not authorize code execution, test execution, merge, rebase, deployment, provider activation, credential use, or changes outside this log.
+
+**Task A-01:** Map every Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2) deterministic-vertical-slice acceptance element to exact current `main` / PR evidence or an explicit unknown. Distinguish contract-test coverage from demonstrated runtime behavior.
+
+**Closure evidence:** Exact refs; Issue #2 acceptance map; verified facts versus claims; missing evidence; explicit statement that no execution was performed.
+
+**Immediate successor:** On closure, issue **A-02**: independently reassess the exact-revision evidence package when supplied; if none exists, retain one owner decision request naming the authoritative maturity record.
