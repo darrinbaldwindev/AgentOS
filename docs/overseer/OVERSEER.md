@@ -283,3 +283,21 @@ This entry is a static, read-only comparison of repository records and tree stat
 **New owner-authored coordination issues:** Issue #7 requests a runtime validation pass; Issue #8 describes an event-driven Overseer control-plane direction; Issue #9 requires user-decision propagation and conflict escalation across Overseers. These are material task/direction records. They do not supersede A-02, make runtime behavior verified, or authorize test execution in this task. Any test/run authorization must separately state the exact revision, command set, non-production environment, no-network/no-credential/no-provider guard, evidence destination, and stop condition.
 
 **Task-chain impact:** A-02 remains blocked on exact M1 vertical-slice evidence or Darrin’s maturity-record decision. A-03 remains inactive. **A-04 proposed — control-plane requirement reconciliation:** Prepare a private mapping from Issues #8–#9 to the selected shared-log policy and AgentOS M1 sequence; do not implement an event bus, schedule, connector, or runtime integration. A-04 is independent from execution and awaits the outcome of A-02 for any runtime dependency.
+
+## A-04 control-plane requirement reconciliation — closed; A-05 publication decision required — 2026-08-26
+
+**A-04 result:** A private AgentOS control-plane requirement reconciliation is prepared at `/home/ubuntu/overseer_scan/agentos_a04_control_plane_requirement_reconciliation_draft_2026-08-26.md`. It maps Issues #8–#9 to the existing project/shared append-only logs, defines a minimal governance-event record, and retains M1 deterministic vertical-slice evidence as the dependency before any future runtime control-plane work.
+
+**Validation:** The draft classifies facts/claims/recommendations/unknowns; treats existing logs as the current event ledger; prohibits an AgentOS event bus, webhook, API, database, worker, schedule/connector change, code/test/run, provider/network/credential use, repository mutation, merge, deployment, release, and external notification. No repository was modified while drafting.
+
+**Status:** **A-04 CLOSED — private requirement reconciliation prepared and validated.** A-02 remains blocked; A-03 remains inactive.
+
+### A-05 — owner-gated reconciliation-publication decision
+
+**Recommended Option A:** Authorize a documentation-only append to `AgentOS/docs/overseer/OVERSEER.md` and shared `repo/docs/overseer/OVERSEER.md` that publishes the exact validated mapping as a current governance interpretation. It would not implement a control plane or change schedule/configuration/connectors.
+
+**Option B:** Publish only the minimal governance-event schema in the AgentOS project log; retain the fuller reconciliation privately.
+
+**Option C:** Retain the reconciliation privately until Darrin selects an AgentOS maturity record and canonical control-plane implementation scope.
+
+**No option is selected by this record.** A-05 is blocked pending Darrin’s explicit selection. H-03 remains independently blocked on naming the Headless reconciliation-plan owner.
