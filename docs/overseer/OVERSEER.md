@@ -212,3 +212,24 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Closure evidence:** Exact refs; Issue #2 acceptance map; verified facts versus claims; missing evidence; explicit statement that no execution was performed.
 
 **Immediate successor:** On closure, issue **A-02**: independently reassess the exact-revision evidence package when supplied; if none exists, retain one owner decision request naming the authoritative maturity record.
+
+## Wave 1 task closure — A-01 — 2026-08-26T13:58:32+10:00
+
+**Author/platform:** Manus Overseer. **Scope:** Read-only mapping of open Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2), current `main` at `66d443baaf2c5e44904a2d7af9484124fd22ae92`, and PR [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) at `5a8e0907ac7819f1411a59ff28921c47efe3d847`. No project command was executed.
+
+**Result:** **A-01 CLOSED — acceptance-evidence map completed.** Issue #2 requires a local deterministic end-to-end test that creates workspace/agent state, executes a bounded task, persists events/artifacts, simulates provider failure, recovers through an alternate adapter, and produces an Overseer audit/recommendation event. PR #6 is explicitly test/documentation-only and uses in-memory persistence and inline fake adapters. Its listed coverage supports bounded boot/eligibility, lifecycle, registry, routing, adapter-payload, and no-live-side-effect contracts, but does not independently demonstrate the Issue #2 end-to-end acceptance chain.
+
+| Issue #2 acceptance element | Current evidence classification |
+|---|---|
+| Workspace/agent/run/event/artifact persistence | **Unknown for durable end-to-end behavior.** PR #6 uses in-memory fixtures. |
+| Bounded task execution / plan→execute→verify→finish | **Unknown.** No exact runtime demonstration was inspected. |
+| Provider failure and alternate-adapter recovery without lost mission state | **Claim/test-boundary only.** No reproduced persisted handoff evidence. |
+| Overseer audit/recommendation event from completed run | **Unknown.** Boot-to-observation contracts are not the required completed-run audit evidence. |
+
+**Owner decision / blocker:** Name the authoritative maturity record and the exact revision evidence package required to satisfy Issue #2. Passing claims in PR #6 remain contributor claims because this review did not run tests or access check rollups.
+
+### Active successor — A-02
+
+**Task A-02:** Reassess the exact revision evidence package when it is supplied. If no package exists, retain the single owner decision request above and mark the vertical slice blocked; do not duplicate PR #6 contract-test review.
+
+**Status:** A-01 closed; A-02 active and blocked on exact-revision end-to-end evidence or Darrin’s maturity-record decision.
