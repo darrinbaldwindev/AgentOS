@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "decisions": [
+    {
+      "id": "decision:state-authority-001",
+      "status": "accepted",
+      "decision": "Use .agentos/state as the canonical machine-readable current state; preserve Markdown coordination documents as history/specification."
+    },
+    {
+      "id": "decision:repository-authority-001",
+      "status": "accepted",
+      "decision": "Use GitHub as authoritative for repository lifecycle facts."
+    },
+    {
+      "id": "decision:overseer-default-001",
+      "status": "accepted",
+      "decision": "agentos:overseer is the default system Overseer and operational control-plane target."
+    }
+  ]
+}
