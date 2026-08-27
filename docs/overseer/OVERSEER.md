@@ -514,3 +514,23 @@ This entry is a static, read-only comparison of repository records and tree stat
 **PR-only notification:** This is materially distinct from R1. PR #1 remains the affected oversight-log PR. One deduplicated commentary-only DQ-01-R2 notice is warranted after this record is pushed; no other communication is authorized. Its URL will be appended when posted.
 
 **Authorized PR-only notice posted:** One commentary-only, deduplicated DQ-01-R2 escalation was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5434169680) after this record was pushed. It identifies the eight-commit `4be1281...fe03e5b` delta, active workflow definition, runner/continuation boundaries, exact decision request, prohibited actions, and verification gate. It does not request source changes or approve/execute/merge/close/rebase/deploy/release anything. No repeat R2 notice is permitted absent a further material revision or Darrin decision.
+
+## DQ-01-R3 direct-main canonical-state, poll/recovery, and PR #14 reconciliation — 2026-08-27
+
+**Material scope:** After R2 tip `fe03e5b`, AgentOS `main` directly advanced fourteen commits to `2c84a8106ab50d49b2611de64309a6576db40ded`, adding `.agentos/state/**`, `runtime/canonical-state.mjs`, canonical context, recovery/poll modules, and tests. PR [#14](https://github.com/darrinbaldwindev/AgentOS/pull/14) separately proposes the narrow continuation import/export repair at `4452d54` against base `9f6fbff`. Manus inspected static GitHub evidence only; no code/test/build/workflow/runner/transport/provider/credential/network/database/deployment/release action occurred.
+
+| Evidence | Reconciliation |
+|---|---|
+| Repository state files mark `agentos:overseer` active/default and state decisions accepted. | Source content only—not durable agent capability acknowledgement or a Darrin decision. It cannot supersede current portfolio task/return controls without Darrin’s decision. |
+| New `pollDispatch` recovers tasks, calls continuation runner, and accepts injected executor/writer; recovery emits in-memory queued state. | **Outside DQ-01.** Models automatic work; no durable/atomic persistence/event/reclaim evidence. `createRunBudget` is not wired into reviewed poll path. |
+| Canonical context validates known missions/accepted decisions. | **Partial only.** It is not statically called from reviewed runner/poll execution boundary. |
+| Continuation derives a queued child within parent capability subset. | **Does not conform:** only Manus may issue a portfolio successor after structured return; subset capability is not successor authority. |
+| PR #14 substitutes `deriveNextTask(completed, candidate, receiver)` for stale import/call. | Addresses R2 named import/export mismatch on its branch; contributor claims of passing tests/executor remain unverified. It does not cure wider R1/R2/R3 controls. |
+
+**Confirmed blockers:** direct-main automatic work/state declarations remain outside candidate isolation and DQ exclusions; self-declared active/accepted state is not evidence of authority; canonical context is not demonstrated at worker/poll gate. **Likely blocker:** concrete adapter wiring could write task state/issue automatic child work. **Unresolved:** execution/test/workflow history, effects, actual agent identity/capability, decision provenance, and transport wiring.
+
+**DQ-01-R3 status:** `HIGH-IMPACT DIRECT-MAIN HOLD`. Candidate `agent/dq01/minimal-durable-queue` remains unchanged at `4d7413e`. No direct-main source or PR #14 is accepted as DQ-01, GlobalShopCo pilot control, or live autonomy evidence.
+
+**Darrin decision:** **A (recommended)** retain direct-main state/poll/recovery/continuation work at `2c84a81` as unreviewed, non-invoked prototype; retain candidate isolation and treat PR #14 only as pending narrow repair until a named review path reconciles the full control plane. **B:** name that review owner/path. **C:** defer DQ/automation. Pending decision: no invocation, source/state edit, credential/provider/network/database/schedule/webhook, merge/close/rebase/deploy/release/production action is within this packet.
+
+**PR notices:** This R3 delta is distinct from R2. One deduplicated commentary-only notice is warranted after push on affected oversight PR #1, and a separate context notice on affected PR #14; neither may imply approval/request changes. Detailed private record: `agentos_dq01_r3_canonical_state_poll_pr14_reconciliation_2026-08-27.md`.
