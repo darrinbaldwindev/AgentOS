@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "agents": [
+    {
+      "id": "agentos:main",
+      "role": "primary-architect",
+      "status": "active"
+    },
+    {
+      "id": "agentos:overseer",
+      "role": "system-overseer",
+      "status": "active",
+      "default": true
+    }
+  ]
+}
