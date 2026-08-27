@@ -554,3 +554,21 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Notification decision:** This approved owner containment is a material decision on both affected PR #1 and PR #14. One bounded commentary-only decision update is warranted on each after this record is pushed; neither is a review verdict or code-change instruction.
 
 **Authorized decision updates posted:** One commentary-only DQ-01-R3 Option A containment update was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435373253), and one pending-status update was posted to [AgentOS PR #14](https://github.com/darrinbaldwindev/AgentOS/pull/14#issuecomment-5435374409). They confirm containment, candidate isolation, and the DQ-01-R4 review-path hold; neither approves, requests change, invokes artifacts, or authorizes merge/close/rebase/deploy/release/production action. No repeat Option A notice is warranted absent material revision or Darrin change.
+
+## DQ-01-R4 direct-main mission-context, capability-adapter, and claim assessment — 2026-08-27
+
+**Material scope:** AgentOS `main` advanced seven direct commits from R3 reviewed tip `2c84a81` to `4b699a04e89e47c674c2f376b3e4350a093fa9b8`, adding mission/decision envelope validation, capability-probe adapters, and claim/release helpers. Manus performed static GitHub/source review only; no code/test/build/workflow/runner/probe/transport/credential/provider/network/database/deployment/release action occurred.
+
+| Verified static evidence | R4 reconciliation |
+|---|---|
+| `dispatch.mjs` requires non-empty `mission_id`; current committed A1 task contains no `mission_id`. | **Inconsistent direct-main contract.** That task cannot satisfy this newer validator as written. |
+| `envelope.mjs` validates canonical task context, but reviewed `pollDispatch` and `runNextTask` do not statically call it. | **Partial and unintegrated** task-context control; no execution-boundary proof. |
+| `decision_id` is optional; state JSON is source content. | Does not evidence Darrin decision/Manus issue authority or resolve R1–R3 issuer/return controls. |
+| Capability adapters invoke injected probe methods; static tests use fake probes. | **Outside DQ candidate scope.** A fixture result is not durable capability availability and invocation could access external integrations when later wired. |
+| `atomicClaim`/`releaseClaim` return in-memory object copies and are not shown used by reviewed poll/runner code. | **Not atomic/durable proof.** No persistence precondition, CAS/version, lock, audit event, or concurrent coordination evidence. |
+
+**R4 result:** Directionally useful reference abstractions only. The new paths remain direct-main, unreviewed, non-invoked, outside the isolated candidate, and insufficient for DQ acceptance or GlobalShopCo pilot control. **Confirmed:** inconsistent validator/task, incomplete integration, and absence of durable atomicity. **Likely:** later injected probes/writers could produce external effects. **Unresolved:** any actual invocation/result/effect, agent capability, adapter wiring, and decision provenance.
+
+**Darrin decision:** **A (recommended)** extend the approved non-invoked-prototype containment from R3 through `4b699a0`, keep candidate `agent/dq01/minimal-durable-queue` unchanged at `4d7413e`, and retain PR #14 as pending narrow repair until a named R4 control-plane review path exists. **B:** name owner/path. **C:** defer. Pending decision: no workflow/poll/runner/executor/probe/transport/test invocation, source/state/task/configuration edit, credential/provider/network/database/schedule/webhook action, merge/close/rebase/deploy/release/production action is within scope.
+
+**Notification:** The R4 direct-main delta is distinct from R3. One deduplicated commentary-only update to affected PR #1 is warranted after this log record is pushed. PR #14 head/content has not changed since R3; no new PR #14 notice is warranted. Detailed private evidence: `agentos_dq01_r4_mission_context_capability_claim_reconciliation_2026-08-27.md`.
