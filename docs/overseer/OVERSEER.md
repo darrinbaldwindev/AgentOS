@@ -466,3 +466,27 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Owner decision now required:** **A (recommended):** treat direct-main `5448d9c3b` as an unreviewed parallel implementation, retain isolated branch `4d7413eb1`, and authorize a Manus static conformance/reconciliation package; **B:** authorize a named owner to create a review PR for the direct-main work; or **C:** defer. No option is selected by this log.
 
 **No external notice:** The direct-main code is not contained in an open affected PR. The standing PR-only notification authority therefore does not permit posting on an unrelated PR; the evidence is recorded here and in shared coordination.
+
+## DQ-01-R1 read-only direct-main conformance and reconciliation package — 2026-08-27
+
+**Authority:** Darrin selected Option A: prepare the read-only conformance/reconciliation package for the direct-to-main DQ work. This entry records analysis/decision preparation only. Manus did not modify or execute AgentOS source, tests, workflows, credentials, providers, schedules, webhooks, data, deployments, or releases.
+
+**Pinned evidence:** `main` was observed at `4be1281014fb218b22ec2048a866f64a96324f7d`, seventeen commits ahead of isolated candidate base `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. The direct-main range adds dispatch docs/task, `authority.mjs`, `dispatch.mjs`, `worker.mjs`, `store.mjs`, `github-store.mjs`, and dispatch tests. The candidate branch remains isolated at `4d7413e`.
+
+| DQ-01 control | Reconciliation status |
+|---|---|
+| Candidate branch only | **Does not conform:** direct-main code sits outside `agent/dq01/minimal-durable-queue`. |
+| Manus/limited authority | **Does not conform:** direct task/architecture use GPTChat issuer semantics and grant `repository_write`/`tests`; source does not enforce closed `OBSERVE`/`PREPARE`/`RECORD` authority. |
+| Immutable, versioned, safe task record | **Does not conform:** no `schema_version`, required timestamp enforcement, immutable issued fields, safe task-ID/path checks, or payload boundary. |
+| Acknowledgement, return, and audit | **Does not conform:** no acknowledgement receipt, return classification/blockers/confidence/successor/trigger, status-event lineage, or exception reasons. |
+| Durable, atomic, recoverable state | **Does not conform:** in-memory Map plus injected read/write adapter is not proof of durable/atomic/recoverable append-only state; `replace` is unvalidated. |
+| Static external-effect boundary | **Partial only:** no concrete network/schedule/webhook/provider/credential/DB call is in inspected modules, but injected adapter `write` can create repository effect if invoked. |
+| Tests/behavior | **Unverified:** static test files/package script are contributor artifacts; Manus ran nothing. |
+
+**Confirmed blockers:** branch-boundary divergence; issuer/authority conflict; missing DQ-01 control contract. **Likely blocker:** a later injected writer could mutate repository state. **Unresolved:** any source/test execution, runtime correctness/effects, actual agent/implementer capability, and concrete transport behavior.
+
+**DQ-01-R1 owner disposition:** **A (recommended)** retain direct-main `4be1281` as an unreviewed parallel reference, keep candidate branch unchanged, and allow only a requirements-to-candidate reconciliation plan; **B** name owner and a new reviewable PR/branch for direct-main disposition; or **C** defer and maintain log-only pilot. No option is selected by this entry.
+
+**PR-only notice assessment:** PR #1 is now an affected oversight-log PR because its head includes the earlier isolation/divergence entry. Its existing A-10 notice does not cover this `4be1281` reconciliation. Under standing authority, one deduplicated **comment-only** DQ-01-R1 notice is warranted after this record is pushed. It must not imply approval, request changes, or authorize code action. The resulting comment URL will be appended when available.
+
+**Detailed evidence:** Private Manus workspace document `agentos_dq01_direct_main_conformance_reconciliation_package_2026-08-27.md`; GitHub compare `4d7413e...4be1281`.
