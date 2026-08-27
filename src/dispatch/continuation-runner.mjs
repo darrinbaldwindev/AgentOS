@@ -1,5 +1,5 @@
 import { runNextTask } from './runner.mjs';
-import { createContinuation } from './continuation.mjs';
+import { deriveNextTask } from './continuation.mjs';
 
 /**
  * Run one task and, when the executor supplies an authorised continuation,
@@ -12,7 +12,7 @@ export async function runWithContinuation({ tasks, receiver, authorityPolicy, st
   const candidate = nextTask(completed);
   if (!candidate) return { completed, next: null };
 
-  const child = createContinuation(completed, candidate);
+  const child = deriveNextTask(completed, candidate, receiver);
   await store.writeTask(child);
   return { completed, next: child };
 }
