@@ -428,3 +428,15 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Next trigger:** A durable AgentOS Project Overseer acknowledgement/receipt in the shared log, GlobalShopCo `GSC-AUT-01` acknowledgement/return, a material dispatch-document revision, or Darrin authority decision. A-07 remains an independent M1 evidence hold.
 
 **Coordination notice:** The A-10 packet was posted once to the affected documentation PR under Darrin’s standing, time-bounded PR-comment authorization: https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5433393872. The comment requests a durable shared-log receipt only; it does not authorise runtime/queue implementation, source change, credentials, or external action.
+
+## A-11 completed — minimal durable-queue decision package — 2026-08-27
+
+**Authority:** Darrin selected Option A from the autonomy-advancement choices: authorise preparation of a **read-only AgentOS minimal durable-queue decision package now**. This authorization covers analysis, preparation, and evidence logging only. It does not authorize queue code, testing, scheduling, webhooks, credentials/providers, source/configuration mutation, merge, deployment, release, or production operation.
+
+**Package result:** The private package `agentos_minimal_durable_queue_decision_package_2026-08-27.md` defines recommended future candidate **DQ-01**: an isolated branch-only repository-backed queue with versioned task/receipt records, append-only state events, manual acknowledgement, and an explicit `OBSERVE`/`PREPARE`/`RECORD` authority allow-list. It reuses AgentOS queue fields and adds explicit evidence baseline, prohibited scope, acknowledgement/capability, classification, blockers, confidence, successor, and trigger fields from the GlobalShopCo pilot.
+
+**Excluded scope:** DQ-01 must have no automatic worker, agent creation, model/provider call, credential/secret, network request, webhook, scheduler, database/migration, external communication, product/commerce action, merge/deploy/release, or production behavior. A task is not a permission grant; a target/issuer string is not authentication or proof that an agent is available.
+
+**Acceptance/rollback:** The package specifies later required deterministic evidence for valid creation, authority denial, acknowledgement/return integrity, lifecycle rejection cases, no-external-effects, GlobalShopCo-pilot compatibility, and explicit interrupted-task recovery. It requires a new isolated branch and preserves records on cancellation/supersession; it forbids history rewriting/force push/reset-style recovery.
+
+**Next owner choice:** Darrin may select **A (recommended):** name an implementer and authorize isolated DQ-01 candidate creation; **B:** authorize a documentation/schema review only; or **C:** defer and retain the log-only pilot. Before any code, Darrin must also decide/approve named implementer/branch, allowed verification command/environment, canonical task source, and next-stage activation boundaries. **A-11** is now the conditional implementation-authority intake hold. A-07 and A-10 remain independent.
