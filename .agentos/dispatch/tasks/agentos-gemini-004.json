@@ -1,0 +1,14 @@
+{
+  "task_id": "agentos-gemini-004",
+  "issuer": "chatgpt:head-overseer",
+  "target": "gemini:worker",
+  "objective": "Perform a concrete multi-step worker task using only the supplied Gemini Worker Pack, then return an evidence-backed response that can be used to issue a follow-up task.",
+  "priority": "high",
+  "scope": ["inspect supplied worker pack", "produce a protocol compliance checklist", "identify three concrete validation tests for task/response correlation", "return structured evidence"],
+  "constraints": ["do not modify GitHub", "do not claim access to files or tools not supplied", "do not invent repository state", "do not assume authority", "use the exact assigned task ID"],
+  "acceptance_criteria": ["response uses task_id agentos-gemini-004", "responder is gemini:worker", "status is supplied", "actual checklist is produced", "exactly three validation tests are described", "evidence references supplied worker-pack material", "assumptions_and_uncertainties is supplied", "next_action is supplied"],
+  "authority": {"granted_capabilities": ["analysis", "review"], "requires_escalation_for": ["repository_write", "permission_grants", "authority_changes"]},
+  "status": "queued",
+  "created_at": "2026-08-28T00:00:00+10:00",
+  "related_task": "agentos-gemini-003"
+}
