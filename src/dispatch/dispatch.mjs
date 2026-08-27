@@ -15,7 +15,7 @@ export const VALID_TRANSITIONS = new Map([
 
 export function validateDispatchTask(task, { issuer, target }) {
   if (!task || typeof task !== 'object') throw new Error('task must be an object');
-  for (const field of ['task_id', 'issuer', 'target', 'objective', 'priority', 'scope', 'constraints', 'acceptance_criteria', 'authority', 'status']) {
+  for (const field of ['task_id', 'issuer', 'target', 'objective', 'priority', 'scope', 'constraints', 'acceptance_criteria', 'authority', 'status', 'mission_id']) {
     if (!(field in task)) throw new Error(`missing required field: ${field}`);
   }
   if (task.issuer !== issuer) throw new Error('issuer mismatch');
@@ -28,6 +28,12 @@ export function validateDispatchTask(task, { issuer, target }) {
   }
   if (!task.authority || !Array.isArray(task.authority.granted_capabilities)) {
     throw new Error('authority.granted_capabilities must be an array');
+  }
+  if (typeof task.mission_id !== 'string' || !task.mission_id) {
+    throw new Error('mission_id must be a non-empty string');
+  }
+  if ('decision_id' in task && task.decision_id !== null && typeof task.decision_id !== 'string') {
+    throw new Error('decision_id must be a string or null');
   }
   return true;
 }
