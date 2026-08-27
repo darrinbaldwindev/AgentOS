@@ -11,6 +11,13 @@
       "role": "system-overseer",
       "status": "active",
       "default": true
+    },
+    {
+      "id": "manus:overseer",
+      "role": "secondary-overseer-execution-agent",
+      "status": "active",
+      "authority_level": "delegated",
+      "reports_to": "GPTChat Overseer"
     }
   ]
 }
