@@ -1,9 +1,18 @@
 import { claimNextTask, advanceTask } from './worker.mjs';
+import { safeWriteTask } from './safe-write.mjs';
 
-/**
- * Run one authorised dispatch task using an injected executor and persistence
- * adapter. The executor owns the actual work; the runner owns lifecycle state.
- */
+async function persist(store, task, expectedSha = null) {
+  const result = await safeWriteTask({ store, task, expectedSha });
+  if (!result.ok) {
+    const error = new Error(result.outcome.action === 'reconcile'
+      ? `persistence conflict requires reconciliation: ${task.task_id}`
+      : `persistence failure: ${task.task_id}`);
+    error.outcome = result.outcome;
+    throw error;
+  }
+  return result.result;
+}
+
 export async function runNextTask({ tasks, receiver, authorityPolicy, store, execute }) {
   if (!Array.isArray(tasks)) throw new Error('tasks must be an array');
   if (!store?.writeTask) throw new Error('store.writeTask is required');
@@ -13,24 +22,29 @@ export async function runNextTask({ tasks, receiver, authorityPolicy, store, exe
   if (!claimed) return null;
 
   let current = claimed;
-  await store.writeTask(current);
+  let expectedSha = claimed.sha ?? null;
+  await persist(store, current, expectedSha);
 
   try {
     current = advanceTask(current, 'start');
-    await store.writeTask(current);
+    expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
     const result = await execute(current);
 
     current = advanceTask(current, 'verify');
-    await store.writeTask(current);
+    expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
     current = advanceTask(current, { type: 'complete', evidence: result });
-    await store.writeTask(current);
+    await persist(store, current, expectedSha);
     return current;
   } catch (error) {
-    current = advanceTask(current, 'escalate');
-    current = { ...current, error: { name: error.name, message: error.message } };
-    await store.writeTask(current);
+    try {
+      current = advanceTask(current, 'escalate');
+      await persist(store, { ...current, error: { name: error.name, message: error.message } }, expectedSha);
+    } catch (persistenceError) {
+      error.persistenceError = { name: persistenceError.name, message: persistenceError.message };
+      error.persistenceOutcome = persistenceError.outcome;
+    }
     throw error;
   }
 }
