@@ -1,23 +1,38 @@
 {
   "schemaVersion": 1,
+  "authorityHierarchy": [
+    "user",
+    "chatgpt:head-overseer",
+    "project-overseer",
+    "project-agents-workers"
+  ],
   "agents": [
     {
-      "id": "agentos:main",
-      "role": "primary-architect",
-      "status": "active"
+      "id": "chatgpt:head-overseer",
+      "role": "portfolio-head-overseer",
+      "status": "active",
+      "authority_level": "final-ai-authority"
     },
     {
       "id": "agentos:overseer",
-      "role": "system-overseer",
+      "role": "project-overseer",
+      "project": "AgentOS",
       "status": "active",
-      "default": true
+      "reports_to": "chatgpt:head-overseer"
     },
     {
-      "id": "manus:overseer",
-      "role": "secondary-overseer-execution-agent",
-      "status": "active",
+      "id": "manus:worker",
+      "role": "external-ai-worker",
+      "status": "available",
       "authority_level": "delegated",
-      "reports_to": "GPTChat Overseer"
+      "reports_to": "project-overseer"
+    },
+    {
+      "id": "gemini:worker",
+      "role": "external-ai-worker",
+      "status": "available",
+      "authority_level": "delegated",
+      "reports_to": "project-overseer"
     }
   ]
 }
