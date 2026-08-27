@@ -411,3 +411,20 @@ This entry is a static, read-only comparison of repository records and tree stat
 | Next trigger | Exact M1 evidence, PR #6/Issue #2 material delta, named Project Overseer acknowledgement, or Darrin maturity decision. |
 
 **No-delay successor rule:** On A-07 return, Manus must in the same continuation cycle either assign the smallest permitted successor, retain a precise evidence hold, request a non-duplicative independent GPTChat challenge, or present the smallest Darrin owner/access decision. A Project Overseer/sub-agent may not broaden authority or select a consequential successor independently.
+
+## A-10 — GlobalShopCo pilot dispatch-contract compatibility and acknowledgement request — 2026-08-27
+
+**Authority and purpose:** Darrin directed that GlobalShopCo serve as the first bounded working autonomy model while AgentOS develops reusable control-plane capability. The AgentOS `main` dispatch proposal (`e9a6b4838104`, `docs/OVERSEER_AGENT_DISPATCH.md`) and durable queue contract (`5016d7ee8efd`, `.agentos/dispatch/README.md`) are relevant future architecture. They do not supersede Darrin’s current governance hierarchy: Manus remains the portfolio dispatcher, GPTChat remains an independent synthesis/challenge role unless Darrin records otherwise, and all consequential authority remains owner-gated.
+
+**Current task:** **A-10 — return a documentation-only compatibility/acknowledgement receipt** for GlobalShopCo pilot task `GSC-AUT-01`. The AgentOS Project Overseer role is `UNCONFIRMED` until a durable acknowledgement is recorded; Manus retains the task/hold in the interim.
+
+| Required return | Boundary |
+|---|---|
+| Exact field mapping between AgentOS queue fields and GlobalShopCo task-packet/return fields; identify no-overlap field additions. | Read-only documentation/log comparison only. |
+| Confirm that AgentOS is control-interface reviewer for this pilot, not a live executor or higher portfolio authority. | No AgentOS runtime/queue implementation, project-agent creation, or autonomy-completion claim. |
+| State any exact authority conflict or missing contract field requiring Darrin decision. | Do not resolve a conflict by source/configuration change. |
+| Return `ACKNOWLEDGED`, `UNCONFIRMED`, or `BLOCKED` with exact evidence, confidence, and next trigger. | No code/test/run, provider/model/credential use, schedule/connector action, merge, deployment, release, or external communication. |
+
+**Next trigger:** A durable AgentOS Project Overseer acknowledgement/receipt in the shared log, GlobalShopCo `GSC-AUT-01` acknowledgement/return, a material dispatch-document revision, or Darrin authority decision. A-07 remains an independent M1 evidence hold.
+
+**Coordination notice:** The A-10 packet was posted once to the affected documentation PR under Darrin’s standing, time-bounded PR-comment authorization: https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5433393872. The comment requests a durable shared-log receipt only; it does not authorise runtime/queue implementation, source change, credentials, or external action.
