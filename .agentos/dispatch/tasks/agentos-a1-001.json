@@ -1,0 +1,36 @@
+{
+  "task_id": "agentos-a1-001",
+  "issuer": "GPTChat Overseer",
+  "target": "AgentOS Overseer Project",
+  "objective": "Establish and validate the first durable Overseer-to-project-agent dispatch contract for AgentOS autonomy.",
+  "priority": "critical",
+  "scope": [
+    "define machine-readable dispatch envelope",
+    "define claim/completion semantics",
+    "define escalation and blocked semantics",
+    "add deterministic validation tests",
+    "document the A1 acceptance criteria"
+  ],
+  "constraints": [
+    "do not alter or merge owner-review PRs",
+    "remain provider-independent",
+    "do not grant authority merely because a task requests it",
+    "preserve existing runtime contracts"
+  ],
+  "acceptance_criteria": [
+    "a valid queued task can be identified for the target agent",
+    "an authorised receiver can claim it exactly once",
+    "state transitions are durable and deterministic",
+    "completion includes evidence/result state",
+    "blocked and escalated states are explicit",
+    "invalid issuer/target/authority is rejected",
+    "tests demonstrate the lifecycle"
+  ],
+  "dependencies": [],
+  "authority": {
+    "granted_capabilities": ["repository_read", "repository_write", "documentation", "tests"],
+    "requires_escalation_for": ["destructive_changes", "financial_commitments", "fundamental_direction_changes", "permission_grants"]
+  },
+  "status": "queued",
+  "created_at": "2026-08-27"
+}
