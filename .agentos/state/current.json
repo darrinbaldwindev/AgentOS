@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "system": "AgentOS",
+  "stateAuthority": ".agentos/state",
+  "dispatchAuthority": ".agentos/dispatch",
+  "repositoryAuthority": "github",
+  "status": "active",
+  "currentMilestone": "CORE-003",
+  "lastReconciled": "2026-08-27",
+  "notes": "Current machine state is authoritative here; historical Markdown coordination records remain preserved."
+}
