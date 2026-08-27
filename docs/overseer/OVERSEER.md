@@ -492,3 +492,23 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Detailed evidence:** Private Manus workspace document `agentos_dq01_direct_main_conformance_reconciliation_package_2026-08-27.md`; GitHub compare `4d7413e...4be1281`.
 
 **Authorized PR-only notice posted:** One deduplicated, commentary-only DQ-01-R1 notice was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5433785778) after the log record was pushed. It identifies the exact direct-main comparison, candidate branch, scope/authority/state-integrity gate, Darrin disposition request, permitted/prohibited scope, and verification boundary. It does not approve, request changes, merge, close, rebase, execute, deploy, or release anything. No repeat DQ-01-R1 comment is warranted absent a material revision or owner decision.
+
+## DQ-01-R2 direct-main runner, workflow, and continuation escalation — 2026-08-27
+
+**Material delta:** After R1 review tip `4be1281`, AgentOS `main` directly advanced eight commits to `fe03e5b6e6d8f6873cc5c339a42b703945fd8df4`, adding `.github/workflows/agentos-dispatch.yml`, a runtime/polling document, runner/continuation modules, and tests. This is new evidence, not a continuation of the R1 notification. Manus conducted a static GitHub/source review only and did not execute code/tests/workflows or use credentials/providers/networks/schedules/webhooks/data/deployments.
+
+| Verified static evidence | Governance result |
+|---|---|
+| Active workflow has `workflow_dispatch` and task-file-push triggers and runs `npm test` with read-only contents permissions. GitHub returned **zero workflow runs** when inspected. | **High direct-main automation gate.** Activation definition exists; no execution is evidenced. DQ-01 excludes workflows/automatic runners. |
+| Runner claims a task, calls injected `execute`, and writes lifecycle state through injected `store.writeTask`. | **Outside DQ-01.** This is an execution pathway with possible later repository-side write effect, not manual record-only work. |
+| Continuation derives child queued work from a completed task’s capability set. | **Outside DQ-01.** Only Manus may issue a portfolio successor after structured return/classification; a parent task cannot self-authorise a child. |
+| `continuation-runner.mjs` imports `createContinuation`; pinned `continuation.mjs` exports `deriveNextTask` only. | **Confirmed static import/export mismatch.** Normal ESM linking would be expected to reject it; no runtime/test execution was attempted. |
+| Test names/assertions model runner/chain behavior. | **Unverified contributor claims**, not runtime/autonomy proof. |
+
+**DQ-01-R2 status:** `HIGH-IMPACT DIRECT-MAIN HOLD`. The isolated candidate remains unchanged at `agent/dq01/minimal-durable-queue` / `4d7413e`. No direct-main path is accepted as DQ-01, a GlobalShopCo pilot control, or active project-agent capability.
+
+**Required Darrin decision:** **A (recommended)** retain direct-main `fe03e5b` paths only as unreviewed, non-invoked prototype; require a named owner and dedicated review path before remediation/adoption; **B** authorize that owner/review path now; or **C** defer DQ/automation and retain log-only pilot. Pending that decision, no workflow dispatch, runner/executor/transport/test invocation, task-file/source/configuration change, network/provider/credential/database/schedule/webhook, merge/close/rebase/deploy/release/production action is permitted under this packet.
+
+**Verification for reassessment:** Exact owner disposition; named source/branch/PR; durable role/capability receipt; and separately authorized bounded verification command/environment with explicit no-side-effect controls. Detailed private evidence: `agentos_dq01_r2_runner_workflow_reconciliation_2026-08-27.md`.
+
+**PR-only notification:** This is materially distinct from R1. PR #1 remains the affected oversight-log PR. One deduplicated commentary-only DQ-01-R2 notice is warranted after this record is pushed; no other communication is authorized. Its URL will be appended when posted.
