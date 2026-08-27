@@ -1,209 +1,88 @@
 # AgentOS Overseer — Evolution Roadmap
 
 **Status:** Active roadmap
-**Effective date:** 2026-08-24
+**Effective date:** 2026-08-27
 **Primary owner:** Human owner
-**Primary AI role:** AgentOS Overseer
+**Primary AI role:** AgentOS Overseer / GPTChat Overseer
 
-## 1. Mission
+## Mission
+AgentOS Overseer operates, supervises, maintains and evolves AgentOS within owner-defined authority boundaries. Manus Overseer operates at portfolio breadth; AgentOS Overseer operates at AgentOS depth.
 
-AgentOS Overseer is the primary AI agent of the AgentOS project. Its job is to operate, supervise, maintain and evolve AgentOS within owner-defined authority boundaries.
+## Architecture principle
+**AgentOS is the vendor-neutral control and operating layer for AI agents, not another single-purpose agent.** Separate:
+1. **Control & Governance:** Overseer, policy, authority, risk, approvals, evidence, audit and self-governance.
+2. **Mission & Coordination:** objectives, task graphs, decomposition, routing, delegation, reconciliation and scheduling.
+3. **Runtime & Execution:** agent lifecycle, sessions, tools, sandboxing, resource limits, browser/computer use and provider adapters.
+4. **State & Knowledge:** authoritative project state, continuity, mission state, semantic/observational memory, skills, provenance and transcripts.
+5. **Integration:** GitHub, Shopify, web, desktop, APIs, MCP/ACP and future providers.
 
-It is not the Manus portfolio Overseer. Manus Overseer operates at portfolio breadth; AgentOS Overseer operates at AgentOS depth.
+External workers such as Manus, Codex, Claude Code, OpenHands, Henry, Browser Use and local agents remain replaceable.
 
-## 2. Current reality
+## Research incorporation
+The 2026-08-27 capability review incorporated portable ideas from HeyHenry, Rivet agentOS, OpenAI Agents SDK, OpenHands, Devin, LangGraph, AutoGen, Mastra, Letta, Browser Use, Goose and current Agent Operating System research. These are reference inputs, not dependencies. Do not copy vendor-specific architecture blindly; extract portable primitives, define AgentOS-native interfaces, test them, and preserve provider independence.
 
-As of 2026-08-24, AgentOS has a substantial specification/prototype/validation foundation but is not yet the product runtime. The critical gap is executable vertical integration: durable project state, durable agents/runs/events, bounded tools, a provider adapter, a safe execution boundary, recovery/provider handoff, and Overseer observation.
+## Capability expansion
+AgentOS should progressively incorporate:
+- mission/task graphs: sequential, parallel, conditional, loops and joins;
+- specialist agent registry;
+- routing based on capability, cost, reliability, latency, risk and permissions;
+- durable resumable sessions and mission checkpoints;
+- universal transcript/event schema with replay and audit;
+- versioned reusable Skills with inputs, outputs, tools, permissions, tests, provenance, metrics and rollback;
+- separation of authoritative project state from semantic, observational and personal agent memory;
+- model/provider/agent portability via adapters and ACP/MCP-compatible interfaces;
+- deny-by-default filesystem/network/process/environment permissions;
+- sandboxing and resource budgets;
+- browser and desktop/computer-use workers as optional capabilities;
+- guardrails at input, output, tool and approval boundaries;
+- risk-based human-in-the-loop approval gates;
+- manager-style and agent-to-agent delegation;
+- agent health, reliability, cost, token, latency and workload telemetry;
+- automatic retry, recovery, provider handoff and reassignment;
+- independent verification/evaluation agents and evidence-backed completion;
+- schedules, webhooks and event-driven autonomous loops;
+- distributed workers and multi-agent observation;
+- visual/operator and voice interfaces as optional control surfaces;
+- governed self-improvement with proposals, regression tests, evaluation and capability-promotion gates.
 
-The current project status explicitly prioritizes this vertical slice over additional broad architecture work.
-
-## 3. Evolution stages
-
+## Evolution stages
 ### Stage 0 — Definition and evidence baseline
-**State:** COMPLETE / IN PROGRESS
+Lock Overseer identity/authority, inventory specifications/prototypes/contracts, preserve evidence, and distinguish Specified, Prototyped, Verified, Implemented and Production-ready states.
 
-Objectives:
-- lock AgentOS Overseer identity and authority;
-- establish the distinction from Manus Overseer;
-- inventory existing specifications, prototypes, contracts and continuity records;
-- identify the specification-to-runtime gap;
-- preserve evidence and status terminology.
+### Stage 1 — Overseer foundation
+Build durable Overseer configuration, startup/context loading, project-state reader, bounded planning, evidence/findings, recommendations, append-only audit, confidence/uncertainty handling and owner escalation.
 
-Exit criteria:
-- role and authority are explicit;
-- project baseline is documented;
-- no production-readiness claim is made without runtime evidence.
+### Stage 2 — Runtime vertical slice
+Build Workspace → Agent → Run → Event → Artifact persistence, provider adapters, AgentRuntime, bounded tools, sandbox boundary, plan → execute → verify → finish lifecycle and run inspection.
 
-### Stage 1 — AgentOS Overseer foundation
-**Target:** first usable internal supervisory agent
-
-Build:
-- durable Overseer profile/configuration;
-- startup/context loading;
-- AgentOS project state reader;
-- task intake and bounded planning;
-- evidence/finding model;
-- recommendation model;
-- append-only Overseer activity/audit log;
-- explicit confidence and uncertainty handling;
-- owner escalation boundary.
-
-Usable when:
-- Overseer can start, understand current AgentOS state, inspect a bounded area, produce evidence-backed findings, preserve its continuity, and stop safely when authority is insufficient.
-
-### Stage 2 — AgentOS runtime vertical slice
-**Target:** first real AgentOS operation
-
-Build:
-- Workspace → Agent → Run → Event → Artifact persistence;
-- deterministic provider adapter;
-- AgentRuntime loop;
-- bounded tool registry;
-- execution/sandbox boundary;
-- plan → execute → verify → finish lifecycle;
-- run inspection.
-
-Usable when:
-- a user can create/select a workspace, assign one bounded task, observe the run and inspect its history without relying on a production model or unrestricted host access.
-
-### Stage 3 — Overseer controls the runtime
-**Target:** primary AgentOS operating intelligence
-
-Connect AgentOS Overseer to the real runtime so it can:
-- inspect active and historical runs;
-- detect failures and incomplete work;
-- diagnose bounded problems;
-- assign/recommend work to specialist agents;
-- verify outcomes;
-- maintain project health state;
-- create recommendations/change-log entries;
-- request owner approval for consequential actions.
-
-Usable when:
-- AgentOS Overseer can supervise a real end-to-end AgentOS task and explain what happened with evidence.
+### Stage 3 — Overseer controls runtime
+Connect Overseer to active/historical runs. Add mission intake, specialist registration, capability discovery, bounded delegation, routing, verification, project health, recommendations and evidence-backed completion.
 
 ### Stage 4 — Continuity and recovery
-**Target:** resilient long-running AgentOS
-
-Build:
-- checkpoint/recovery;
-- provider/model handoff;
-- resumable mission state;
-- failure classification;
-- retry and escalation policy;
-- state integrity verification;
-- recovery audit trail.
-
-Usable when:
-- simulated provider/tool failure can occur and the system can recover or escalate without losing mission state or falsifying completion.
+Build checkpoint/recovery, provider/model handoff, resumable missions, failure classification, retry/escalation, state integrity verification and recovery audit trails.
 
 ### Stage 5 — Multi-agent orchestration
-**Target:** coordinated AgentOS workforce
-
-Build:
-- specialist registration;
-- capability discovery;
-- bounded task delegation;
-- inter-agent contracts;
-- result reconciliation;
-- conflict handling;
-- resource/budget controls;
-- agent health monitoring.
-
-Usable when:
-- Overseer can delegate a bounded multi-agent task, observe each agent, reconcile outputs and produce a verified result.
+Build task graphs, parallel workers, inter-agent contracts, result reconciliation, conflict handling, resource/budget controls, agent health monitoring and reusable Skill registry.
 
 ### Stage 6 — Controlled autonomy
-**Target:** autonomous AgentOS operation
+Build authorised schedules/events, autonomous maintenance loops, safe diagnostics, recommendation-to-action pipelines, reversible changes, approval gates, auditability and kill/pause semantics.
 
-Build:
-- scheduled/event-driven supervision where explicitly authorized;
-- autonomous maintenance loops;
-- safe self-diagnostics;
-- recommendation-to-action pipeline;
-- reversible changes;
-- approval gates for high-impact actions;
-- comprehensive auditability;
-- kill switch / pause semantics.
+### Stage 7 — Governed self-improvement
+Build evidence-driven capability-gap detection, controlled tool/agent/Skill creation proposals, evaluation harness, regression detection, learning/change history, capability promotion gates and Overseer self-audit.
 
-Usable when:
-- Overseer can run recurring operational loops without continuous human prompting while remaining bounded, observable, interruptible and recoverable.
+## GPTChat Overseer delegation mandate
+GPTChat Overseer may continue AgentOS work autonomously within the configured authority boundary. It must not merely select the best agent; it should **decompose missions, delegate bounded work, monitor workers, verify results, recover from failures, reconcile conflicting outputs and update durable continuity state**.
 
-### Stage 7 — Self-improvement with governance
-**Target:** mature AgentOS Overseer
+Preferred loop:
+**Objective → decomposition → worker selection → permission grant → execution → observation → verification → reconciliation → state update → next decision.**
 
-Build:
-- evidence-driven capability-gap detection;
-- controlled tool/agent creation proposals;
-- evaluation harness;
-- regression detection;
-- learning/change history;
-- capability promotion gates;
-- self-audit against its own charter.
+Use the best available worker for each task. Workers may include Henry, Manus, Codex, Claude Code, OpenHands, Browser Use, local agents or future compatible workers. Prefer delegation when a task can be safely parallelised or benefits from specialist capability.
 
-Usable when:
-- Overseer can propose improvements, evaluate them against explicit tests/criteria, and only promote changes through the configured authority boundary.
+## Priority rule
+Do not expand broad architecture at the expense of the executable vertical slice. Map research-derived capabilities to implementation gaps and prioritise one coherent tested path over documentation-only expansion.
 
-## 4. Significant milestones
+## Non-negotiable autonomy gates
+Production autonomy requires least-privilege permissions, approval gates for high-impact actions, durable audit history, secrets isolation, bounded execution/sandboxing, cancellation/kill semantics, recovery testing, regression evaluation, independent verification for consequential completion claims, owner-defined privacy/deployment policy, and immutable authority boundaries that self-improvement cannot modify.
 
-| Milestone | Meaning | User value |
-|---|---|---|
-| M0 | Role locked | Clear AgentOS Overseer identity and authority |
-| M1 | First supervised inspection | Overseer can understand and report AgentOS state |
-| M2 | First executable vertical slice | AgentOS performs one bounded real task |
-| M3 | First Overseer-supervised run | Overseer becomes operational rather than documentary |
-| M4 | First recovery/handoff | AgentOS survives provider/runtime failure |
-| M5 | First coordinated multi-agent task | AgentOS becomes a real agent system |
-| M6 | Safe autonomous loop | AgentOS can operate for extended periods with bounded autonomy |
-| M7 | Governed self-improvement | AgentOS can improve itself without becoming its own unchecked authority |
-
-## 5. When it can be used
-
-### Now
-Use as a design/inspection/continuity system. Do not describe it as a production autonomous runtime.
-
-### After M1
-Useful as an internal AgentOS engineering Overseer for repository inspection, project-state analysis, recommendations and continuity.
-
-### After M2
-Useful for controlled real tasks using deterministic/local adapters and bounded tools.
-
-### After M3
-Useful as the primary operating agent for AgentOS development and supervised execution.
-
-### After M4
-Suitable for longer-running tasks where provider/runtime failures must be expected and recovered from.
-
-### After M5
-Suitable for meaningful multi-agent workflows.
-
-### After M6
-Candidate for ongoing autonomous operation, subject to explicit security, privacy, deployment and owner-approval gates.
-
-### After M7
-Candidate for mature self-evolving AgentOS operation, still constrained by immutable authority boundaries and evaluation gates.
-
-## 6. Non-negotiable gates
-
-No stage may claim completion merely because documentation exists. Evidence must be classified as Specified, Prototyped, Verified, Implemented, or Production-ready.
-
-Production autonomy requires, at minimum:
-- least-privilege tool permissions;
-- explicit approval gates for high-impact actions;
-- durable audit history;
-- secrets isolation;
-- bounded execution/sandboxing;
-- cancellation/kill semantics;
-- recovery testing;
-- regression evaluation;
-- owner-defined privacy and deployment policy.
-
-## 7. Priority rule
-
-Do not expand broad AgentOS architecture while the core vertical slice remains unimplemented. Prefer completing one coherent executable path over adding more specifications.
-
-Manus Overseer should consume reusable evidence/state/governance capabilities where beneficial, but AgentOS Overseer remains the primary development target.
-
-## 8. Definition of mature AgentOS Overseer
-
-A mature AgentOS Overseer can understand AgentOS state, plan bounded work, coordinate agents, operate tools safely, observe execution, verify outcomes, recover from failures, preserve continuity, detect regressions, recommend improvements, and execute only those changes permitted by policy — while remaining interruptible, auditable and subordinate to the owner.
+## Mature definition
+A mature AgentOS Overseer can understand state, create missions, decompose work, select and delegate to agents, operate tools safely, observe execution, verify outcomes, reconcile conflicts, recover from failures, preserve continuity, learn operational reliability, detect regressions, propose improvements and execute only permitted changes — while remaining interruptible, auditable and subordinate to the owner.
