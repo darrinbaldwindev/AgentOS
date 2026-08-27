@@ -381,3 +381,13 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Options:** **A (recommended):** documentation-only field dictionary and labelled pilot; **B:** defer all measurement work and retain current template; **C:** defer until a post-M1 measurement-design decision. No option is selected by this record.
 
 **Successor task / precise hold:** **A-09 — measurement-semantics intake hold.** If Darrin selects A, reconcile one approved field dictionary and labelled documentation-only pilot; if B/C, retain `UNKNOWN`/no-metrics boundary. A-07 remains independent and unchanged. **Next trigger:** Darrin Option A/B/C decision, Issue #11/PR #1 revision, or exact M1 evidence.
+
+## A-09 complete — Option A Measurement Semantics v0.1 — 2026-08-27
+
+**Owner decision:** Darrin selected **Option A**. The authorized scope was documentation-only: establish Measurement Semantics v0.1 with append-only designated project/shared Overseer logs as the **interim canonical evidence source**.
+
+**Completed artifact:** `agentos_measurement_semantics_v0_1_2026-08-27.md` is retained in the Manus workspace. It defines a controlled qualitative field dictionary; actor/evidence separation; `UNKNOWN`, `NOT_COLLECTED`, `VERIFIED`, `PARTIALLY_VERIFIED`, and `CLAIMED` treatment; a privacy/minimal-metadata rule; explicit non-inference from Git identities; A0–A5 definitions without measurement; and an explicitly non-metric labelled pilot format. It includes an A-08 pilot record with `NOT_MEASURED` autonomy and no numeric progress, time-saved, contribution, or autonomy claim.
+
+**Boundary preserved:** This decision does **not** authorize a schema, database, telemetry, event collector, dashboard, calculation, progress percentage, intervention count, schedule, connector, provider/credential, runtime, test, merge, deployment, release, or production action. It does not change Issue #2 M1 acceptance or A-07.
+
+**Task-loop state:** **A-09 documentation package complete.** **A-07 remains the current AgentOS task** for exact M1 runtime evidence intake. Measurement Semantics v0.1 is a standing reporting rule; reassess it only if Darrin requests a specific future data/event-collection design or a privacy/security/evidence boundary changes.
