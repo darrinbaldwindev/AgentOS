@@ -367,3 +367,17 @@ This entry is a static, read-only comparison of repository records and tree stat
 **A-08 — reporting-attribution field-map reconciliation:** Produce a read-only mapping of each Issue #11 field to one of: existing exact evidence source, missing canonical source, privacy/retention decision, calculation/attribution rule, or `UNKNOWN`. Identify overlap with the shared continuation-report template and conflicts with A-02/A-07 scope. Do not add metrics, infer authorship, calculate progress, execute code/tests, change schema, configure schedules/connectors, access providers/credentials, merge, deploy, release, or contact external parties.
 
 **Return/release condition:** A-08 returns a field-by-field matrix and smallest owner decision for canonical evidence source and reporting boundary. A-07 remains independently active for exact M1 runtime evidence. **Next review trigger:** Issue #11/PR #1 change, A-08 return, evidence-source decision, or exact M1 evidence.
+
+## A-08 return — reporting-attribution field-map reconciliation — 2026-08-27
+
+**Scope:** Read-only reconciliation of [Issue #11](https://github.com/darrinbaldwindev/AgentOS/issues/11), the shared/project append-only logs, and the adopted continuation-report template. No code, schema, database, telemetry, calculation, schedule, connector, provider, credential, test, merge, deployment, release, or external action occurred.
+
+**Result:** **A-08 complete.** Current sources can support only qualitative, evidence-backed reporting of reporting window, exact revision/log, explicitly recorded task/hold, bounded completed work, blocker, trigger, and confidence. They provide partial support for named decision/executor/verifier only when the durable record states them explicitly. Trigger, event identity, user-directed versus autonomous classification, autonomy depth, chain length, interventions, time saved, numeric progress/autonomous share, and contributor breakdown are `UNKNOWN` or not collected. Git author/committer metadata must not be used to infer decision-maker, executor, verifier, or autonomy.
+
+**Required current rule:** Do not calculate progress, time saved, autonomy scores, author share, or cross-project gain totals. Continue the completed-work delta; label runtime evidence and attribution as `UNKNOWN` where explicit durable evidence is absent. The full field matrix and treatment rationale are retained in the Manus workspace at `agentos_a08_reporting_attribution_field_map_2026-08-27.md`.
+
+**Smallest owner decision — recommended Option A:** Approve a **documentation-only Measurement Semantics v0.1** with shared/project append-only Overseer logs as interim canonical source. It would define field meanings, `UNKNOWN` policy, attribution boundaries, and a no-metrics rule, but would not add schema/data collection, telemetry, dashboards, schedules/connectors, providers, tests, implementation, or production capability.
+
+**Options:** **A (recommended):** documentation-only field dictionary and labelled pilot; **B:** defer all measurement work and retain current template; **C:** defer until a post-M1 measurement-design decision. No option is selected by this record.
+
+**Successor task / precise hold:** **A-09 — measurement-semantics intake hold.** If Darrin selects A, reconcile one approved field dictionary and labelled documentation-only pilot; if B/C, retain `UNKNOWN`/no-metrics boundary. A-07 remains independent and unchanged. **Next trigger:** Darrin Option A/B/C decision, Issue #11/PR #1 revision, or exact M1 evidence.
