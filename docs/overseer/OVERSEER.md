@@ -355,3 +355,15 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Notification:** The material default-branch architecture delta was reported to the affected documentation PR at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5427986507 under Darrin’s standing PR-only authorization.
 
 **Successor:** A-07 remains the active exact-evidence intake hold. A future architecture-to-roadmap reconciliation requires a separately bounded owner decision and must not widen the current M1 acceptance scope.
+
+## New Issue #11 — autonomy-attribution reporting proposal — 2026-08-27
+
+**Evidence:** [Issue #11](https://github.com/darrinbaldwindev/AgentOS/issues/11), created `2026-08-27T00:51:48Z`, proposes a portfolio/project reporting measurement model for trigger, author, executor, verifier, evidence state, user-directed/autonomous distinction, A0–A5 autonomy depth, chain length, interventions, reusable gains, and autonomy failure reasons. It directs that generic Git metadata must not determine authorship and `UNKNOWN` must be used where evidence is incomplete.
+
+**Classification:** **New documentation/governance proposal, not an implemented measurement system.** The repository currently supplies no canonical event schema, data source, privacy/retention boundary, calculation method, evidence baseline, or verified project-progress metric. The proposal does not modify Issue #2 M1 acceptance rows, does not release A-07, and must not be used to estimate progress/savings or imply autonomous capability that has not been evidenced.
+
+**Notification:** The material issue delta was reported to the affected documentation PR at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5432968780 under Darrin’s standing PR-only authorization.
+
+**A-08 — reporting-attribution field-map reconciliation:** Produce a read-only mapping of each Issue #11 field to one of: existing exact evidence source, missing canonical source, privacy/retention decision, calculation/attribution rule, or `UNKNOWN`. Identify overlap with the shared continuation-report template and conflicts with A-02/A-07 scope. Do not add metrics, infer authorship, calculate progress, execute code/tests, change schema, configure schedules/connectors, access providers/credentials, merge, deploy, release, or contact external parties.
+
+**Return/release condition:** A-08 returns a field-by-field matrix and smallest owner decision for canonical evidence source and reporting boundary. A-07 remains independently active for exact M1 runtime evidence. **Next review trigger:** Issue #11/PR #1 change, A-08 return, evidence-source decision, or exact M1 evidence.
