@@ -536,3 +536,19 @@ This entry is a static, read-only comparison of repository records and tree stat
 **PR notices:** This R3 delta is distinct from R2. One deduplicated commentary-only notice is warranted after push on affected oversight PR #1, and a separate context notice on affected PR #14; neither may imply approval/request changes. Detailed private record: `agentos_dq01_r3_canonical_state_poll_pr14_reconciliation_2026-08-27.md`.
 
 **Authorized notices posted:** One commentary-only DQ-01-R3 escalation was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435256690), and one related context notice was posted to [AgentOS PR #14](https://github.com/darrinbaldwindev/AgentOS/pull/14#issuecomment-5435258135). They record exact revisions, scope/authority/validation limits, owner decision fields, prohibited actions, and reassessment evidence. Neither approves, requests changes, invokes artifacts, or authorizes merge/close/rebase/deployment/release/production action. No repeat R3 notices are permitted absent a material revision or Darrin decision.
+
+## Darrin decision — DQ-01-R3 Option A approved: direct-main containment — 2026-08-27
+
+**Decision:** Darrin approved **DQ-01-R3 Option A.** Retain direct-main state/poll/recovery/continuation paths at `2c84a8106ab50d49b2611de64309a6576db40ded` as an **unreviewed, non-invoked prototype**. The owner-authorized DQ candidate `agent/dq01/minimal-durable-queue` remains isolated and unchanged at `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. PR #14 remains a pending narrow continuation repair; this decision does not approve, merge, or otherwise adopt it.
+
+**Authority/evidence:** Darrin’s explicit Option A selection following DQ-01-R3; direct-main comparison `fe03e5b...2c84a81`; PR #14 at `4452d54`; DQ-01-R3 static reconciliation record. **Risk handled:** Direct-main automatic-work, self-declared authority, and branch-isolation ambiguity. **Reversibility:** Governance-only containment decision; no source/configuration/CI/data state changed.
+
+**Approved scope:** Read-only static review; append-only governance/acknowledgement/decision records; and preparation of a future owner-named review-path plan. **Excluded scope:** Invocation of workflow, poll, runner, executor, transport, or tests; direct-main/candidate/state/task/source/configuration edits; credentials/providers/network/database/schedule/webhook; merge/close/rebase; deploy/release/production action.
+
+### Active successor — DQ-01-R4 control-plane review-path hold
+
+**Status:** `ACTIVE HOLD — accountable owner/review path not yet named.` A future review path must declare the canonical authority hierarchy, candidate/base/source relationship, issuer/capability allow-list, acknowledgement/return/audit controls, durable/atomic state/recovery design, explicit Manus-issued successor rule, PR #14 disposition, and exact non-side-effect verification boundary. It may not invoke or alter the prototype under this hold.
+
+**Return/trigger:** A named accountable owner and review branch/PR; a Darrin change to this containment decision; a durable actor/capability receipt; or a material direct-main/PR #14/workflow revision. No state-file label, commit message, test claim, or role name is sufficient return evidence.
+
+**Notification decision:** This approved owner containment is a material decision on both affected PR #1 and PR #14. One bounded commentary-only decision update is warranted on each after this record is pushed; neither is a review verdict or code-change instruction.
