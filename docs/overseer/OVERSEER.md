@@ -391,3 +391,23 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Boundary preserved:** This decision does **not** authorize a schema, database, telemetry, event collector, dashboard, calculation, progress percentage, intervention count, schedule, connector, provider/credential, runtime, test, merge, deployment, release, or production action. It does not change Issue #2 M1 acceptance or A-07.
 
 **Task-loop state:** **A-09 documentation package complete.** **A-07 remains the current AgentOS task** for exact M1 runtime evidence intake. Measurement Semantics v0.1 is a standing reporting rule; reassess it only if Darrin requests a specific future data/event-collection design or a privacy/security/evidence boundary changes.
+
+## Manus-led AgentOS dispatch and return protocol — 2026-08-27
+
+**Darrin direction applied:** Manus Overseer owns the portfolio task chain. A Project Overseer may execute or delegate only the exact bounded work in a Manus task packet, then must return an evidence package to Manus for immediate successor dispatch or the smallest genuine owner/access escalation. This strengthens—not replaces—the shared mandatory project task loop.
+
+**Agent availability limit:** The current evidence establishes an AgentOS task role, not a named/acknowledged online Project Overseer or sub-agent. Until an explicit durable acknowledgement identifies a capable actor, the responsible Project Overseer is **`UNCONFIRMED — Manus retains direct task ownership`**. No fictitious delegation or autonomous runtime claim is permitted.
+
+### Current Manus task packet — A-07
+
+| Packet field | Required value |
+|---|---|
+| Dispatcher / responsible role | `MANUS` / `UNCONFIRMED — Manus retains direct evidence task` |
+| Parent / reason | A-06 completed; Issue #2 M1 acceptance remains partially evidenced. |
+| Exact required return | A seven-row entity/tool/lifecycle/recovery/handoff/Overseer-event accept/partial/missing matrix against newly supplied exact evidence. |
+| Permitted work | Read-only Issue #2/PR #6/new-artifact and changed-path inspection. A confirmed child reviewer may compare static paths only. |
+| Prohibited work | No runtime test/run, source/config change, provider/model/credential access, merge, deployment, release, or external communication. |
+| Return package | Status; work performed; exact revision/path/artifact; verified/claimed/unknown classification; confirmed/likely/unresolved blockers; confidence; smallest successor/owner decision. |
+| Next trigger | Exact M1 evidence, PR #6/Issue #2 material delta, named Project Overseer acknowledgement, or Darrin maturity decision. |
+
+**No-delay successor rule:** On A-07 return, Manus must in the same continuation cycle either assign the smallest permitted successor, retain a precise evidence hold, request a non-duplicative independent GPTChat challenge, or present the smallest Darrin owner/access decision. A Project Overseer/sub-agent may not broaden authority or select a consequential successor independently.
