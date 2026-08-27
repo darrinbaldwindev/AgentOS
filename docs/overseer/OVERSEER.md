@@ -440,3 +440,29 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Acceptance/rollback:** The package specifies later required deterministic evidence for valid creation, authority denial, acknowledgement/return integrity, lifecycle rejection cases, no-external-effects, GlobalShopCo-pilot compatibility, and explicit interrupted-task recovery. It requires a new isolated branch and preserves records on cancellation/supersession; it forbids history rewriting/force push/reset-style recovery.
 
 **Next owner choice:** Darrin may select **A (recommended):** name an implementer and authorize isolated DQ-01 candidate creation; **B:** authorize a documentation/schema review only; or **C:** defer and retain the log-only pilot. Before any code, Darrin must also decide/approve named implementer/branch, allowed verification command/environment, canonical task source, and next-stage activation boundaries. **A-11** is now the conditional implementation-authority intake hold. A-07 and A-10 remain independent.
+
+## DQ-01 Implementer designated; isolated candidate branch established; direct-main divergence held — 2026-08-27
+
+**Darrin authorization applied:** `AgentOS DQ-01 Implementer` is the designated bounded implementation role. This designation is task authority only; no durable acknowledgement establishes that a live/capable agent has accepted or performed the task. Manus remains portfolio dispatcher and independent reviewer; AgentOS Project Overseer remains `UNCONFIRMED` pending a durable receipt.
+
+**Isolated branch created:** `agent/dq01/minimal-durable-queue` now exists at verified pre-implementation baseline `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. It contains none of the later `src/dispatch/**`, `tests/dispatch*.mjs`, or `.agentos/dispatch/tasks/**` files. Its purpose is an unmodified, reviewable candidate boundary—not authorization to copy/recreate/run implementation.
+
+**New material evidence — direct-to-main implementation:** AgentOS `main` advanced directly to `5448d9c3bf3369fe33bc46d8987d5ac221bffd34`, adding dispatch schema/task documents, `src/dispatch/dispatch.mjs`, `worker.mjs`, `store.mjs`, and test files. Static inspection finds the committed task authorizes `repository_write` and `tests`, is issued as `GPTChat Overseer`, and lacks DQ-01-required schema version, prohibited-scope, evidence baseline, acknowledgement/capability, structured return, confidence, successor, and trigger fields. The new `MemoryDispatchStore` is in-memory, while worker functions operate on passed state; no durable/recoverable/append-only store, atomic claim, issuer authentication, capability registry, or recovery protocol is evidenced in the inspected files. Static test files are not independent execution evidence; **Manus did not run them.** Git metadata does not prove authorisation/actor attribution.
+
+**Classification:** **Confirmed source/branch-boundary and authority-contract divergence; unverified runtime validation.** This is not a merge/release/security conclusion and does not authorize moving, executing, modifying, or deleting the direct-main work.
+
+### DQ-01-CANDIDATE-01 current packet
+
+| Field | Current boundary |
+|---|---|
+| Dispatcher / responsible role | `MANUS` / `AgentOS DQ-01 Implementer — designated, acknowledgement required` |
+| Candidate | `agent/dq01/minimal-durable-queue` at `4d7413eb1` |
+| Status | `BOUNDARY_ESTABLISHED / IMPLEMENTATION_HELD` |
+| Permitted now | Acknowledgement and plan-only/static reconciliation receipt. |
+| Prohibited now | Source edit; copy/cherry-pick/rebase direct-main DQ code; code/test/run; task execution; provider/model/network/credential; schedule/webhook; database/migration; external action; merge/deploy/release/production. |
+| Required return | Capability, branch/base, accepted/prohibited scope, direct-main non-adoption, exact static findings, confirmed/likely/unresolved blockers, confidence, and recommended next action. |
+| Release | Manus-verified acknowledgement, Darrin direct-main treatment decision, and separately defined verification boundary. |
+
+**Owner decision now required:** **A (recommended):** treat direct-main `5448d9c3b` as an unreviewed parallel implementation, retain isolated branch `4d7413eb1`, and authorize a Manus static conformance/reconciliation package; **B:** authorize a named owner to create a review PR for the direct-main work; or **C:** defer. No option is selected by this log.
+
+**No external notice:** The direct-main code is not contained in an open affected PR. The standing PR-only notification authority therefore does not permit posting on an unrelated PR; the evidence is recorded here and in shared coordination.
