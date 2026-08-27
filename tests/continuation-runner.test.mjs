@@ -39,5 +39,5 @@ test('authority escalation in continuation is rejected', async () => {
       objective: 'Request extra authority', priority: 'high', scope: ['tests'], constraints: [],
       acceptance_criteria: ['never accepted'], authority: { granted_capabilities: ['financial_commitment'] }, status: 'queued',
     }),
-  }), /capability/);
+  }), /authority/);
 });
