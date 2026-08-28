@@ -574,3 +574,17 @@ This entry is a static, read-only comparison of repository records and tree stat
 **Notification:** The R4 direct-main delta is distinct from R3. One deduplicated commentary-only update to affected PR #1 is warranted after this log record is pushed. PR #14 head/content has not changed since R3; no new PR #14 notice is warranted. Detailed private evidence: `agentos_dq01_r4_mission_context_capability_claim_reconciliation_2026-08-27.md`.
 
 **Authorized PR-only notice posted:** One commentary-only, deduplicated DQ-01-R4 notice was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435421008) after this record was pushed. It identifies `2c84a81...4b699a0`, the direct-main control/integration findings, Darrin decision choices, prohibited actions, and exact reassessment evidence. It does not approve, request changes, invoke artifacts, or authorize merge/close/rebase/deploy/release/production action. No repeat R4 notice is permitted absent material revision or Darrin decision.
+
+## Comprehensive PR scan delta — 2026-08-28
+
+**Evidence:** The accessible queue contains AgentOS PRs #1, #6, and #14. Static metadata now reports PR #6 at unchanged head `1d77b5d` as `CLEAN`, and PR #14 at unchanged head `4452d54` as `DIRTY`; GitHub check-run visibility remains unavailable (`403 Resource not accessible by integration`). PR #1 remains the oversight record branch.
+
+| PR | Material classification | Controlling task / result |
+|---|---|---|
+| [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) | `CLEAN` metadata at unchanged test/documentation head; contributor test results remain unverified. | **A-07** remains exact M1 evidence intake. Clean metadata is not validation, merge, release, runtime, or autonomy evidence. |
+| [#14](https://github.com/darrinbaldwindev/AgentOS/pull/14) | `DIRTY` metadata at unchanged narrow repair head; branch divergence from main. | **DQ-01-R4** containment applies. It remains pending and is not DQ acceptance or a merge/rebase instruction. |
+| [#1](https://github.com/darrinbaldwindev/AgentOS/pull/1) | Existing R1–R4 log/notice surface. | No new decision/acknowledgement was found. |
+
+**Henry comparison:** The public Henry Intelligent Machines page identifies an autonomous-microbusiness positioning but does not provide enough primary technical/control evidence to assess integration, identity, data, audit, or approval safeguards. No authoritative link between HIM and OpenClaw was found. No installation, connection, access request, credential, or adoption is authorised. Potentially reusable concepts are explicit missions, bounded role receipts, and supervisor returns—not external code or an unbounded action runtime.
+
+**Notice decision:** One material, commentary-only notice is warranted on each affected PR #6 and #14 after this record is pushed. Detailed private record: `portfolio_pr_scan_henry_comparison_2026-08-28.md`.
