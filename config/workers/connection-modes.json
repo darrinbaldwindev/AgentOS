@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "modes": {
+    "free-limited": "Use provider capabilities available without a paid plan, subject to provider terms and limits.",
+    "subscription": "Use capabilities exposed by a consumer subscription when the provider permits the required integration.",
+    "api": "Use programmatic provider access through an API credential; API billing may be separate from consumer subscriptions.",
+    "oauth": "Use an authorized provider account where OAuth is supported.",
+    "mcp": "Use a provider/service exposed through an MCP-compatible integration.",
+    "affiliate": "An acquisition route associated with a verified affiliate/referral relationship; never a runtime execution mode."
+  },
+  "rules": [
+    "Never assume consumer subscription implies API access.",
+    "Never store provider credentials in source control.",
+    "Verify runtime capability before activating a worker.",
+    "Affiliate metadata may expose an acquisition path but cannot grant capability or authority.",
+    "A worker can expose more than one connection mode."
+  ]
+}
