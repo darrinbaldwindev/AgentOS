@@ -16,11 +16,12 @@ export function taskFingerprint(task) {
   return createHash('sha256').update(serialiseTask(task)).digest('hex');
 }
 
-export function createRepositoryDispatchAdapter({ read, write, append }) {
+export function createRepositoryDispatchAdapter({ read, write, append, readAuditEvents }) {
   if (typeof read !== 'function' || typeof write !== 'function') {
     throw new Error('read and write functions are required');
   }
   if (typeof append !== 'function') throw new Error('append function is required for audit persistence');
+  if (typeof readAuditEvents !== 'function') throw new Error('readAuditEvents function is required for audit persistence');
 
   return {
     async readTask(taskId) {
@@ -31,6 +32,9 @@ export function createRepositoryDispatchAdapter({ read, write, append }) {
         expectedSha,
         fingerprint: taskFingerprint(task),
       });
+    },
+    async readAuditEvents() {
+      return readAuditEvents(auditPath());
     },
     async appendAuditEvent(event) {
       return append(auditPath(), `${JSON.stringify(event)}\n`);
