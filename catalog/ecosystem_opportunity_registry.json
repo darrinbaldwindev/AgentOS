@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Unified discovery and capability registry for external programs, tools, offers and integrations.",
+  "canonicalStrategicSource": "logs/2026-08-30-chatgpt-overseer-ecosystem-research.md",
+  "activationPolicy": "Discovery does not authorize purchase, enrollment, credentials, routing, referral redirects or external outreach. Current official terms, entitlement and owner authorization are required before activation.",
+  "routingPolicy": "Provider and model selection is capability-, entitlement-, availability-, cost- and policy-driven; commercial status must not determine model selection by itself.",
+  "statusVocabulary": ["discovered", "candidate", "ready_for_activation", "active", "verified", "blocked", "expired"],
+  "interfaceVocabulary": ["api", "local_runtime", "cli", "browser", "desktop_app", "mcp_tool", "workspace", "unknown"],
+  "entries": [
+    {"id":"lennys_product_pass","name":"Lenny's Product Pass","category":"ecosystem_bundle","sourceType":"commercial_bundle","status":"discovered","agentosRole":"capability_acquisition_source","interface":"workspace","priority":"P0","activation":"owner_claim_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"n8n","name":"n8n","category":"workflow_automation","sourceType":"lennys_product_pass_and_existing_project_research","status":"candidate","agentosRole":"workflow_orchestration_worker","interface":"api","priority":"P0","activation":"current_offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md; catalog/provider_catalog_reconciliation.json"},
+    {"id":"cursor","name":"Cursor","category":"coding","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"coding_repository_worker","interface":"desktop_app","priority":"P0","activation":"offer_and_interface_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"manus","name":"Manus","category":"agent_execution","sourceType":"lennys_product_pass_and_existing_project_research","status":"candidate","agentosRole":"general_execution_worker","interface":"browser","priority":"P0","activation":"subscription_and_execution_interface_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md; catalog/provider_catalog_reconciliation.json"},
+    {"id":"google_ai_pro_gemini","name":"Google AI Pro / Gemini","category":"research_intelligence","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"research_intelligence_worker","interface":"browser","priority":"P0","activation":"offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"factory","name":"Factory","category":"coding","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"software_development_worker","interface":"unknown","priority":"P0","activation":"interface_and_offer_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"gumloop","name":"Gumloop","category":"workflow_automation","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"cross_app_automation_worker","interface":"api","priority":"P1","activation":"current interface verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"supabase","name":"Supabase","category":"backend_infrastructure","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"persistence_backend_capability","interface":"api","priority":"P1","activation":"offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"replit","name":"Replit","category":"build_deployment","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"build_deployment_worker","interface":"browser","priority":"P1","activation":"offer_and_execution_interface_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"linear","name":"Linear","category":"project_management","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"project_task_surface","interface":"api","priority":"P1","activation":"offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"notion","name":"Notion","category":"knowledge_workspace","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"knowledge_workspace_layer","interface":"api","priority":"P1","activation":"offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"warp","name":"Warp","category":"developer_terminal","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"agentic_terminal_worker","interface":"desktop_app","priority":"P1","activation":"offer_and_interface_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"jam","name":"Jam","category":"debugging_evidence","sourceType":"lennys_product_pass","status":"candidate","agentosRole":"bug_and_evidence_capture_worker","interface":"browser","priority":"P1","activation":"offer_and_access_verification_required","evidence":"docs/LENNYS_PRODUCT_PASS_AGENTOS_ONBOARDING.md"},
+    {"id":"sumo_app","name":"Sumo App","category":"external_program","sourceType":"prior_chat_context","status":"candidate","agentosRole":"unclassified_until_researched","interface":"unknown","priority":"research","activation":"current official capability/interface verification required","evidence":"Prior ChatGPT Overseer conversation; no current repository verification claim"}
+  ],
+  "integration_stages": [
+    "discover",
+    "classify_capability",
+    "identify_interface",
+    "verify_current_terms",
+    "verify_entitlement",
+    "define_worker_adapter",
+    "safe_test",
+    "evidence",
+    "verification",
+    "activate_for_routing"
+  ],
+  "registry_relationships": {
+    "modelRegistry": "technical model capabilities",
+    "providerEntitlementRegistry": "what the user/AgentOS is actually entitled to use",
+    "partnerRevenueRegistry": "commercial relationships and economics",
+    "ecosystemOpportunityRegistry": "discovery, acquisition source, capability and integration opportunity"
+  },
+  "data_boundary": "This registry is not a credential store and must not contain secrets, account identifiers, referral codes or private browsing history."
+}
