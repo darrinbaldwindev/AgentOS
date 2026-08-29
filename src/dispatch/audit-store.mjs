@@ -17,3 +17,13 @@ export function createAuditStore({ readEvents, appendEvent }) {
     },
   };
 }
+
+export function createAdapterAuditStore(adapter) {
+  if (typeof adapter?.readAuditEvents !== 'function' || typeof adapter?.appendAuditEvent !== 'function') {
+    throw new Error('adapter must provide readAuditEvents and appendAuditEvent');
+  }
+  return createAuditStore({
+    readEvents: () => adapter.readAuditEvents(),
+    appendEvent: event => adapter.appendAuditEvent(event),
+  });
+}
