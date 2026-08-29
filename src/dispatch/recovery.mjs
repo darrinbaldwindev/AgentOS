@@ -22,3 +22,16 @@ export function createRunBudget({ maxTasks = 1, timeoutMs = 15 * 60 * 1000 } = {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('timeoutMs must be positive');
   return { maxTasks, timeoutMs };
 }
+
+export function evaluateRecovery({ health, attempts = 0, maxAttempts = 2 } = {}) {
+  const consecutiveErrors = health?.consecutive_errors ?? 0;
+  if (consecutiveErrors === 0) return { action: 'none', reason: 'healthy' };
+  if (attempts < maxAttempts) return { action: 'retry', reason: 'recovery_budget_available', attempts: attempts + 1 };
+  return { action: 'escalate', reason: 'recovery_budget_exhausted', attempts };
+}
+
+export function applyRecoveryDecision({ control, decision, applyControl }) {
+  if (!applyControl) throw new Error('applyControl is required');
+  if (decision.action === 'escalate') return applyControl(control, 'pause');
+  return control;
+}
