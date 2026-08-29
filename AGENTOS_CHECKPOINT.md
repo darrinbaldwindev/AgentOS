@@ -20,16 +20,20 @@
 - Formal Continuity Protocol
 - AgentOS agent capability eligibility contract
 - Agent connectivity health report
+- Subscription-aware Worker Registry
+- Capability-based Worker Router
+- Preconfigured worker profiles for GPTChat, Claude, Gemini, Perplexity, Manus, Codex, Cursor, Devin and Replit
 
 ## In progress
 
 - Runtime shell boundary
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
+- Provider adapter lifecycle integration
 
 ## Next highest-priority action
 
-Build the local runtime shell contract around the existing domain/runtime modules. The shell must probe GitHub and local workspace access before granting AgentOS execution eligibility.
+Build the provider adapter contract and runtime registration path around the Worker Registry. Each adapter should discover connectivity, run a health check, expose runtime capabilities and execute approved tasks without storing credentials in the repository.
 
 ## Agent eligibility rule
 
@@ -47,6 +51,8 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 8. If checkpoint and code/runtime state disagree, code/runtime state wins and the discrepancy is recorded.
 9. An AI agent without reliable GitHub/continuity access is not eligible for autonomous AgentOS project work.
 10. Local workspace access is preferred when available because it provides direct access to the active working tree.
+11. Subscriptions activate worker capabilities; they do not change AgentOS's provider-neutral architecture.
+12. Worker selection is based on capability, eligibility, availability and task fit—not commercial attribution or partner revenue.
 
 ## Blockers
 
@@ -58,3 +64,4 @@ None known at this checkpoint.
 - Persistence semantics still need a real durable adapter.
 - Security policy will need stronger isolation before powerful tools such as shell/deployment are enabled.
 - Capability probes must be real integration checks; they must never be inferred from provider names.
+- External providers require explicit authentication and runtime connectivity before they can be selected as active workers.
