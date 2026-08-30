@@ -5,14 +5,13 @@ import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
 
 const policy = createAuthorityPolicy({ issuers: ['GPTChat Overseer'], capabilities: ['tests'] });
 const task = {
-  task_id: 'runner-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
-  objective: 'Execute one autonomous task', priority: 'critical', scope: ['tests'],
-  constraints: [], acceptance_criteria: ['executor result is persisted'],
-  authority: { granted_capabilities: ['tests'] }, status: 'queued',
+  task_id: 'runner-001', mission_id: 'mission:runner-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
+  objective: 'Execute one autonomous task', priority: 'critical', scope: ['tests'], constraints: [],
+  acceptance_criteria: ['executor result is persisted'], authority: { granted_capabilities: ['tests'] }, status: 'queued',
 };
 
 function storeFrom(log) {
-  return { writeTask: async value => log.push(structuredClone(value)) };
+  return { writeTask: async value => { log.push(structuredClone(value)); return { written: true }; } };
 }
 
 test('runner claims, executes, verifies and completes one task', async () => {
