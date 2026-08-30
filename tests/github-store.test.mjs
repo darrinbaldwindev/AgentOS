@@ -10,6 +10,7 @@ test('repository adapter maps task IDs to durable dispatch paths and forwards ex
     read: async path => ({ path }),
     write: async (path, content, metadata) => { calls.push({ path, content, metadata }); return 'ok'; },
     append: async () => 'audit-ok',
+    readAuditEvents: async () => [],
   });
   assert.deepEqual(await adapter.readTask('abc-123'), { path: taskPath('abc-123') });
   assert.equal(await adapter.writeTask(task, 'sha-old'), 'ok');
@@ -25,6 +26,7 @@ test('repository adapter exposes durable audit path', async () => {
     read: async () => null,
     write: async () => 'ok',
     append: async (...args) => { path = args[0]; return 'audit-ok'; },
+    readAuditEvents: async () => [],
   });
   assert.equal(await adapter.appendAuditEvent({ event_id: 'audit-1' }), 'audit-ok');
   assert.equal(path, auditPath());
