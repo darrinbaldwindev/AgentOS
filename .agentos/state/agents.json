@@ -23,7 +23,8 @@
     {
       "id": "manus:worker",
       "role": "external-ai-worker",
-      "status": "available",
+      "status": "unavailable",
+      "availability_reason": "No active Manus subscription/connection confirmed",
       "authority_level": "delegated",
       "reports_to": "project-overseer"
     },
