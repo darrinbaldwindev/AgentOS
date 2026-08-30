@@ -10,7 +10,7 @@ const task = {
   constraints: [], acceptance_criteria: ['parent completes'],
   authority: { granted_capabilities: ['tests'] }, mission_id: 'mission:core-003', status: 'queued',
 };
-const store = log => ({ writeTask: async value => log.push(structuredClone(value)) });
+const store = log => ({ writeTask: async value => { log.push(structuredClone(value)); return { written: true }; } });
 
 test('completed task can create an authorised queued continuation', async () => {
   const writes = [];
