@@ -21,9 +21,9 @@ test('scheduler stops rescheduling after kill', async () => {
   assert.equal(calls, 1);
 });
 
-test('control actions preserve kill as terminal', () => {
+test('control actions preserve kill as terminal', async () => {
   const killed = applyControlAction(createRuntimeControl(), 'kill');
-  const attemptedResume = applyControlAction(killed, 'resume');
-  assert.equal(attemptedResume.killed, true);
-  assert.equal(attemptedResume.paused, false);
+  await assert.rejects(() => Promise.resolve(applyControlAction(killed, 'resume')), /requires a fresh runtime instance/);
+  assert.equal(killed.killed, true);
+  assert.equal(killed.paused, true);
 });
