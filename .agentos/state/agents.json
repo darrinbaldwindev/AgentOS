@@ -21,6 +21,14 @@
       "reports_to": "chatgpt:head-overseer"
     },
     {
+      "id": "agentos:deterministic-skill-agent",
+      "role": "internal-deterministic-worker",
+      "status": "available",
+      "authority_level": "delegated",
+      "reports_to": "project-overseer",
+      "capabilities": ["repository_read", "documentation", "deterministic_validation"]
+    },
+    {
       "id": "manus:worker",
       "role": "external-ai-worker",
       "status": "unavailable",
