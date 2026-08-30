@@ -6,7 +6,7 @@ export function createAgentOSMission({ decisionLoop, missionStore, orchestrator 
     missionStore.transition(missionId, 'running');
     const outcome = await decisionLoop.run({ missionId, message, task });
     if (outcome.status === 'blocked') {
-      orchestrator.pauseForHuman({ missionId, reason: outcome.route?.reason ?? 'blocked', context: { task, route: outcome.route }, nextAction: 'resume' });
+      orchestrator.pauseForHuman({ missionId, reason: outcome.route?.reason ?? 'blocked', context: { task, message, route: outcome.route }, nextAction: 'resume' });
       return { ...outcome, mission: missionStore.get(missionId) };
     }
     missionStore.transition(missionId, 'completed', { result: outcome.result, observation: outcome.observation });
