@@ -5,17 +5,16 @@ import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
 
 const policy = createAuthorityPolicy({ issuers: ['GPTChat Overseer'], capabilities: ['tests'] });
 const task = {
-  task_id: 'poll-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
+  task_id: 'poll-001', mission_id: 'mission:poll-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
   objective: 'Run one poll cycle', priority: 'high', scope: ['tests'], constraints: [],
-  acceptance_criteria: ['poll executes'], authority: { granted_capabilities: ['tests'] },
-  status: 'queued',
+  acceptance_criteria: ['poll executes'], authority: { granted_capabilities: ['tests'] }, status: 'queued',
 };
 
 test('poll cycle executes one matching task and can expose continuation', async () => {
   const writes = [];
   const result = await pollDispatch({
     tasks: [task], receiver: task.target, authorityPolicy: policy,
-    store: { writeTask: async value => writes.push(structuredClone(value)) },
+    store: { writeTask: async value => { writes.push(structuredClone(value)); return { written: true }; } },
     execute: async () => ({ ok: true }),
     nextTask: parent => ({ ...parent, task_id: 'poll-002', objective: 'Continue', status: 'queued' }),
     now: Date.parse('2026-08-27T15:00:00Z'), claimTimeoutMs: 900000,
