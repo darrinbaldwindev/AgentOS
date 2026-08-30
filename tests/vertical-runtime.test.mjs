@@ -15,7 +15,7 @@ test('full vertical runtime completes a mission', async () => {
   let executions = 0;
   const decisionLoop = { run: async () => ({ status: 'completed', result: { output: ++executions === 1 ? 'done' : 'resumed' }, observation: { quality: 0.96 } }) };
   const mission = createAgentOSMission({ decisionLoop, missionStore, orchestrator });
-  const runner = createAgentOSMissionRunner({ mission, decisionLoop, orchestrator });
+  const runner = createAgentOSMissionRunner({ mission, decisionLoop, orchestrator, missionStore });
   const result = await runner.start({ missionId: 'vertical-1', message: 'Complete a test task', task: {} });
   assert.equal(result.mission.state, 'completed');
   assert.equal(result.result.output, 'done');
@@ -29,11 +29,11 @@ test('full vertical runtime can pause, receive a human decision, and resume', as
   let blocked = true;
   const decisionLoop = { run: async () => blocked ? (blocked = false, { status: 'blocked', route: { reason: 'needs_human' } }) : ({ status: 'completed', result: { output: 'resumed-ok' }, observation: { quality: 0.95 } }) };
   const mission = createAgentOSMission({ decisionLoop, missionStore, orchestrator });
-  const runner = createAgentOSMissionRunner({ mission, decisionLoop, orchestrator });
+  const runner = createAgentOSMissionRunner({ mission, decisionLoop, orchestrator, missionStore });
   const paused = await runner.start({ missionId: 'vertical-2', message: 'Test human gate', task: {} });
   assert.equal(paused.mission.state, 'awaiting_human');
   assert.equal(humanGate.get('vertical-2').status, 'pending');
   const resumed = await runner.resume({ missionId: 'vertical-2', decision: 'approve', note: 'continue' });
   assert.equal(resumed.status, 'completed');
-  assert.equal(missionStore.get('vertical-2').state, 'running');
+  assert.equal(missionStore.get('vertical-2').state, 'completed');
 });
