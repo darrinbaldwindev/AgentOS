@@ -13,6 +13,6 @@ test('qualified verification can override a weaker original', () => {
 });
 
 test('unresolved disagreement escalates', () => {
-  const r = resolveDisagreement({ original: { decision: 'yes', quality: 0.91, confidence: 0.81 }, verification: { decision: 'no', quality: 0.89, confidence: 0.82 }, task: {} });
+  const r = resolveDisagreement({ original: { decision: 'yes', quality: 0.91, confidence: 0.79 }, verification: { decision: 'no', quality: 0.89, confidence: 0.82 }, task: {} });
   assert.equal(r.decision, 'escalate');
 });
