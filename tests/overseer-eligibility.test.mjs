@@ -16,10 +16,7 @@ test('Overseer eligibility passes only after real integration probes', async () 
 });
 
 test('Overseer eligibility blocks missing GitHub connectivity', async () => {
-  const result = await assessOverseerEligibility({
-    ...connected,
-    github: { probeRead: async () => false },
-  });
+  const result = await assessOverseerEligibility({ ...connected, github: { probeRead: async () => false } });
   assert.equal(result.eligible, false);
-  await assert.rejects(() => assertOverseerEligible({ ...connected, github: { probeRead: async () => false } }), /AGENT_NOT_ELIGIBLE/);
+  await assert.rejects(() => assertOverseerEligible({ ...connected, github: { probeRead: async () => false } }), /github\.read/);
 });
