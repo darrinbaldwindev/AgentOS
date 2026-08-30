@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 import { MemoryDispatchStore } from '../src/dispatch/store.mjs';
 
 const task = {
-  task_id: 'store-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
-  objective: 'Validate state storage', priority: 'normal', scope: ['tests'],
-  constraints: [], acceptance_criteria: ['state survives store operations'],
-  authority: { granted_capabilities: ['tests'] }, status: 'queued',
+  task_id: 'store-001', mission_id: 'mission:store-001', issuer: 'GPTChat Overseer', target: 'AgentOS Overseer Project',
+  objective: 'Validate state storage', priority: 'normal', scope: ['tests'], constraints: [],
+  acceptance_criteria: ['state survives store operations'], authority: { granted_capabilities: ['tests'] }, status: 'queued',
 };
 
 test('store returns isolated task state and rejects duplicate IDs', () => {
