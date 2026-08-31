@@ -25,3 +25,13 @@ jobs:
         run: |
           echo "AgentOS dispatch queue detected."
           find .agentos/dispatch/tasks -maxdepth 1 -name '*.json' -print 2>/dev/null || true
+
+  globalshopco-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Execute GlobalShopCo worker transaction
+        run: node scripts/run-globalshopco-worker-fixture.mjs
