@@ -19,6 +19,8 @@ jobs:
           node-version: 22
       - name: Run deterministic tests
         run: npm test
+      - name: Execute GlobalShopCo deterministic fixture
+        run: node scripts/run-globalshopco-worker-fixture.mjs
       - name: Report dispatch queue state
         run: |
           echo "AgentOS dispatch queue detected."
