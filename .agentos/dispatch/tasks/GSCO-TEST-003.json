@@ -1,0 +1,18 @@
+{
+  "task_id": "GSCO-TEST-003",
+  "mission_id": "globalshopco:test-003",
+  "issuer": "agentos:overseer",
+  "target": "agentos:deterministic-skill-agent",
+  "objective": "Perform one non-destructive GlobalShopCo repository/documentation read through the existing AgentOS dispatch and worker lifecycle.",
+  "priority": "high",
+  "scope": ["GlobalShopCo", "repository_read", "documentation"],
+  "constraints": ["no source changes during execution", "no destructive changes", "no credentials", "no external providers", "no production Shopify", "no paid APIs"],
+  "acceptance_criteria": ["task is claimed by the authorised worker", "worker executes", "docs/RUNTIME_SHELL.md is actually read", "response contains the exact task_id", "lifecycle reaches completed with evidence"],
+  "dependencies": [],
+  "authority": {
+    "granted_capabilities": ["repository_read", "documentation"],
+    "requires_escalation_for": ["repository_write", "destructive_changes", "financial_commitments", "permission_grants"]
+  },
+  "status": "queued",
+  "created_at": "2026-08-31T10:10:00Z"
+}
