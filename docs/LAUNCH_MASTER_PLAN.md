@@ -9,23 +9,23 @@ AgentOS launches when evidence satisfies the gates, not because a calendar date 
 
 ## Master sequence
 
-| Phase | Target | Work | How / acceptance gate | Owner |
-|---|---|---|---|---|
-| 0 | Now–W1 | IP protection | Patent/IP review of Mission 033; classify patent candidates, trade secrets, copyright and trademarks; no premature public disclosure | Owner + IP counsel |
-| 1 | W1 | Archive/control plane | Canonical Gemini mission index; continuous mission/report integrity; no fabricated history | Overseer + Green Agent |
-| 2 | W1–W3 | AgentOS core | Policy → capability → authority → budget → bounded dispatch → worker → checkpoint → verification; deterministic end-to-end proof | AgentOS + PRS |
-| 3 | W1–W2 | PRS v0.1 | Independent evaluator verification; GREEN only after independent evidence | PRS |
-| 4 | W2–W4 | Green Agent | Reporting watches, durable findings, escalation/acknowledgement/resolution tests | Green Agent |
-| 5 | W3–W5 | Security | Threat model, dependency/secret scanning, independent security review | Security |
-| 6 | W4–W6 | Product packaging | Core/SDK/middleware boundaries, developer experience, Open Core decision | Product + Engineering |
-| 7 | W5–W8 | Governance Middleware | Extract reusable control-plane APIs; prove an external/non-AgentOS integration | Engineering |
-| 8 | W5–W7 | Commercial | Pricing, unit economics, licensing, support model | Commercial |
-| 9 | W6–W10 | Partnerships | Score 5–10 strategic targets; controlled partner disclosure; design-partner pilots | Business |
-| 10 | W8–W12 | Pilot | 2–5 bounded real-world use cases; measure reliability, violations, escalations and cost | Product + Overseer |
-| 11 | W10–W14 | Enterprise readiness | Legal, privacy, security docs, compliance roadmap, SLA/support, incident response | Legal + Security + Ops |
-| 12 | W13–W16 | Launch readiness | Independent audit and final GREEN gate; no unresolved critical findings | Independent reviewers |
-| 13 | ~W16 | Launch | Public/controlled release only after all required gates pass | Owner + AgentOS |
-| 14 | Continuous | Post-launch | Green Agent monitoring, security/IP monitoring, verified roadmap feedback | Green Agent + Overseer |
+| Phase | Target | Work | How / acceptance gate | Owner | Status |
+|---|---|---|---|---|---|
+| 0 | Now–W1 | IP protection | Patent/IP review of Mission 033; classify patent candidates, trade secrets, copyright and trademarks; no premature public disclosure | Owner + IP counsel | **OPEN** |
+| 1 | W1 | Archive/control plane | Canonical Gemini mission index; continuous mission/report integrity; no fabricated history | Overseer + Green Agent | **PARTIAL** |
+| 2 | W1–W3 | AgentOS core | Policy → capability → authority → budget → bounded dispatch → worker → checkpoint → verification; deterministic end-to-end proof | AgentOS + PRS | **IN PROGRESS** |
+| 3 | W1–W2 | PRS v0.1 | Independent evaluator verification; GREEN only after independent evidence | PRS | **IN PROGRESS** |
+| 4 | W2–W4 | Green Agent | Reporting watches, durable findings, escalation/acknowledgement/resolution tests | Green Agent | **IN PROGRESS** |
+| 5 | W3–W5 | Security | Threat model, dependency/secret scanning, independent security review | Security | **NEW / NOT STARTED** |
+| 6 | W4–W6 | Product packaging | Core/SDK/middleware boundaries, developer experience, Open Core decision | Product + Engineering | **NOT STARTED** |
+| 7 | W5–W8 | Governance Middleware | Extract reusable control-plane APIs; prove an external/non-AgentOS integration | Engineering | **NOT STARTED** |
+| 8 | W5–W7 | Commercial | Pricing, unit economics, licensing, support model | Commercial | **NOT STARTED** |
+| 9 | W6–W10 | Partnerships | Score 5–10 strategic targets; controlled partner disclosure; design-partner pilots | Business | **NOT STARTED** |
+| 10 | W8–W12 | Pilot | 2–5 bounded real-world use cases; measure reliability, violations, escalations and cost | Product + Overseer | **NOT STARTED** |
+| 11 | W10–W14 | Enterprise readiness | Legal, privacy, security docs, compliance roadmap, SLA/support, incident response | Legal + Security + Ops | **NOT STARTED** |
+| 12 | W13–W16 | Launch readiness | Independent audit and final GREEN gate; no unresolved critical findings | Independent reviewers | **NOT STARTED** |
+| 13 | ~W16 | Launch | Public/controlled release only after all required gates pass | Owner + AgentOS | **NOT STARTED** |
+| 14 | Continuous | Post-launch | Green Agent monitoring, security/IP monitoring, verified roadmap feedback | Green Agent + Overseer | **DESIGNATED** |
 
 ## Launch gates
 
@@ -42,6 +42,10 @@ AgentOS launches when evidence satisfies the gates, not because a calendar date 
 ## Required work-item fields
 
 Every launch item must track: **WHAT, HOW, EVIDENCE, GATE, OWNER, STATUS, BLOCKER, NEXT ACTION**.
+
+## Security workstream
+
+Security is now a first-class launch workstream. See `docs/AGENTOS_SECURITY_CONTROL_PLANE.md`. Scope includes identity, authentication, capability authorization, authority/delegation, policy integrity, sandboxing, data/tenant isolation, secrets, prompt-injection boundaries, supply chain, runtime monitoring, audit integrity, Green Agent protection, PRS independence, recovery/quarantine, partner/API security and provider/model isolation. Agent security levels A0–A4 must be governed by policy; agents cannot grant themselves authority.
 
 ## IP strategy
 
