@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentos.local/schemas/reporting-watch-v0.1.json",
+  "title": "AgentOS Reporting Watch",
+  "type": "object",
+  "required": ["watch_id", "project_id", "mission_id", "task_id", "expected_report_type", "state", "due_at"],
+  "properties": {
+    "watch_id": {"type": "string"},
+    "project_id": {"type": "string"},
+    "mission_id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "correlation_id": {"type": "string"},
+    "expected_report_type": {"type": "string"},
+    "state": {"type": "string", "enum": ["PENDING", "RECEIVED", "LATE", "MISSING", "INVALID", "ESCALATED", "RESOLVED"]},
+    "due_at": {"type": "string", "format": "date-time"},
+    "received_at": {"type": "string", "format": "date-time"},
+    "finding_id": {"type": "string"},
+    "escalation_id": {"type": "string"}
+  },
+  "additionalProperties": false
+}
