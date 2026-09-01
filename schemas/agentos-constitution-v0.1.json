@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentos.local/schemas/agentos-constitution-v0.1.json",
+  "title": "AgentOS Constitution",
+  "type": "object",
+  "required": ["version", "invariants"],
+  "properties": {
+    "version": {"type": "string"},
+    "invariants": {"type": "array", "minItems": 15, "items": {"type": "object", "required": ["id", "rule", "enforcement"], "properties": {"id": {"type": "string"}, "rule": {"type": "string"}, "enforcement": {"type": "string", "enum": ["FAIL_CLOSED", "REQUIRE_EVIDENCE", "REQUIRE_AUTHORITY", "AUDIT", "REVIEW"]}}, "additionalProperties": false}}
+  },
+  "additionalProperties": false
+}
