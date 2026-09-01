@@ -22,7 +22,10 @@ test('session blocks execution before routing when required connectivity is unav
     execute: async () => { executed = true; },
     integrations: { ...connected, github: { probeRead: async () => false } },
   });
-  await assert.rejects(() => session.send({ missionId: 'm1', message: 'test', task: {} }), /AGENT_NOT_ELIGIBLE/);
+  await assert.rejects(
+    () => session.send({ missionId: 'm1', message: 'test', task: {} }),
+    (error) => error?.code === 'AGENT_NOT_ELIGIBLE'
+  );
   assert.equal(routed, false);
   assert.equal(executed, false);
 });

@@ -7,7 +7,13 @@ import { createOverseerRouter } from '../runtime/overseer-router.mjs';
 import { createOverseerSession } from '../runtime/overseer-session.mjs';
 import { createOverseerAuditor } from '../runtime/overseer-auditor.mjs';
 
- test('Overseer turn routes, persists, and audits through one boundary', async () => {
+const connected = {
+  github: { probeRead: async () => true },
+  continuity: { probeRead: async () => true },
+  handoff: { probe: async () => true },
+};
+
+test('Overseer turn routes, persists, and audits through one boundary', async () => {
   const persistence = createPersistenceBridge(createStateStore());
   await bootstrapOverseer({ persistence });
   await activateOverseer({ persistence });
@@ -21,7 +27,7 @@ import { createOverseerAuditor } from '../runtime/overseer-auditor.mjs';
     return { runId: run.id, output: 'ok' };
   };
 
-  const session = createOverseerSession({ persistence, router, execute, auditor });
+  const session = createOverseerSession({ persistence, router, execute, auditor, integrations: connected });
   const response = await session.send({ missionId: mission.id, message: 'complete task', task: { requirements: { reasoning: true } } });
 
   assert.equal(response.result.runId, 'run:session-audit');
