@@ -2,6 +2,8 @@ name: Project Overseer Wake
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
     - cron: '17 * * * *'
 
