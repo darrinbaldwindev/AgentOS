@@ -18,7 +18,7 @@ assert.match(source, /id="context-panel"[^>]*hidden/);
 assert.match(source, /id="provider-list"[^>]*aria-label="Provider health choices"/);
 assert.equal(count(/class="provider(?:\s+selected)?"[^>]*tabindex="0"/g), 3);
 assert.equal(count(/aria-pressed="(?:true|false)"/g), 3);
-assert.equal(count(/class="status (?:available|rate-limited|degraded|offline|error|warning)"/g), 3);
+assert.equal(count(/class="provider(?:\s+selected)?"[^>]*tabindex="0"[\s\S]*?class="status (?:available|rate-limited|degraded|offline|error|warning)"/g), 3);
 assert.match(source, /ArrowDown/);
 assert.match(source, /ArrowUp/);
 assert.match(source, /Home/);
