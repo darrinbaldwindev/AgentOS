@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentos.dev/schemas/tier2_3_status.schema.json",
+  "title": "AgentOS Tier 2.3 Status",
+  "description": "Canonical machine-readable status contract for Tier 2.3 governance gates and deterministic evidence suites.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "mission_id",
+    "project",
+    "tier",
+    "overall_status",
+    "green_eligible",
+    "current_commit",
+    "gates",
+    "tests",
+    "blocking_reasons",
+    "evidence",
+    "generated_at",
+    "generated_by"
+  ],
+  "properties": {
+    "schema": { "const": "agentos.tier2_3.status" },
+    "schema_version": { "const": "1.0" },
+    "mission_id": { "type": "string", "minLength": 1 },
+    "project": { "type": "string", "minLength": 1 },
+    "tier": { "const": "2.3" },
+    "overall_status": { "$ref": "#/$defs/status" },
+    "green_eligible": { "type": "boolean" },
+    "current_commit": { "type": ["string", "null"] },
+    "last_verified_commit": { "type": ["string", "null"] },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["G1", "G2", "G3", "G4", "G5"],
+      "properties": {
+        "G1": { "$ref": "#/$defs/gate" },
+        "G2": { "$ref": "#/$defs/gate" },
+        "G3": { "$ref": "#/$defs/gate" },
+        "G4": { "$ref": "#/$defs/gate" },
+        "G5": { "$ref": "#/$defs/gate" }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["T1", "T2", "T3", "T4", "T5", "T6", "T7"],
+      "properties": {
+        "T1": { "$ref": "#/$defs/test" },
+        "T2": { "$ref": "#/$defs/test" },
+        "T3": { "$ref": "#/$defs/test" },
+        "T4": { "$ref": "#/$defs/test" },
+        "T5": { "$ref": "#/$defs/test" },
+        "T6": { "$ref": "#/$defs/test" },
+        "T7": { "$ref": "#/$defs/test" }
+      }
+    },
+    "blocking_reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blockingReason" }
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence" }
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "generated_by": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "RUNNING", "PASS", "FAIL", "BLOCKED", "SKIPPED", "VERIFIED", "REJECTED"]
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "name", "status", "required_evidence", "evidence", "blocking_reasons", "last_evaluated_commit", "verified_by", "updated_at"],
+      "properties": {
+        "gate_id": { "type": "string", "pattern": "^G[1-5]$" },
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/status" },
+        "required_evidence": { "type": "array", "items": { "type": "string", "pattern": "^T[1-7]$" }, "minItems": 1 },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "blocking_reasons": { "type": "array", "items": { "type": "string" } },
+        "last_evaluated_commit": { "type": ["string", "null"] },
+        "verified_by": { "type": "array", "items": { "type": "string" } },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_id", "name", "parent_gate", "status", "executed", "passed", "evidence", "failures", "blocking_reasons", "commit", "test_command", "executed_at"],
+      "properties": {
+        "test_id": { "type": "string", "pattern": "^T[1-7]$" },
+        "name": { "type": "string", "minLength": 1 },
+        "parent_gate": { "type": "string", "pattern": "^G[1-5]$" },
+        "status": { "$ref": "#/$defs/status" },
+        "executed": { "type": "boolean" },
+        "passed": { "type": "boolean" },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "failures": { "type": "array", "items": { "type": "string" } },
+        "blocking_reasons": { "type": "array", "items": { "type": "string" } },
+        "commit": { "type": ["string", "null"] },
+        "test_command": { "type": ["string", "null"] },
+        "executed_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "blockingReason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity", "blocks", "resolution_required"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["MISSING_EVIDENCE", "MISSING_AUTHORITY", "INVALID_SCOPE", "CAPABILITY_MISMATCH", "CONSENT_REQUIRED", "BUDGET_UNAVAILABLE", "BUDGET_RESERVATION_FAILED", "PATH_AUTHORITY_UNAVAILABLE", "WORKER_UNTRUSTED", "VERIFICATION_UNAVAILABLE", "AUDIT_UNAVAILABLE", "DEPENDENCY_UNAVAILABLE", "STALE_EVIDENCE", "TEST_NOT_EXECUTED", "PRODUCTION_AUTHORIZATION_REQUIRED", "UNKNOWN_STATE"]
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["INFO", "WARNING", "HIGH", "CRITICAL"] },
+        "blocks": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "resolution_required": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "type", "source", "result"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["SOURCE_INSPECTION", "UNIT_TEST", "INTEGRATION_TEST", "END_TO_END_TEST", "RUNTIME", "AUDIT_LOG", "PRS_EVALUATION", "GREEN_AGENT_REVIEW", "PRODUCTION"] },
+        "source": { "type": "string", "minLength": 1 },
+        "commit": { "type": ["string", "null"] },
+        "test_id": { "type": ["string", "null"], "pattern": "^T[1-7]$" },
+        "result": { "$ref": "#/$defs/status" },
+        "artifact": { "type": ["string", "null"] },
+        "executed_at": { "type": ["string", "null"], "format": "date-time" },
+        "verified_by": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "green_eligible": { "const": true } } },
+      "then": {
+        "properties": {
+          "overall_status": { "enum": ["PASS", "VERIFIED"] }
+        }
+      }
+    }
+  ]
+}
