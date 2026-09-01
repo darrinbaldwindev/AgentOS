@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentos.local/schemas/governance-events-v0.1.json",
+  "title": "AgentOS Governance Event",
+  "type": "object",
+  "required": ["event_id", "event_type", "timestamp", "scope", "actor", "correlation_id"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "enum": ["TASK_CREATED", "TASK_CLAIMED", "TASK_STARTED", "TASK_BLOCKED", "TASK_FAILED", "EVIDENCE_CREATED", "VERIFICATION_PASSED", "VERIFICATION_FAILED", "TASK_COMPLETED", "INTERVENTION_REQUIRED", "HANDOFF_CREATED", "POLICY_DENIED", "BUDGET_EXCEEDED", "CHECKPOINT_CREATED", "RECOVERY_STARTED", "SIMULATION_COMPLETED"]},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "scope": {"type": "object", "required": ["project_id"], "properties": {"project_id": {"type": "string"}, "mission_id": {"type": "string"}, "task_id": {"type": "string"}}, "additionalProperties": false},
+    "actor": {"type": "object", "required": ["actor_id", "actor_type"], "properties": {"actor_id": {"type": "string"}, "actor_type": {"type": "string", "enum": ["human", "overseer", "worker", "verifier", "system", "integration"]}}, "additionalProperties": false},
+    "correlation_id": {"type": "string", "minLength": 1},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": false
+}
