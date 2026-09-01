@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentos.local/schemas/green-agent-escalation-v0.1.json",
+  "title": "AgentOS Green Agent Escalation",
+  "type": "object",
+  "required": ["escalation_id", "finding_id", "project_id", "reason", "severity", "state", "detected_at"],
+  "properties": {
+    "escalation_id": {"type": "string"},
+    "finding_id": {"type": "string"},
+    "project_id": {"type": "string"},
+    "mission_id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "correlation_id": {"type": "string"},
+    "reason": {"type": "string"},
+    "severity": {"type": "string", "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+    "state": {"type": "string", "enum": ["OPEN", "ACKNOWLEDGED", "ACTIONING", "AWAITING_EVIDENCE", "RESOLVED", "REJECTED"]},
+    "detected_at": {"type": "string", "format": "date-time"},
+    "acknowledged_at": {"type": "string", "format": "date-time"},
+    "resolved_at": {"type": "string", "format": "date-time"},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "expected_response_at": {"type": "string", "format": "date-time"},
+    "recipient": {"type": "string"}
+  },
+  "additionalProperties": false
+}
