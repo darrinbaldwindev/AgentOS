@@ -104,6 +104,37 @@ Elasticity must remain fail-closed:
 
 ## Verification target
 
+
+**Mission 011 Implementation Status (2026-09-01):**
+
+A deterministic fixture and focused test suite have been implemented to prove the following properties:
+
+**✓ Proven with deterministic fixtures:**
+
+1. **Multiple independent tasks can progress in parallel** — Task dependency resolution correctly identifies when multiple tasks become eligible simultaneously after their dependencies complete.
+2. **Dependency ordering is enforced** — Tasks cannot start until all dependencies are satisfied, preventing premature execution.
+3. **Concurrency and budget limits** — Logic correctly limits concurrent worker allocation and respects budget constraints.
+4. **Duplicate-claim prevention** — Atomic claim mechanism prevents multiple workers from claiming the same task.
+5. **Conflict reconciliation** — Evidence model detects and marks conflicting results for reconciliation.
+6. **Correlated evidence** — Evidence data model supports full correlation to mission, task, and execution identifiers.
+7. **Checkpoint recovery** — Checkpoint storage and retrieval successfully restores mission state.
+
+**✗ Not yet proven (requires production runtime):**
+
+- Actual concurrent execution with real threading/parallelism
+- Real-world scheduler timing and resource contention
+- Distributed coordination across network boundaries
+- Provider integration with external systems
+- Scale testing beyond fixture boundaries
+- Recovery from actual failures (network, process crashes, OOM)
+- End-to-end mission completion with independent verification
+
+**Implementation artifacts:**
+
+- `fixtures/mission-011-deterministic-fixture.mjs` — Deterministic fixture with 6-task DAG proving all seven properties
+- `tests/mission-011-elastic-worker-pool.test.mjs` — Focused test suite validating each proof point
+
+## Original verification target
 The implementation should eventually prove, with deterministic fixtures:
 
 - one mission produces multiple independent eligible tasks;
