@@ -1,0 +1,39 @@
+{
+  "schema": "agentos.tier2_3.status",
+  "schema_version": "1.1",
+  "mission_id": "example-green-eligible",
+  "project": "AgentOS",
+  "tier": "2.3",
+  "overall_status": "VERIFIED",
+  "green_eligible": true,
+  "current_commit": "0123456789abcdef0123456789abcdef01234567",
+  "last_verified_commit": "0123456789abcdef0123456789abcdef01234567",
+  "gates": {
+    "G1": {"gate_id":"G1","name":"Scope & Authority","status":"VERIFIED","required_evidence":["T1"],"evidence":["ev-t1"],"blocking_reasons":[],"last_evaluated_commit":"0123456789abcdef0123456789abcdef01234567","verified_by":["example-verifier"],"updated_at":"2026-09-01T00:00:00Z"},
+    "G2": {"gate_id":"G2","name":"Budget & Resource Control","status":"VERIFIED","required_evidence":["T2"],"evidence":["ev-t2"],"blocking_reasons":[],"last_evaluated_commit":"0123456789abcdef0123456789abcdef01234567","verified_by":["example-verifier"],"updated_at":"2026-09-01T00:00:00Z"},
+    "G3": {"gate_id":"G3","name":"Execution Safety","status":"VERIFIED","required_evidence":["T3"],"evidence":["ev-t3"],"blocking_reasons":[],"last_evaluated_commit":"0123456789abcdef0123456789abcdef01234567","verified_by":["example-verifier"],"updated_at":"2026-09-01T00:00:00Z"},
+    "G4": {"gate_id":"G4","name":"Worker Capability & Consent","status":"VERIFIED","required_evidence":["T4"],"evidence":["ev-t4"],"blocking_reasons":[],"last_evaluated_commit":"0123456789abcdef0123456789abcdef01234567","verified_by":["example-verifier"],"updated_at":"2026-09-01T00:00:00Z"},
+    "G5": {"gate_id":"G5","name":"Verification, Recovery & Integrity","status":"VERIFIED","required_evidence":["T5","T6","T7"],"evidence":["ev-t5","ev-t6","ev-t7"],"blocking_reasons":[],"last_evaluated_commit":"0123456789abcdef0123456789abcdef01234567","verified_by":["example-verifier"],"updated_at":"2026-09-01T00:00:00Z"}
+  },
+  "tests": {
+    "T1":{"test_id":"T1","name":"Scope test","parent_gate":"G1","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t1"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T2":{"test_id":"T2","name":"Budget test","parent_gate":"G2","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t2"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T3":{"test_id":"T3","name":"Safety test","parent_gate":"G3","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t3"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T4":{"test_id":"T4","name":"Worker test","parent_gate":"G4","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t4"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T5":{"test_id":"T5","name":"Verification test","parent_gate":"G5","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t5"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T6":{"test_id":"T6","name":"Recovery test","parent_gate":"G5","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t6"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"},
+    "T7":{"test_id":"T7","name":"Integrity test","parent_gate":"G5","status":"VERIFIED","executed":true,"passed":true,"evidence":["ev-t7"],"failures":[],"blocking_reasons":[],"commit":"0123456789abcdef0123456789abcdef01234567","test_command":"example","executed_at":"2026-09-01T00:00:00Z"}
+  },
+  "blocking_reasons": [],
+  "evidence": [
+    {"evidence_id":"ev-t1","type":"UNIT_TEST","source":"example","test_id":"T1","result":"VERIFIED"},
+    {"evidence_id":"ev-t2","type":"UNIT_TEST","source":"example","test_id":"T2","result":"VERIFIED"},
+    {"evidence_id":"ev-t3","type":"UNIT_TEST","source":"example","test_id":"T3","result":"VERIFIED"},
+    {"evidence_id":"ev-t4","type":"UNIT_TEST","source":"example","test_id":"T4","result":"VERIFIED"},
+    {"evidence_id":"ev-t5","type":"UNIT_TEST","source":"example","test_id":"T5","result":"VERIFIED"},
+    {"evidence_id":"ev-t6","type":"UNIT_TEST","source":"example","test_id":"T6","result":"VERIFIED"},
+    {"evidence_id":"ev-t7","type":"UNIT_TEST","source":"example","test_id":"T7","result":"VERIFIED"}
+  ],
+  "generated_at":"2026-09-01T00:00:00Z",
+  "generated_by":"AgentOS Tier 2.3 example"
+}
