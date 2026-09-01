@@ -6,7 +6,8 @@ import { runLocalProjectOverseerCycle } from '../src/dispatch/local-cycle.mjs';
 const baseTask = {
   task_id: 'local-cycle-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
   objective: 'inspect and perform bounded local action', priority: 'high', scope: ['repository'],
-  constraints: ['no external side effects'], authority: { action: 'execute' },
+  constraints: ['no external side effects'], authority: { action: 'execute', granted_capabilities: ['repository:read'] },
+  acceptance_criteria: ['bounded action verified'],
   status: 'queued', created_at: '2026-09-01T00:00:00Z'
 };
 
