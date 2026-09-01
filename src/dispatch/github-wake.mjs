@@ -2,8 +2,8 @@ import { claimNextTask, advanceTask } from './worker.mjs';
 import { validateProjectOverseerResponse } from '../../scripts/validate-project-overseer-response.mjs';
 
 /** Execute one fail-closed wake cycle against a repository-backed dispatch adapter. */
-export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, inspect, act, leaseStore, now = Date.now()) {
-  if (!leaseStore) throw new Error('leaseStore is required');
+export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, inspect, act, leaseStore, idempotencyStore, now = Date.now()) {
+  if (!leaseStore || !idempotencyStore) throw new Error('leaseStore and idempotencyStore are required');
   const audit = await adapter.readAuditEvents();
   const queued = (audit ?? []).filter((event) => event?.type === 'dispatch.created' && event.task?.status === 'queued' && event.task.target === receiver);
   if (queued.length === 0) return { status: 'IDLE', response: null };
@@ -14,6 +14,11 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
 
   const lease = leaseStore.acquire(current.task_id, receiver, now);
   if (!lease.acquired) return { status: 'IDLE', response: null, reason: lease.reason };
+  const idempotency = idempotencyStore.begin(current.task_id, now);
+  if (!idempotency.accepted) {
+    leaseStore.release(current.task_id, receiver);
+    return { status: 'IDLE', response: null, reason: idempotency.reason };
+  }
 
   try {
     const claimed = claimNextTask([current], receiver, authorityPolicy);
@@ -54,6 +59,8 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
     };
     const validation = validateProjectOverseerResponse(response);
     if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
+    const completion = idempotencyStore.complete(terminal.task_id, response, Date.parse(response.completed_at));
+    if (!completion.completed) throw new Error(`idempotent completion rejected: ${completion.reason}`);
     await adapter.appendAuditEvent({ type: 'dispatch.response', task_id: terminal.task_id, response, lease_owner: receiver, created_at: response.completed_at });
     return { status: response.status, response, task: terminal };
   } finally {
