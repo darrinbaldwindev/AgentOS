@@ -1,0 +1,25 @@
+name: Project Overseer Wake
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-overseer-wake
+  cancel-in-progress: false
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run deterministic wake verification
+        run: node --test tests/local-cycle.test.mjs tests/github-wake.test.mjs tests/project-overseer-response-validator.test.mjs
