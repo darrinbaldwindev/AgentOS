@@ -1,15 +1,16 @@
-// LOCAL-RUNTIME-004: persistent manual wake attached to the installed AgentOS runtime.
-// Reuses canonical boot, dispatch, authority and local-cycle primitives.
+// LOCAL-RUNTIME-005: persistent manual wake attached to the installed AgentOS runtime.
+// Reuses canonical boot, dispatch, authority and durable persistence primitives.
 // Safe by default: DRY_RUN only, autonomy disabled, no provider or production writes.
 
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
+import { createLocalDispatchStore } from './local-dispatch-store.mjs';
 import { bootAgentOS } from './agentos-boot.mjs';
-import { MemoryDispatchStore } from '../src/dispatch/store.mjs';
-import { runLocalProjectOverseerCycle } from '../src/dispatch/local-cycle.mjs';
+import { runNextTask } from '../src/dispatch/runner.mjs';
 import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
+import { validateProjectOverseerResponse } from '../scripts/validate-project-overseer-response.mjs';
 
 const RECEIVER = 'agentos:project-overseer';
 const ISSUER = 'agentos:overseer';
@@ -26,10 +27,6 @@ function safeRuntimeConfig(config) {
   return config;
 }
 
-function taskFromArtifact(artifact) {
-  return artifact?.artifactType === 'dispatch.task' ? artifact.payload : null;
-}
-
 export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
   if (!root) throw new TypeError('root is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
@@ -42,9 +39,9 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     continuityCheck: async () => ({ ok: true }),
   });
 
-  const artifacts = await persistence.list('artifact');
-  const tasks = artifacts.map(taskFromArtifact).filter(Boolean);
   const taskId = `local-wake-${randomUUID()}`;
+  const wakeTraceId = randomUUID();
+  const createdAt = new Date().toISOString();
   const task = {
     task_id: taskId,
     mission_id: `mission:${taskId}`,
@@ -57,45 +54,79 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     authority: { action: 'execute', granted_capabilities: ['repository:read'] },
     acceptance_criteria: ['bounded action verified', 'response schema validated'],
     status: 'queued',
-    created_at: new Date().toISOString(),
+    created_at: createdAt,
+    wake_trace_id: wakeTraceId,
+    scheduler_wake_at: createdAt,
   };
 
   // Persist before execution so an interrupted wake remains recoverable and auditable.
   await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
 
-  // The existing synchronous cycle remains the execution engine; persistence is its durable boundary.
-  const seeded = new MemoryDispatchStore([...tasks, task]);
+  // Use the canonical conflict-safe runner; the local adapter is only the durable boundary.
+  const dispatchStore = createLocalDispatchStore(persistence);
   const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: ['repository:read'] });
-  const result = runLocalProjectOverseerCycle(
-    seeded,
-    RECEIVER,
-    policy,
-    () => ({ summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed' }),
-    (started, inspection) => ({
+  const completedTask = await runNextTask({
+    tasks: await dispatchStore.list(),
+    receiver: RECEIVER,
+    authorityPolicy: policy,
+    store: dispatchStore,
+    execute: async (started) => ({
       source_agent: 'agentos:local-wake-worker',
       implemented: ['executed one bounded local Project Overseer control cycle'],
-      verification: [inspection.summary, 'generated response validated by local-cycle'],
-      evidence: [`local:wake:${started.wake_trace_id}`],
+      verification: [
+        'canonical runner completed claimed → working → verification → completed',
+        'issuer and granted capability were authorised before execution',
+        'DRY_RUN/no-production-credential constraints were preserved',
+      ],
+      evidence: [
+        `local:wake:${started.wake_trace_id}`,
+        `local:task:${started.task_id}`,
+      ],
       repository_commit: 'local-runtime',
       next_action: 'reconcile returned evidence with upstream Overseer log',
     }),
-  );
+  });
 
-  await persistence.update('artifact', taskId, { payload: result.task });
+  if (!completedTask) throw new Error('LOCAL_WAKE_TASK_NOT_EXECUTED');
+
+  const completedAt = new Date().toISOString();
+  const executionEvidence = completedTask.evidence ?? {};
+  const response = {
+    mission_id: completedTask.task_id,
+    source_agent: executionEvidence.source_agent ?? 'agentos:local-wake-worker',
+    wake_trace_id: completedTask.wake_trace_id,
+    status: 'COMPLETED',
+    started_at: completedTask.created_at,
+    completed_at: completedAt,
+    repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
+    inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed',
+    work_claimed: [completedTask.objective],
+    work_implemented: executionEvidence.implemented ?? [],
+    verification: executionEvidence.verification ?? [],
+    evidence: executionEvidence.evidence ?? [],
+    blockers: [],
+    escalations: [],
+    next_action: executionEvidence.next_action ?? 'await upstream reconciliation',
+  };
+
+  const validation = validateProjectOverseerResponse(response);
+  if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
+
   await persistence.create('artifact', {
     id: `response:${taskId}`,
     artifactType: 'project-overseer.response',
-    payload: result.response,
+    payload: response,
   });
   await persistence.create('event', {
     agentId: boot.overseer.id,
     eventType: 'agentos.manual-wake.completed',
     taskId,
-    wakeTraceId: result.response.wake_trace_id,
-    status: result.status,
+    wakeTraceId: response.wake_trace_id,
+    missionId: response.mission_id,
+    status: response.status,
   });
 
-  return Object.freeze({ ...result, boot, task_id: taskId });
+  return Object.freeze({ status: response.status, response, task: completedTask, boot, task_id: taskId });
 }
 
 export async function main({ env = process.env, argv = process.argv } = {}) {
