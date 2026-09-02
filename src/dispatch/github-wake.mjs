@@ -12,11 +12,11 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
   const current = await adapter.readTask(candidate.task_id);
   if (!current || current.status !== 'queued') return { status: 'IDLE', response: null };
 
-  const lease = leaseStore.acquire(current.task_id, receiver, now);
+  const lease = await leaseStore.acquire(current.task_id, receiver, now);
   if (!lease.acquired) return { status: 'IDLE', response: null, reason: lease.reason };
-  const idempotency = idempotencyStore.begin(current.task_id, now);
+  const idempotency = await idempotencyStore.begin(current.task_id, now);
   if (!idempotency.accepted) {
-    leaseStore.release(current.task_id, receiver);
+    await leaseStore.release(current.task_id, receiver);
     return { status: 'IDLE', response: null, reason: idempotency.reason };
   }
 
@@ -60,11 +60,11 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
     };
     const validation = validateProjectOverseerResponse(response);
     if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
-    const completion = idempotencyStore.complete(terminal.task_id, response, Date.parse(response.completed_at));
+    const completion = await idempotencyStore.complete(terminal.task_id, response, Date.parse(response.completed_at));
     if (!completion.completed) throw new Error(`idempotent completion rejected: ${completion.reason}`);
     await adapter.appendAuditEvent({ type: 'dispatch.response', task_id: terminal.task_id, source_agent: response.source_agent, response, lease_owner: receiver, created_at: response.completed_at });
     return { status: response.status, response, task: terminal };
   } finally {
-    leaseStore.release(current.task_id, receiver);
+    await leaseStore.release(current.task_id, receiver);
   }
 }
