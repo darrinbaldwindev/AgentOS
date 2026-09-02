@@ -28,6 +28,54 @@ function findingKey(finding) {
   return `${finding.project}:${finding.finding_id}`;
 }
 
+function validateAssuranceClaim(claim, index) {
+  if (!claim || typeof claim !== 'object') throw new TypeError(`assurance claim ${index} must be an object`);
+  requireText(claim.claim_id, `assurance claim ${index}.claim_id`);
+  requireText(claim.summary, `assurance claim ${index}.summary`);
+  if (!Array.isArray(claim.evidence_refs) || claim.evidence_refs.length === 0) throw new TypeError(`assurance claim ${claim.claim_id} evidence_refs must be non-empty`);
+  return claim;
+}
+
+/**
+ * Independently challenge a supplied evidence packet without executing remediation.
+ * GREEN is reserved for packets where every claim has verified evidence and there
+ * are no stated blocking limitations. A limitation is blocking unless explicitly
+ * marked non_blocking, so missing live-equivalent evidence cannot be promoted by
+ * inference.
+ */
+export function evaluateAssurancePacket({ packet, timestamp = new Date(0).toISOString() } = {}) {
+  if (!packet || typeof packet !== 'object') throw new TypeError('packet is required');
+  for (const field of ['packet_id', 'project', 'repository', 'commit_sha']) requireText(packet[field], `packet.${field}`);
+  if (!Array.isArray(packet.claims) || packet.claims.length === 0) throw new TypeError('packet.claims must be non-empty');
+  const claims = packet.claims.map(validateAssuranceClaim);
+  const limitations = Array.isArray(packet.limitations) ? packet.limitations : [];
+  const evidence = claims.flatMap((claim) => claim.evidence_refs);
+  const unverifiedClaims = claims.filter((claim) => claim.evidence_refs.some((ref) => !ref || ref.status !== 'verified'));
+  const blockingLimitations = limitations.filter((limitation) => limitation && limitation.non_blocking !== true);
+  const disposition = unverifiedClaims.length > 0 ? 'red' : blockingLimitations.length > 0 ? 'yellow' : 'green';
+  return Object.freeze({
+    packet_id: packet.packet_id,
+    project: packet.project,
+    repository: packet.repository,
+    commit_sha: packet.commit_sha,
+    timestamp,
+    assurance_owner: 'green-agent',
+    claims: claims.map((claim) => ({
+      claim_id: claim.claim_id,
+      summary: claim.summary,
+      status: claim.evidence_refs.every((ref) => ref && ref.status === 'verified') ? 'verified' : 'insufficient_evidence',
+      evidence_refs: claim.evidence_refs,
+    })),
+    limitations,
+    blocking_limitations: blockingLimitations,
+    disposition,
+    production_promotion_allowed: disposition === 'green',
+    challenge: unverifiedClaims.length > 0 ? 'unverified claim evidence blocks promotion' : blockingLimitations.length > 0 ? 'blocking limitation prevents GREEN promotion' : 'all supplied claims have verified evidence and no blocking limitations were declared',
+    provenance: { source: 'green-agent', timestamp },
+    evidence_count: evidence.length,
+  });
+}
+
 export function createGreenAgent({ persistence, scan, createTask, rescan } = {}) {
   if (!persistence || typeof persistence.list !== 'function' || typeof persistence.create !== 'function') throw new TypeError('persistence is required');
   if (typeof scan !== 'function') throw new TypeError('scan is required');
