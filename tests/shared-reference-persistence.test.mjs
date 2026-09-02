@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SharedReferencePersistence } from '../src/dispatch/shared-reference-persistence.mjs';
+import { completionKey } from '../src/dispatch/persistence.mjs';
 
 const makeAdapter = () => new SharedReferencePersistence();
 
@@ -19,9 +20,11 @@ test('shared reference persistence prevents competing owners from taking the sam
   assert.equal(second.acquired, false);
 });
 
-test('shared reference persistence supports completion replay', async () => {
+test('shared reference persistence uses the canonical completion key and supports replay', async () => {
   const adapter = makeAdapter();
   const completion = { task_id: 'task-2', status: 'completed' };
-  await adapter.putCompletion('task-2', completion);
-  assert.deepEqual(await adapter.getCompletion('task-2'), completion);
+  const result = await adapter.putCompletion('task-2', completion);
+  assert.equal(result.completed, true);
+  assert.equal(result.record.task_id, completionKey('task-2'));
+  assert.deepEqual((await adapter.getCompletion('task-2')).response, completion);
 });
