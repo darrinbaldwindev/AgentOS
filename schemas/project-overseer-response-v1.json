@@ -6,6 +6,7 @@
   "required": ["mission_id", "status", "started_at", "completed_at", "repository_commit", "inspection_summary", "work_claimed", "work_implemented", "verification", "evidence", "blockers", "escalations", "next_action"],
   "properties": {
     "mission_id": {"type": "string", "minLength": 1},
+    "source_agent": {"type": "string", "minLength": 1},
     "status": {"enum": ["COMPLETED", "PARTIALLY_COMPLETE", "BLOCKED", "ESCALATED", "FAILED"]},
     "started_at": {"type": "string", "format": "date-time"},
     "completed_at": {"type": "string", "format": "date-time"},
