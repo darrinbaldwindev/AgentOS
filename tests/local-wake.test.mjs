@@ -22,6 +22,10 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     assert.notEqual(first.response.wake_trace_id, second.response.wake_trace_id);
     assert.equal(first.boot.overseer.id, second.boot.overseer.id);
     assert.equal(first.boot.capabilities.mode, 'DRY_RUN');
+    assert.equal(first.response.source_agent, 'agentos:deterministic-skill-agent');
+    assert.equal(second.response.source_agent, 'agentos:deterministic-skill-agent');
+    assert.ok(first.response.evidence.some((item) => item === 'worker:agentos:deterministic-skill-agent'));
+    assert.ok(first.response.verification.some((item) => item.includes('registered worker was enabled, executable and matched every required capability')));
 
     const state = JSON.parse(await readFile(join(root, DEFAULT_CONFIG.stateFile), 'utf8'));
     const artifacts = Object.values(state.records.artifact);
@@ -31,6 +35,7 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     assert.equal(tasks.length, 2);
     assert.equal(responses.length, 2);
     assert.equal(wakes.length, 2);
+    assert.equal(wakes[0].workerId, 'agentos:deterministic-skill-agent');
     assert.equal(state.records.agent['agentos:overseer'].status, 'online');
   } finally {
     await rm(root, { recursive: true, force: true });
