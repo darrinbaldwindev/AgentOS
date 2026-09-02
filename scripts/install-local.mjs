@@ -29,6 +29,16 @@ export function resolveInstallRoot(env = process.env, platformHome = homedir()) 
   return resolve(env.AGENTOS_HOME || join(platformHome, '.agentos'));
 }
 
+function initialRuntimeState() {
+  return {
+    schemaVersion: 1,
+    sequence: 0,
+    records: {
+      project: {}, workspace: {}, agent: {}, run: {}, event: {}, artifact: {},
+    },
+  };
+}
+
 export async function installLocal({ root = resolveInstallRoot(), force = false } = {}) {
   assertSupportedNode();
   await fs.mkdir(root, { recursive: true });
@@ -47,7 +57,7 @@ export async function installLocal({ root = resolveInstallRoot(), force = false 
   await fs.writeFile(configPath, `${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`, { mode: 0o600 });
   try { await fs.chmod(configPath, 0o600); } catch {}
   try { await fs.access(statePath); } catch {
-    await fs.writeFile(statePath, JSON.stringify({ schemaVersion: 1, installedAt: new Date().toISOString(), runs: [], events: [] }, null, 2) + '\n', { mode: 0o600 });
+    await fs.writeFile(statePath, `${JSON.stringify(initialRuntimeState(), null, 2)}\n`, { mode: 0o600 });
   }
   return { root, configPath, statePath, created: true };
 }
