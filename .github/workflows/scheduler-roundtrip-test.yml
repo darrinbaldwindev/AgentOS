@@ -10,9 +10,9 @@ on:
         type: choice
         options: ['1', '2', '3']
   schedule:
-    # One deterministic wake every 15 minutes. Each scheduled wake advances
+    # Fast deterministic wake every 5 minutes. Each scheduled wake advances
     # the mailbox chain by one phase, then the next wake starts a new cycle.
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: read
