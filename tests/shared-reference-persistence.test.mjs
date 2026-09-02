@@ -12,11 +12,13 @@ test('shared reference persistence exposes the required production adapter surfa
   }
 });
 
-test('shared reference persistence prevents competing owners from taking the same active lease', async () => {
+test('shared reference persistence preserves lease time semantics and prevents competing owners', async () => {
   const adapter = makeAdapter();
   const first = await adapter.acquireLease('task-1', 'runner-a', 60_000, 1_000);
   const second = await adapter.acquireLease('task-1', 'runner-b', 60_000, 1_001);
   assert.equal(first.acquired, true);
+  assert.equal(first.lease.acquired_at, 1_000);
+  assert.equal(first.lease.expires_at, 61_000);
   assert.equal(second.acquired, false);
 });
 
