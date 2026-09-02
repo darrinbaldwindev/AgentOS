@@ -10,8 +10,8 @@ on:
         type: choice
         options: ['1', '2', '3']
   schedule:
-    # Test cadence is intentionally 15 minutes. Each scheduled wake advances
-    # the bounded mailbox chain by exactly one phase.
+    # One deterministic wake every 15 minutes. Each scheduled wake advances
+    # the mailbox chain by one phase, then the next wake starts a new cycle.
     - cron: '*/15 * * * *'
 
 permissions:
@@ -42,12 +42,13 @@ jobs:
           set -euo pipefail
 
           comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
+          latest="$(echo "$comments" | jq -r '.[-1].body // empty')"
 
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             phase="${MANUAL_PHASE}"
-          elif echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:response -->"))' >/dev/null; then
+          elif echo "$latest" | grep -q '<!-- scheduler-test:response -->'; then
             phase="3"
-          elif echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:task -->"))' >/dev/null; then
+          elif echo "$latest" | grep -q '<!-- scheduler-test:task -->'; then
             phase="2"
           else
             phase="1"
@@ -57,12 +58,9 @@ jobs:
 
           case "$phase" in
             1)
-              if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:task -->"))' >/dev/null; then
-                echo "Task already exists; refusing duplicate delegation."
-                exit 0
-              fi
-              trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)"
-              body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- phase: 1\n\n<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${TEST_ID}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
+              trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
+              task_id="${TEST_ID}-${GITHUB_RUN_ID}"
+              body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- phase: 1\n\n<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
               gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
               ;;
 
@@ -77,10 +75,6 @@ jobs:
               if [ -z "$trace" ] || [ -z "$task_id" ]; then
                 echo "ERROR: task correlation fields missing."
                 exit 1
-              fi
-              if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:response -->"))' >/dev/null; then
-                echo "Response already exists; refusing duplicate execution."
-                exit 0
               fi
               body="<!-- scheduler-test:response -->\n## Project Overseer → ChatGPT Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: COMPLETED\n- source_agent: agentos:project-overseer-test\n- implemented: bounded scheduler-chain execution\n- verification: task and trace correlation preserved\n- evidence: scheduled test mailbox round-trip"
               gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
@@ -99,9 +93,9 @@ jobs:
               response_trace="$(printf '%s\n' "$response_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
               test "$task_id" = "$response_id"
               test "$task_trace" = "$response_trace"
-              echo "GREEN TEST EVIDENCE: ChatGPT delegation -> Project Overseer execution -> ChatGPT reconciliation completed with preserved task_id and wake_trace_id."
-              echo "task_id=$task_id"
-              echo "wake_trace_id=$task_trace"
+              body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${task_trace}\n- status: GREEN\n- evidence: ChatGPT delegation → Project Overseer execution → ChatGPT reconciliation\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
+              echo "GREEN TEST EVIDENCE: preserved task_id and wake_trace_id across the complete scheduled chain."
               ;;
 
             *)
