@@ -44,7 +44,6 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
 
   const artifacts = await persistence.list('artifact');
   const tasks = artifacts.map(taskFromArtifact).filter(Boolean);
-  const store = new MemoryDispatchStore(tasks);
   const taskId = `local-wake-${randomUUID()}`;
   const task = {
     task_id: taskId,
@@ -61,9 +60,10 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     created_at: new Date().toISOString(),
   };
 
-  store.constructor; // keep the store contract explicit for the installed runtime path
-  // MemoryDispatchStore is intentionally used as the synchronous execution adapter;
-  // the canonical durable copy is written before and after the cycle.
+  // Persist before execution so an interrupted wake remains recoverable and auditable.
+  await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
+
+  // The existing synchronous cycle remains the execution engine; persistence is its durable boundary.
   const seeded = new MemoryDispatchStore([...tasks, task]);
   const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: ['repository:read'] });
   const result = runLocalProjectOverseerCycle(
@@ -81,11 +81,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     }),
   );
 
-  await persistence.create('artifact', {
-    id: taskId,
-    artifactType: 'dispatch.task',
-    payload: result.task,
-  });
+  await persistence.update('artifact', taskId, { payload: result.task });
   await persistence.create('artifact', {
     id: `response:${taskId}`,
     artifactType: 'project-overseer.response',
