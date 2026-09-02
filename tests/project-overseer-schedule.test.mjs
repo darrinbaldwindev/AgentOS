@@ -41,3 +41,7 @@ test('Project Overseer wake verifies the complete deterministic gate', () => {
   ];
   for (const testPath of requiredTests) assert.match(workflow, new RegExp(testPath.replaceAll('.', '\\.') + '\\b'));
 });
+
+test('Project Overseer wake remains production-enabled', () => {
+  assert.match(workflow, /cron:\s*['\"]17 \* \* \* \*['\"]/);
+});
