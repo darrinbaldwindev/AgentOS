@@ -24,4 +24,4 @@ jobs:
         with:
           node-version: 22
       - name: Run deterministic wake verification
-        run: node --test tests/local-cycle.test.mjs tests/github-wake.test.mjs tests/github-wake-lease.test.mjs tests/lease.test.mjs tests/project-overseer-response-validator.test.mjs
+        run: node --test tests/local-cycle.test.mjs tests/github-wake.test.mjs tests/github-wake-lease.test.mjs tests/lease.test.mjs tests/project-overseer-response-validator.test.mjs tests/persistence.test.mjs tests/shared-reference-persistence.test.mjs
