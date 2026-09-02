@@ -18,6 +18,13 @@ test('reservations consume remaining budget before execution', () => {
   assert.equal(governor.reserve({ cost: 0.5, calls: 1, tokens: 500 }), null);
 });
 
+test('reservation IDs are unique across rapid reservations', () => {
+  const governor = createEfficiencyGovernor({ budget: { maxCost: 100, maxCalls: 100, maxTokens: 100000 } });
+  const reservations = Array.from({ length: 100 }, () => governor.reserve({ cost: 1, calls: 1, tokens: 1 }));
+  const ids = reservations.map(reservation => reservation.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
 test('reconciliation releases the reservation and records actual usage', () => {
   const governor = createEfficiencyGovernor({ budget: { maxCost: 1, maxCalls: 2, maxTokens: 1000 } });
   const reservation = governor.reserve({ cost: 0.6, calls: 1, tokens: 600 });
@@ -26,6 +33,13 @@ test('reconciliation releases the reservation and records actual usage', () => {
   assert.equal(result.overBudget, false);
   assert.deepEqual(governor.remaining(), { cost: 0.6, calls: 1, tokens: 550 });
   assert.throws(() => governor.reconcile({ reservation, actual: { cost: 0.1 } }), /unknown or already reconciled reservation/);
+});
+
+test('reconciliation reports an actual usage total above the hard ceiling', () => {
+  const governor = createEfficiencyGovernor({ budget: { maxCost: 1, maxCalls: 2, maxTokens: 1000 } });
+  const reservation = governor.reserve({ cost: 0.5, calls: 1, tokens: 500 });
+  const result = governor.reconcile({ reservation, actual: { cost: 1.2, calls: 1, tokens: 500 } });
+  assert.equal(result.overBudget, true);
 });
 
 test('released reservations become available without recording spend', () => {
