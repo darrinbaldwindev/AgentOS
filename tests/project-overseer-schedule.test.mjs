@@ -12,10 +12,9 @@ function countExact(line) {
   return workflow.split('\n').filter((entry) => entry === line).length;
 }
 
-test('Project Overseer production schedule is explicitly paused during scheduler testing', () => {
-  assert.doesNotMatch(workflow, /schedule:/);
-  assert.doesNotMatch(workflow, /cron:/);
-  assert.match(workflow, /Production schedule intentionally PAUSED/);
+test('Project Overseer production schedule is hourly and exact', () => {
+  assert.match(workflow, /schedule:\n\s+- cron: ['\"]17 \* \* \* \*['\"]/);
+  assert.doesNotMatch(workflow, /cron:\s*['\"]0 \* \* \* \*['\"]/);
   assert.equal(countExact('  workflow_dispatch:'), 1);
   assert.equal(countExact('  pull_request:'), 1);
   assert.equal(countExact('  push:'), 1);
