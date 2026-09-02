@@ -63,9 +63,9 @@ function raceGitHub({ gatePut = false } = {}) {
 }
 
 test('two concurrent runners have exactly one winner for a new lease', async () => {
-  const { fetchImpl } = raceGitHub({ gatePut: true });
-  const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
-  const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
+  const backing = raceGitHub({ gatePut: true });
+  const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
+  const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
 
   const results = await Promise.all([
     a.acquireLease('race-1', 'worker-a', 1000, 10000),
@@ -74,24 +74,21 @@ test('two concurrent runners have exactly one winner for a new lease', async () 
 
   assert.equal(results.filter((result) => result.acquired).length, 1);
   assert.equal(results.filter((result) => !result.acquired).length, 1);
-  const stored = [...new Map([...recordsFrom(fetchImpl)].map(([k, v]) => [k, v])).values()];
+  const stored = [...backing.records.values()];
   assert.equal(stored.length, 1);
   assert.ok(stored[0].value.owner === 'worker-a' || stored[0].value.owner === 'worker-b');
 });
-
-function recordsFrom(fetchImpl) {
-  return fetchImpl.records ?? [];
-}
 
 test('expired lease takeover is single-winner and stale owner cannot release it', async () => {
   const backing = raceGitHub();
   const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
   const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
+  const c = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
 
   assert.equal((await a.acquireLease('race-2', 'worker-a', 1000, 100)).acquired, true);
   const takeover = await Promise.all([
     b.acquireLease('race-2', 'worker-b', 1101, 100),
-    b.acquireLease('race-2', 'worker-c', 1101, 100)
+    c.acquireLease('race-2', 'worker-c', 1101, 100)
   ]);
   assert.equal(takeover.filter((result) => result.acquired).length, 1);
 
@@ -101,9 +98,9 @@ test('expired lease takeover is single-winner and stale owner cannot release it'
 });
 
 test('completion race is first-writer-wins and loser replays the winner', async () => {
-  const { fetchImpl } = raceGitHub({ gatePut: true });
-  const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
-  const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
+  const backing = raceGitHub({ gatePut: true });
+  const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
+  const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl: backing.fetchImpl });
   const responseA = { mission_id: 'race-3', status: 'COMPLETED', winner: 'a' };
   const responseB = { mission_id: 'race-3', status: 'COMPLETED', winner: 'b' };
 
