@@ -11,8 +11,14 @@ import { assertPersistenceAdapter, completionKey } from './persistence.mjs';
 export function createGitHubContentsPersistence({ owner, repo, token, root = '.agentos/persistence', apiBase = 'https://api.github.com', fetchImpl = fetch }) {
   if (!owner || !repo || !token) throw new Error('owner, repo and token are required');
 
-  const base = `${apiBase.replace(/\\/$/, '')}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`;
-  const pathFor = (key) => `${root.replace(/^\\/+|\\/+$/g, '')}/${encodeURIComponent(key)}.json`;
+  const trimSlashes = (value) => {
+    let result = String(value);
+    while (result.startsWith('/')) result = result.slice(1);
+    while (result.endsWith('/')) result = result.slice(0, -1);
+    return result;
+  };
+  const base = `${apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents`;
+  const pathFor = (key) => `${trimSlashes(root)}/${encodeURIComponent(key)}.json`;
 
   async function request(path, options = {}) {
     const response = await fetchImpl(`${base}/${path}`, {
@@ -37,7 +43,7 @@ export function createGitHubContentsPersistence({ owner, repo, token, root = '.a
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`GitHub persistence read failed: ${response.status}`);
     if (!body?.content || !body?.sha) throw new Error('GitHub persistence record is malformed');
-    const decoded = Buffer.from(body.content.replace(/\\s/g, ''), 'base64').toString('utf8');
+    const decoded = Buffer.from(body.content.replace(/\s/g, ''), 'base64').toString('utf8');
     return { value: JSON.parse(decoded), sha: body.sha };
   }
 
