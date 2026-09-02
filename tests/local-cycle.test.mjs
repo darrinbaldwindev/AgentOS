@@ -14,13 +14,14 @@ const baseTask = {
 
 const policy = createAuthorityPolicy({ issuers: ['agentos:overseer'], capabilities: ['repository:read'] });
 
-test('local cycle receives, inspects, acts, verifies and responds', () => {
+test('local cycle receives, inspects, acts, verifies and responds with source agent', () => {
   const store = new MemoryDispatchStore([baseTask]);
   const result = runLocalProjectOverseerCycle(store, 'agentos:project-overseer', policy,
     () => ({ summary: 'repository inspected' }),
-    () => ({ implemented: ['bounded local action'], verification: ['deterministic verification passed'], evidence: ['local:evidence-001'], repository_commit: 'abcdef1234567', next_action: 'reconcile upstream' }));
+    () => ({ source_agent: 'agentos:repo-worker', implemented: ['bounded local action'], verification: ['deterministic verification passed'], evidence: ['local:evidence-001'], repository_commit: 'abcdef1234567', next_action: 'reconcile upstream' }));
   assert.equal(result.status, 'COMPLETED');
   assert.equal(result.task.status, 'completed');
+  assert.equal(result.response.source_agent, 'agentos:repo-worker');
   assert.deepEqual(result.response.evidence, ['local:evidence-001']);
 });
 
