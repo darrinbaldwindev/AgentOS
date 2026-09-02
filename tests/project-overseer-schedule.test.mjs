@@ -17,8 +17,9 @@ test('Project Overseer wake schedule is hourly but avoids the top-of-hour load p
   assert.doesNotMatch(workflow, /schedule:\n    - cron: '0 \* \* \* \*'/);
   assert.equal((workflow.match(/\n    - cron: '[^']+'\n/g) ?? []).length, 1);
   assert.equal(countExact('  workflow_dispatch:'), 1);
+  assert.equal(countExact('  pull_request:'), 1);
   assert.equal(countExact('  push:'), 1);
-  assert.equal(countExact('    branches: [main]'), 1);
+  assert.equal(countExact('    branches: [main]'), 2);
 });
 
 test('Project Overseer wake remains serialized and fail-visible', () => {
