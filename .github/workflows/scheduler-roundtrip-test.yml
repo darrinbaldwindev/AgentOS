@@ -43,6 +43,10 @@ jobs:
 
           comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
           latest="$(echo "$comments" | jq -r '.[-1].body // empty')"
+          run_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:heartbeat -->"))] | length')"
+          completed_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:complete -->"))] | length')"
+          failed_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:failure -->"))] | length')"
+          next_run_count=$((run_count + 1))
 
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             phase="${MANUAL_PHASE}"
@@ -54,25 +58,27 @@ jobs:
             phase="1"
           fi
 
-          echo "Scheduled cron=${SCHEDULED_CRON:-manual}; selected phase=${phase}"
+          echo "Scheduled cron=${SCHEDULED_CRON:-manual}; selected phase=${phase}; run_count=${next_run_count}; completed_round_trips=${completed_count}; failures=${failed_count}"
 
           case "$phase" in
             1)
               trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
               task_id="${TEST_ID}-${GITHUB_RUN_ID}"
-              body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- phase: 1\n\n<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
+              body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- run_count: ${next_run_count}\n- completed_round_trips: ${completed_count}\n- failed_runs: ${failed_count}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- phase: 1\n\n<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
               gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
               ;;
 
             2)
               task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
               if [ -z "$task_body" ]; then
+                gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="<!-- scheduler-test:failure -->\n## Scheduler Test Failure\n- run_count: ${next_run_count}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- reason: ChatGPT task has not arrived before Project Overseer phase"
                 echo "ERROR: ChatGPT task has not arrived before Project Overseer phase."
                 exit 1
               fi
               trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
               task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
               if [ -z "$trace" ] || [ -z "$task_id" ]; then
+                gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="<!-- scheduler-test:failure -->\n## Scheduler Test Failure\n- run_count: ${next_run_count}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- reason: task correlation fields missing"
                 echo "ERROR: task correlation fields missing."
                 exit 1
               fi
@@ -84,6 +90,7 @@ jobs:
               task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
               response_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:response -->")) | .body] | last // empty')"
               if [ -z "$task_body" ] || [ -z "$response_body" ]; then
+                gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="<!-- scheduler-test:failure -->\n## Scheduler Test Failure\n- run_count: ${next_run_count}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- reason: round-trip is incomplete"
                 echo "ERROR: round-trip is incomplete."
                 exit 1
               fi
@@ -93,7 +100,8 @@ jobs:
               response_trace="$(printf '%s\n' "$response_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
               test "$task_id" = "$response_id"
               test "$task_trace" = "$response_trace"
-              body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${task_trace}\n- status: GREEN\n- evidence: ChatGPT delegation → Project Overseer execution → ChatGPT reconciliation\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              new_completed_count=$((completed_count + 1))
+              body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${task_trace}\n- status: GREEN\n- run_count: ${next_run_count}\n- completed_round_trips: ${new_completed_count}\n- failed_runs: ${failed_count}\n- evidence: ChatGPT delegation → Project Overseer execution → ChatGPT reconciliation\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
               gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
               echo "GREEN TEST EVIDENCE: preserved task_id and wake_trace_id across the complete scheduled chain."
               ;;
