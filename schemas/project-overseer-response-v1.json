@@ -7,6 +7,7 @@
   "properties": {
     "mission_id": {"type": "string", "minLength": 1},
     "source_agent": {"type": "string", "minLength": 1},
+    "wake_trace_id": {"type": "string", "minLength": 1},
     "status": {"enum": ["COMPLETED", "PARTIALLY_COMPLETE", "BLOCKED", "ESCALATED", "FAILED"]},
     "started_at": {"type": "string", "format": "date-time"},
     "completed_at": {"type": "string", "format": "date-time"},
