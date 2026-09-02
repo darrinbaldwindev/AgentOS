@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/**/*.test.mjs",
-    "install:local": "node scripts/install-local.mjs"
+    "install:local": "node scripts/install-local.mjs",
+    "doctor:local": "node scripts/doctor-local.mjs"
   }
 }
