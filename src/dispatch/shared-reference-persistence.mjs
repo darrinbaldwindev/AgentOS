@@ -15,11 +15,11 @@ export class SharedReferencePersistence {
   }
 
   async acquireLease(key, owner, ttlMs, now = Date.now()) {
-    return this.leaseStore.acquire(key, owner, ttlMs, now);
+    return this.leaseStore.acquire(key, owner, now, ttlMs);
   }
 
   async renewLease(key, owner, ttlMs, now = Date.now()) {
-    return this.leaseStore.renew(key, owner, ttlMs, now);
+    return this.leaseStore.renew(key, owner, now, ttlMs);
   }
 
   async releaseLease(key, owner) {
