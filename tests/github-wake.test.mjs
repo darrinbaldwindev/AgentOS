@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runGitHubWakeCycle } from '../src/dispatch/github-wake.mjs';
+import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
 import { LeaseStore } from '../src/dispatch/lease-store.mjs';
 import { IdempotencyStore } from '../src/dispatch/idempotency.mjs';
 
@@ -11,7 +12,7 @@ const task = {
   acceptance_criteria: ['inspection evidence recorded'],
   status: 'queued', created_at: '2026-09-01T00:00:00Z'
 };
-const policy = { allowedIssuers: ['agentos:overseer'], allowedTargets: ['agentos:project-overseer'], allowedActions: ['execute'] };
+const policy = createAuthorityPolicy({ issuers: ['agentos:overseer'], capabilities: ['repository:read'] });
 
 function adapterFor(initialTask) {
   let current = structuredClone(initialTask);
