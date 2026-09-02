@@ -27,6 +27,7 @@ export function runLocalProjectOverseerCycle(store, receiver, authorityPolicy, i
 
   const response = {
     mission_id: started.task_id,
+    source_agent: result?.source_agent ?? receiver,
     status: terminal.status === 'completed' ? 'COMPLETED' : terminal.status === 'blocked' ? 'BLOCKED' : 'ESCALATED',
     started_at: started.created_at,
     completed_at: new Date().toISOString(),
