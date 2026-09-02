@@ -27,17 +27,18 @@ function adapterFor(initialTask) {
 
 function stores() { return { leaseStore: new LeaseStore(), idempotencyStore: new IdempotencyStore() }; }
 
-test('github-backed wake executes and persists response', async () => {
+test('github-backed wake executes and persists response with source agent', async () => {
   const adapter = adapterFor(task);
   const { leaseStore, idempotencyStore } = stores();
   const result = await runGitHubWakeCycle(adapter, task.target, policy,
     async () => ({ summary: 'repo inspected' }),
-    async () => ({ implemented: ['bounded action'], verification: ['verified locally'], evidence: ['commit:abcdef1234567'], repository_commit: 'abcdef1234567' }),
+    async () => ({ source_agent: 'agentos:repo-worker', implemented: ['bounded action'], verification: ['verified locally'], evidence: ['commit:abcdef1234567'], repository_commit: 'abcdef1234567' }),
     leaseStore, idempotencyStore);
   assert.equal(result.status, 'COMPLETED');
+  assert.equal(result.response.source_agent, 'agentos:repo-worker');
   assert.equal(result.task.status, 'completed');
   const events = await adapter.readAuditEvents();
-  assert.ok(events.some((event) => event.type === 'dispatch.response' && event.task_id === task.task_id));
+  assert.ok(events.some((event) => event.type === 'dispatch.response' && event.task_id === task.task_id && event.source_agent === 'agentos:repo-worker'));
 });
 
 test('github-backed wake fails closed when task disappears', async () => {
