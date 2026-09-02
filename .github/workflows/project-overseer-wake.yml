@@ -6,9 +6,9 @@ on:
     branches: [main]
   push:
     branches: [main]
-  schedule:
-    - cron: '17 * * * *'
 
+# Production schedule intentionally PAUSED during scheduler integration testing.
+# Re-enable only after the three-phase scheduled round-trip gate passes.
 permissions:
   contents: read
 
