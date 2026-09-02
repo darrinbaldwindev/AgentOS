@@ -5,7 +5,7 @@ import { LeaseStore } from '../src/dispatch/lease-store.mjs';
 import { IdempotencyStore } from '../src/dispatch/idempotency.mjs';
 import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
 
-const task = { task_id: 'wake-idem-001', mission_id: 'mission-wake-idem-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer', objective: 'bounded action', priority: 'high', scope: ['repository'], constraints: ['no external side effects'], authority: { action: 'execute' }, acceptance_criteria: ['worker result evidence recorded'], status: 'queued', created_at: '2026-09-02T00:00:00Z' };
+const task = { task_id: 'wake-idem-001', mission_id: 'mission-wake-idem-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer', objective: 'bounded action', priority: 'high', scope: ['repository'], constraints: ['no external side effects'], authority: { action: 'execute', granted_capabilities: ['repository:read'] }, acceptance_criteria: ['worker result evidence recorded'], status: 'queued', created_at: '2026-09-02T00:00:00Z' };
 const policy = createAuthorityPolicy({ issuers: ['agentos:overseer'], capabilities: ['repository:read'] });
 function adapter() { let current = structuredClone(task); const events = [{ type: 'dispatch.created', task: structuredClone(task) }]; return { async readTask() { return structuredClone(current); }, async writeTask(next) { current = structuredClone(next); }, async readAuditEvents() { return structuredClone(events); }, async appendAuditEvent(event) { events.push(structuredClone(event)); } }; }
 
