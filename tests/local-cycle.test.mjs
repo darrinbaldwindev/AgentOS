@@ -4,7 +4,7 @@ import { MemoryDispatchStore } from '../src/dispatch/store.mjs';
 import { runLocalProjectOverseerCycle } from '../src/dispatch/local-cycle.mjs';
 
 const baseTask = {
-  task_id: 'local-cycle-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
+  task_id: 'local-cycle-001', mission_id: 'mission:local-cycle-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
   objective: 'inspect and perform bounded local action', priority: 'high', scope: ['repository'],
   constraints: ['no external side effects'], authority: { action: 'execute', granted_capabilities: ['repository:read'] },
   acceptance_criteria: ['bounded action verified'],
@@ -24,7 +24,7 @@ test('local cycle receives, inspects, acts, verifies and responds', () => {
 });
 
 test('local cycle blocks without claiming completion', () => {
-  const store = new MemoryDispatchStore([{ ...baseTask, task_id: 'local-cycle-002' }]);
+  const store = new MemoryDispatchStore([{ ...baseTask, task_id: 'local-cycle-002', mission_id: 'mission:local-cycle-002' }]);
   const result = runLocalProjectOverseerCycle(store, 'agentos:project-overseer', policy,
     () => ({ summary: 'repository inspected' }),
     () => ({ status: 'blocked', blockers: ['missing authority'], next_action: 'escalate' }));
