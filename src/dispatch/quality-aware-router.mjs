@@ -1,9 +1,11 @@
+import { rankEligibleWorkers } from './unified-worker-routing.mjs';
+
 export function chooseQualityAwareWorker({ workers = [], task = {}, governor = null } = {}) {
   const requiredQuality = task.quality?.required ?? 0;
-  const candidates = workers.filter(worker => {
-    if (worker.enabled === false) return false;
-    if (!(worker.capabilities ?? []).every(capability => (task.capabilities ?? []).includes(capability))) return false;
-    return (worker.quality?.floor ?? 0) >= requiredQuality;
+  const candidates = rankEligibleWorkers({
+    workers,
+    requiredCapabilities: task.capabilities ?? [],
+    eligible: worker => worker.enabled !== false && (worker.quality?.floor ?? 0) >= requiredQuality,
   });
 
   if (!candidates.length) return { worker: null, reason: 'quality_or_capability_unavailable' };
