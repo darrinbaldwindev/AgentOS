@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 * * * *'
+    - cron: '0 * * * *'
 
 permissions:
   contents: read
@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Run deterministic wake verification
-        run: node --test tests/local-cycle.test.mjs tests/github-wake.test.mjs tests/github-wake-lease.test.mjs tests/lease.test.mjs tests/project-overseer-response-validator.test.mjs tests/persistence.test.mjs tests/shared-reference-persistence.test.mjs
+        run: node --test tests/project-overseer-schedule.test.mjs tests/local-cycle.test.mjs tests/github-wake.test.mjs tests/github-wake-lease.test.mjs tests/lease.test.mjs tests/project-overseer-response-validator.test.mjs tests/persistence.test.mjs tests/shared-reference-persistence.test.mjs
