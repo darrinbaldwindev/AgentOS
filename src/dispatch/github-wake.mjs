@@ -44,6 +44,7 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
 
     const response = {
       mission_id: terminal.task_id,
+      source_agent: result?.source_agent ?? receiver,
       status: terminal.status === 'completed' ? 'COMPLETED' : terminal.status === 'blocked' ? 'BLOCKED' : 'ESCALATED',
       started_at: working.created_at,
       completed_at: new Date().toISOString(),
@@ -61,7 +62,7 @@ export async function runGitHubWakeCycle(adapter, receiver, authorityPolicy, ins
     if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
     const completion = idempotencyStore.complete(terminal.task_id, response, Date.parse(response.completed_at));
     if (!completion.completed) throw new Error(`idempotent completion rejected: ${completion.reason}`);
-    await adapter.appendAuditEvent({ type: 'dispatch.response', task_id: terminal.task_id, response, lease_owner: receiver, created_at: response.completed_at });
+    await adapter.appendAuditEvent({ type: 'dispatch.response', task_id: terminal.task_id, source_agent: response.source_agent, response, lease_owner: receiver, created_at: response.completed_at });
     return { status: response.status, response, task: terminal };
   } finally {
     leaseStore.release(current.task_id, receiver);
