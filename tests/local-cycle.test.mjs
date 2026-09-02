@@ -11,10 +11,9 @@ const baseTask = {
   acceptance_criteria: ['bounded action verified'],
   status: 'queued', created_at: '2026-09-01T00:00:00Z'
 };
-
 const policy = createAuthorityPolicy({ issuers: ['agentos:overseer'], capabilities: ['repository:read'] });
 
-test('local cycle receives, inspects, acts, verifies and responds with source agent', () => {
+test('local cycle propagates wake trace and records useful progress', () => {
   const store = new MemoryDispatchStore([baseTask]);
   const result = runLocalProjectOverseerCycle(store, 'agentos:project-overseer', policy,
     () => ({ summary: 'repository inspected' }),
@@ -22,7 +21,15 @@ test('local cycle receives, inspects, acts, verifies and responds with source ag
   assert.equal(result.status, 'COMPLETED');
   assert.equal(result.task.status, 'completed');
   assert.equal(result.response.source_agent, 'agentos:repo-worker');
-  assert.deepEqual(result.response.evidence, ['local:evidence-001']);
+  assert.match(result.response.wake_trace_id, /^[0-9a-f-]{36}$/);
+  assert.equal(result.task.wake_trace_id, result.response.wake_trace_id);
+  assert.ok(result.task.last_useful_work_at);
+});
+
+test('local cycle preserves an existing wake trace', () => {
+  const store = new MemoryDispatchStore([{ ...baseTask, task_id: 'local-cycle-003', mission_id: 'mission:local-cycle-003', wake_trace_id: 'trace-preexisting' }]);
+  const result = runLocalProjectOverseerCycle(store, 'agentos:project-overseer', policy, () => ({ summary: 'inspection' }), () => ({ evidence: ['local:evidence-003'] }));
+  assert.equal(result.response.wake_trace_id, 'trace-preexisting');
 });
 
 test('local cycle blocks without claiming completion', () => {
@@ -33,4 +40,5 @@ test('local cycle blocks without claiming completion', () => {
   assert.equal(result.status, 'BLOCKED');
   assert.equal(result.task.status, 'blocked');
   assert.equal(result.response.status, 'BLOCKED');
+  assert.ok(result.response.wake_trace_id);
 });
