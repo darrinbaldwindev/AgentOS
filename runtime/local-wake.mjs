@@ -1,4 +1,4 @@
-// LOCAL-RUNTIME-005: persistent manual wake attached to the installed AgentOS runtime.
+// LOCAL-RUNTIME-005 / MISSION-050: persistent manual wake attached to the installed AgentOS runtime.
 // Reuses canonical boot, dispatch, authority and durable persistence primitives.
 // Safe by default: DRY_RUN only, autonomy disabled, no provider or production writes.
 
@@ -7,13 +7,16 @@ import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { createLocalDispatchStore } from './local-dispatch-store.mjs';
+import { createMissionBudget } from './mission-budget.mjs';
 import { bootAgentOS } from './agentos-boot.mjs';
 import { runNextTask } from '../src/dispatch/runner.mjs';
-import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
+import { createAuthorityPolicy, authoriseDispatch } from '../src/dispatch/authority.mjs';
 import { validateProjectOverseerResponse } from '../scripts/validate-project-overseer-response.mjs';
 
+const PROJECT_ID = 'agentos-local';
 const RECEIVER = 'agentos:project-overseer';
 const ISSUER = 'agentos:overseer';
+const CAPABILITY = 'repository:read';
 
 async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
@@ -27,10 +30,26 @@ function safeRuntimeConfig(config) {
   return config;
 }
 
+function validateExecutionEnvelope(task) {
+  if (typeof task.project_id !== 'string' || !task.project_id) throw new Error('PROJECT_ID_REQUIRED');
+  if (task.project_id !== PROJECT_ID) throw new Error('PROJECT_ID_MISMATCH');
+  if (task.consent_mode !== 'PRE_AUTHORIZED') throw new Error('CONSENT_REQUIRED');
+  const required = task.required_capabilities ?? [];
+  const granted = task.authority?.granted_capabilities ?? [];
+  if (!Array.isArray(required) || !required.every((capability) => granted.includes(capability))) {
+    throw new Error('CAPABILITY_MATCH_FAILED');
+  }
+  // Local wake has no file/tool execution boundary beyond the read-only inspection below.
+  if (task.scope?.includes('production') || task.constraints?.some((value) => /production write/i.test(value))) {
+    throw new Error('PRODUCTION_SCOPE_PROHIBITED');
+  }
+}
+
 export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
   if (!root) throw new TypeError('root is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
   const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
+  const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
 
   const boot = await bootAgentOS({
     persistence,
@@ -45,88 +64,112 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
   const task = {
     task_id: taskId,
     mission_id: `mission:${taskId}`,
+    project_id: PROJECT_ID,
     issuer: ISSUER,
     target: RECEIVER,
     objective,
     priority: 'high',
     scope: ['local-runtime'],
-    constraints: ['DRY_RUN only', 'no external side effects', 'no production credentials'],
-    authority: { action: 'execute', granted_capabilities: ['repository:read'] },
-    acceptance_criteria: ['bounded action verified', 'response schema validated'],
+    constraints: ['DRY_RUN only', 'no external side effects', 'no production credentials', 'read-only execution boundary'],
+    consent_mode: 'PRE_AUTHORIZED',
+    required_capabilities: [CAPABILITY],
+    authority: { action: 'execute', granted_capabilities: [CAPABILITY] },
+    acceptance_criteria: ['bounded action verified', 'response schema validated', 'budget reconciled'],
     status: 'queued',
     created_at: createdAt,
     wake_trace_id: wakeTraceId,
     scheduler_wake_at: createdAt,
   };
 
+  validateExecutionEnvelope(task);
+  authoriseDispatch(task, createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] }));
+
   // Persist before execution so an interrupted wake remains recoverable and auditable.
   await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
 
-  // Use the canonical conflict-safe runner; the local adapter is only the durable boundary.
-  const dispatchStore = createLocalDispatchStore(persistence);
-  const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: ['repository:read'] });
-  const completedTask = await runNextTask({
-    tasks: await dispatchStore.list(),
-    receiver: RECEIVER,
-    authorityPolicy: policy,
-    store: dispatchStore,
-    execute: async (started) => ({
-      source_agent: 'agentos:local-wake-worker',
-      implemented: ['executed one bounded local Project Overseer control cycle'],
-      verification: [
-        'canonical runner completed claimed → working → verification → completed',
-        'issuer and granted capability were authorised before execution',
-        'DRY_RUN/no-production-credential constraints were preserved',
-      ],
-      evidence: [
-        `local:wake:${started.wake_trace_id}`,
-        `local:task:${started.task_id}`,
-      ],
-      repository_commit: 'local-runtime',
-      next_action: 'reconcile returned evidence with upstream Overseer log',
-    }),
-  });
+  // Two-phase budget: reserve before worker execution; reconcile immediately after.
+  const reservation = budget.reserve({ project_id: PROJECT_ID, mission_id: task.mission_id, limit_units: 1 });
+  let budgetOutcome;
+  try {
+    const dispatchStore = createLocalDispatchStore(persistence);
+    const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] });
+    const completedTask = await runNextTask({
+      tasks: await dispatchStore.list(),
+      receiver: RECEIVER,
+      authorityPolicy: policy,
+      store: dispatchStore,
+      execute: async (started) => {
+        validateExecutionEnvelope(started);
+        return {
+          source_agent: 'agentos:local-wake-worker',
+          implemented: ['executed one bounded local Project Overseer control cycle'],
+          verification: [
+            'canonical runner completed claimed → working → verification → completed',
+            'issuer, consent mode and required/granted capability match were validated before execution',
+            'DRY_RUN/no-production-credential constraints were preserved',
+          ],
+          evidence: [
+            `local:wake:${started.wake_trace_id}`,
+            `local:task:${started.task_id}`,
+            `budget:reservation:${reservation.reservation_id}`,
+          ],
+          repository_commit: 'local-runtime',
+          next_action: 'reconcile returned evidence with upstream Overseer log',
+        };
+      },
+    });
 
-  if (!completedTask) throw new Error('LOCAL_WAKE_TASK_NOT_EXECUTED');
+    if (!completedTask) throw new Error('LOCAL_WAKE_TASK_NOT_EXECUTED');
+    budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 1 });
 
-  const completedAt = new Date().toISOString();
-  const executionEvidence = completedTask.evidence ?? {};
-  const response = {
-    mission_id: completedTask.task_id,
-    source_agent: executionEvidence.source_agent ?? 'agentos:local-wake-worker',
-    wake_trace_id: completedTask.wake_trace_id,
-    status: 'COMPLETED',
-    started_at: completedTask.created_at,
-    completed_at: completedAt,
-    repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
-    inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed',
-    work_claimed: [completedTask.objective],
-    work_implemented: executionEvidence.implemented ?? [],
-    verification: executionEvidence.verification ?? [],
-    evidence: executionEvidence.evidence ?? [],
-    blockers: [],
-    escalations: [],
-    next_action: executionEvidence.next_action ?? 'await upstream reconciliation',
-  };
+    const completedAt = new Date().toISOString();
+    const executionEvidence = completedTask.evidence ?? {};
+    const response = {
+      mission_id: completedTask.task_id,
+      source_agent: executionEvidence.source_agent ?? 'agentos:local-wake-worker',
+      wake_trace_id: completedTask.wake_trace_id,
+      status: 'COMPLETED',
+      started_at: completedTask.created_at,
+      completed_at: completedAt,
+      repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
+      inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed',
+      work_claimed: [completedTask.objective],
+      work_implemented: executionEvidence.implemented ?? [],
+      verification: [...(executionEvidence.verification ?? []), `budget reconciled: ${budgetOutcome.status}`],
+      evidence: executionEvidence.evidence ?? [],
+      blockers: [],
+      escalations: [],
+      next_action: executionEvidence.next_action ?? 'await upstream reconciliation',
+    };
 
-  const validation = validateProjectOverseerResponse(response);
-  if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
+    const validation = validateProjectOverseerResponse(response);
+    if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
 
-  await persistence.create('artifact', {
-    id: `response:${taskId}`,
-    artifactType: 'project-overseer.response',
-    payload: response,
-  });
-  await persistence.create('event', {
-    agentId: boot.overseer.id,
-    eventType: 'agentos.manual-wake.completed',
-    taskId,
-    wakeTraceId: response.wake_trace_id,
-    missionId: response.mission_id,
-    status: response.status,
-  });
+    await persistence.create('artifact', {
+      id: `response:${taskId}`,
+      artifactType: 'project-overseer.response',
+      payload: response,
+    });
+    await persistence.create('event', {
+      agentId: boot.overseer.id,
+      eventType: 'agentos.manual-wake.completed',
+      taskId,
+      wakeTraceId: response.wake_trace_id,
+      missionId: response.mission_id,
+      projectId: PROJECT_ID,
+      budgetReservationId: reservation.reservation_id,
+      status: response.status,
+    });
 
-  return Object.freeze({ status: response.status, response, task: completedTask, boot, task_id: taskId });
+    return Object.freeze({ status: response.status, response, task: completedTask, boot, task_id: taskId, budget: budgetOutcome });
+  } catch (error) {
+    if (!budgetOutcome) {
+      try { budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 0 }); } catch {}
+    }
+    throw error;
+  } finally {
+    budget.close();
+  }
 }
 
 export async function main({ env = process.env, argv = process.argv } = {}) {
@@ -141,6 +184,7 @@ export async function main({ env = process.env, argv = process.argv } = {}) {
     wake_trace_id: result.response.wake_trace_id,
     source_agent: result.response.source_agent,
     mode: result.boot.capabilities.mode,
+    budget_status: result.budget.status,
     autonomyEnabled: false,
   }, null, 2));
   return result;
