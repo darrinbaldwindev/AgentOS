@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { SharedReferencePersistence } from '../src/dispatch/shared-reference-persistence.mjs';
+
+const makeAdapter = () => new SharedReferencePersistence();
+
+test('shared reference persistence exposes the required production adapter surface', async () => {
+  const adapter = makeAdapter();
+  for (const method of ['acquireLease', 'renewLease', 'releaseLease', 'getCompletion', 'putCompletion']) {
+    assert.equal(typeof adapter[method], 'function');
+  }
+});
+
+test('shared reference persistence prevents competing owners from taking the same active lease', async () => {
+  const adapter = makeAdapter();
+  const first = await adapter.acquireLease('task-1', 'runner-a', 60_000, 1_000);
+  const second = await adapter.acquireLease('task-1', 'runner-b', 60_000, 1_001);
+  assert.equal(first.acquired, true);
+  assert.equal(second.acquired, false);
+});
+
+test('shared reference persistence supports completion replay', async () => {
+  const adapter = makeAdapter();
+  const completion = { task_id: 'task-2', status: 'completed' };
+  await adapter.putCompletion('task-2', completion);
+  assert.deepEqual(await adapter.getCompletion('task-2'), completion);
+});
