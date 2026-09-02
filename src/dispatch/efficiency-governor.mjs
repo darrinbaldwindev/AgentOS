@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
   const limits = {
     maxCost: budget.maxCost ?? Infinity,
@@ -7,7 +9,6 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
   const spent = { cost: costs.cost ?? 0, calls: costs.calls ?? 0, tokens: costs.tokens ?? 0 };
   const reserved = { cost: 0, calls: 0, tokens: 0 };
   const reservations = new Map();
-  let nextReservationId = 1;
 
   const normalise = ({ cost = 0, calls = 1, tokens = 0 } = {}) => ({
     cost: Number(cost),
@@ -43,7 +44,7 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
     const usage = normalise({ cost, calls, tokens });
     if (!canSpend(estimate(usage))) return null;
 
-    const id = `r-${nextReservationId++}`;
+    const id = `r-${randomUUID()}`;
     reservations.set(id, usage);
     reserved.cost += usage.cost;
     reserved.calls += usage.calls;
@@ -70,7 +71,9 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
     return {
       ...totals,
       reservationId: id,
-      overBudget: !canSpend({ cost: totals.cost, calls: totals.calls, tokens: totals.tokens }),
+      overBudget: totals.cost > limits.maxCost ||
+        totals.calls > limits.maxCalls ||
+        totals.tokens > limits.maxTokens,
     };
   };
 
