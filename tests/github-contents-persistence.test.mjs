@@ -6,7 +6,7 @@ function fakeGitHub() {
   const records = new Map();
   let shaCounter = 0;
   const fetchImpl = async (url, options = {}) => {
-    const path = decodeURIComponent(new URL(url).pathname.split('/contents/')[1]);
+    const path = new URL(url).pathname.split('/contents/')[1];
     const method = options.method ?? 'GET';
     const current = records.get(path);
     if (method === 'GET') {
@@ -35,13 +35,11 @@ test('GitHub persistence provides shared conditional lease acquisition and relea
   const { fetchImpl } = fakeGitHub();
   const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
   const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
-
   const first = await a.acquireLease('task-1', 'worker-a', 1000, 10000);
   assert.equal(first.acquired, true);
   const second = await b.acquireLease('task-1', 'worker-b', 1001, 10000);
   assert.equal(second.acquired, false);
   assert.equal(second.reason, 'lease_active');
-
   const released = await a.releaseLease('task-1', 'worker-a');
   assert.equal(released.released, true);
   const third = await b.acquireLease('task-1', 'worker-b', 1002, 10000);
@@ -52,7 +50,6 @@ test('GitHub persistence prevents stale lease renewal from overwriting a newer l
   const { fetchImpl } = fakeGitHub();
   const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
   const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
-
   const first = await a.acquireLease('task-2', 'worker-a', 1000, 1000);
   assert.equal(first.acquired, true);
   const renewed = await a.renewLease('task-2', 'worker-a', 1500, 1000);
@@ -67,7 +64,6 @@ test('GitHub persistence stores one completion and replays the winner', async ()
   const a = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
   const b = createGitHubContentsPersistence({ owner: 'o', repo: 'r', token: 't', fetchImpl });
   const response = { mission_id: 'task-3', status: 'COMPLETED' };
-
   const first = await a.putCompletion('task-3', response);
   assert.equal(first.stored, true);
   const second = await b.putCompletion('task-3', { mission_id: 'task-3', status: 'BLOCKED' });
