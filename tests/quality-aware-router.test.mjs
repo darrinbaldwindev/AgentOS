@@ -18,6 +18,17 @@ test('speed preference selects fastest worker among quality-qualified options', 
   assert.equal(result.worker.id, 'fast');
 });
 
+test('worker must provide every required capability', () => {
+  const result = chooseQualityAwareWorker({
+    workers: [
+      { id: 'partial', capabilities: ['research'], quality: { floor: 1 }, estimated_cost: 0.01 },
+      { id: 'complete', capabilities: ['research', 'github.read'], quality: { floor: 0.9 }, estimated_cost: 0.10 },
+    ],
+    task: { capabilities: ['research', 'github.read'], quality: { required: 0.8 }, preference: 'cost' },
+  });
+  assert.equal(result.worker.id, 'complete');
+});
+
 test('reports when required quality is unavailable', () => {
   const result = chooseQualityAwareWorker({ workers, task: { capabilities: ['research'], quality: { required: 0.99 } } });
   assert.equal(result.worker, null);
