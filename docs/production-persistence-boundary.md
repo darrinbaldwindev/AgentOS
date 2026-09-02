@@ -6,6 +6,12 @@ AgentOS wake execution now has an explicit persistence interface for leases and 
 
 `src/dispatch/shared-reference-persistence.mjs` composes the existing in-memory lease and idempotency stores. It is suitable for deterministic tests and single-process execution only.
 
+## Shared GitHub adapter
+
+`src/dispatch/github-contents-persistence.mjs` provides a shared persistence implementation backed by the GitHub Contents API. Lease and completion records are stored as repository content and updates/deletes use the returned content SHA as a conditional compare-and-swap boundary. The adapter is asynchronous and is compatible with the wake cycle's persistence interface.
+
+The adapter is **implemented and deterministically verified**, but it is not yet approved for autonomous production writes. GitHub Contents persistence also introduces repository commits for state changes, so a production deployment should use a dedicated state repository or otherwise isolated state path/branch with deliberately scoped write permissions rather than allowing the wake workflow to mutate the application source branch.
+
 ## Production requirement
 
 A production adapter MUST provide atomic conditional semantics in a backing store shared by competing runners. In particular:
@@ -20,4 +26,6 @@ GitHub-hosted runner local memory/filesystem are not sufficient because runners 
 
 ## Promotion gate
 
-Before production promotion, implement a shared conditional/atomic provider, wire it into the wake runner, add competing-runner and failure-recovery tests, and obtain fresh CI plus independent Green Agent/PRS assurance.
+Before production promotion, the shared provider must pass actual competing-runner and failure-recovery verification, followed by fresh CI and independent Green Agent/PRS assurance. A deterministic fake-provider test is necessary but is not by itself evidence of live distributed behavior.
+
+The wake workflow must remain read-only until this gate is satisfied. No owner-controlled production credential or write permission is granted implicitly by implementing the adapter.
