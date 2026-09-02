@@ -5,7 +5,7 @@ import { LeaseStore } from '../src/dispatch/lease-store.mjs';
 import { IdempotencyStore } from '../src/dispatch/idempotency.mjs';
 
 const task = {
-  task_id: 'github-wake-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
+  task_id: 'github-wake-001', mission_id: 'mission:github-wake-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
   objective: 'perform bounded repository inspection', priority: 'high', scope: ['repository'],
   constraints: ['no external side effects'], authority: { action: 'execute', granted_capabilities: ['repository:read'] },
   acceptance_criteria: ['inspection evidence recorded'],
