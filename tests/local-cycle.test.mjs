@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDispatchStore } from '../src/dispatch/store.mjs';
 import { runLocalProjectOverseerCycle } from '../src/dispatch/local-cycle.mjs';
+import { createAuthorityPolicy } from '../src/dispatch/authority.mjs';
 
 const baseTask = {
   task_id: 'local-cycle-001', mission_id: 'mission:local-cycle-001', issuer: 'agentos:overseer', target: 'agentos:project-overseer',
@@ -11,7 +12,7 @@ const baseTask = {
   status: 'queued', created_at: '2026-09-01T00:00:00Z'
 };
 
-const policy = { allowedIssuers: ['agentos:overseer'], allowedTargets: ['agentos:project-overseer'], allowedActions: ['execute'] };
+const policy = createAuthorityPolicy({ issuers: ['agentos:overseer'], capabilities: ['repository:read'] });
 
 test('local cycle receives, inspects, acts, verifies and responds', () => {
   const store = new MemoryDispatchStore([baseTask]);
