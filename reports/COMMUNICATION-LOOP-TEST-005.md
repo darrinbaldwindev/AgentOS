@@ -14,6 +14,10 @@ Protocol:
 Important: this artifact tests the durable state/sequence protocol. It does not by itself prove that an independent unattended Project Overseer process executed each step.
 
 ## Round 1
+STATE: PROJECT_OVERSEER_RESPONSE
+RESULT: Mailbox entry was readable; mission identity and bounded work were preserved.
+VERIFICATION: Response is tied to Round 1 and no completion is claimed beyond the mailbox protocol.
 
+## Round 2
 STATE: CHATGPT_WORK_ISSUED
-WORK: Confirm mailbox can carry a bounded task and preserve mission identity.
+WORK: Confirm the loop can consume the response and issue a distinct next task without losing sequence.
