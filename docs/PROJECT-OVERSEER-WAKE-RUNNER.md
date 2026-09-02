@@ -49,7 +49,7 @@ Fresh repository/CI evidence is available for the governed wake suite: Project O
 
 This is repository/CI verification, not installed-host verification and not proof of an independent scheduled workflow run.
 
-The scheduler workflow has been refactored so a scheduled invocation performs the complete test chain in one invocation rather than depending on multiple cron ticks. The current scheduler workflow itself has not yet produced fresh post-refactor scheduled-run evidence through the available GitHub control surface. That remains an explicit evidence gap rather than a claimed failure.
+The scheduler workflow has been refactored so a scheduled invocation performs the complete test chain in one invocation rather than depending on multiple cron ticks. Fresh post-refactor scheduled-run evidence is still required before the scheduled path itself is promoted to VERIFIED.
 
 ## Promotion gate
 
