@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "status": "READY_TO_DISPATCH",
+  "principle": "Workers are bounded execution roles; provider/model identity is separate.",
+  "roles": [
+    {"id":"REPO-CODE","name":"Repository Code Worker","capabilities":["repo_scan","implementation","code_review","github_work"]},
+    {"id":"QA-TEST","name":"Quality Verification Worker","capabilities":["test_design","test_execution","regression","evidence_review"]},
+    {"id":"RESEARCH","name":"Research Worker","capabilities":["research","evidence_gathering","comparison","requirements"]},
+    {"id":"ARCHITECTURE","name":"Architecture Worker","capabilities":["architecture","integration_design","interface_design","tradeoff_analysis"]},
+    {"id":"SKILLS","name":"Skills Worker","capabilities":["skill_discovery","skill_registry","skill_routing","skill_lifecycle"]},
+    {"id":"SECURITY-HEALTH","name":"Security and Health Worker","capabilities":["security_review","dependency_review","health_check","recovery_review","control_consistency"]},
+    {"id":"INSTALLER","name":"Installer Worker","capabilities":["installation","upgrade","uninstall","bootstrap"]},
+    {"id":"BOOT-RUNTIME","name":"Boot and Runtime Worker","capabilities":["boot","runtime_health","recovery","shutdown"]},
+    {"id":"DISPATCH","name":"Dispatch Worker","capabilities":["task_routing","authority_check","task_lifecycle","continuation"]},
+    {"id":"EVIDENCE","name":"Evidence Worker","capabilities":["evidence_capture","verification","provenance","status_reconciliation"]},
+    {"id":"PERSISTENCE","name":"Persistence Worker","capabilities":["state_persistence","lease_review","idempotency_review","recovery_state"]},
+    {"id":"SCHEDULER","name":"Scheduler Worker","capabilities":["wake_scheduling","wake_health","retry","schedule_reconciliation"]},
+    {"id":"GITHUB-RECON","name":"GitHub Reconciliation Worker","capabilities":["canonical_sync","repo_reconciliation","mission_log_sync","ci_evidence"]},
+    {"id":"AI-PROVIDER","name":"AI Provider Worker","capabilities":["provider_discovery","capability_matching","model_execution","cost_aware_routing"]},
+    {"id":"GOVERNANCE","name":"Governance Worker","capabilities":["policy_check","permission_review","fail_closed_review","authority_boundary"]},
+    {"id":"COMMERCIAL","name":"Commercial Worker","capabilities":["packaging","entitlement_analysis","value_analysis","upgrade_evidence"]},
+    {"id":"MARKETING","name":"Marketing Worker","capabilities":["positioning","content","campaigns","creative_briefs","analytics"]},
+    {"id":"INDEPENDENT-VERIFY","name":"Independent Verification Worker","capabilities":["challenge_claims","cross_check","assurance_review","conflict_detection"]}
+  ],
+  "rules": [
+    "Do not treat this registry as proof that workers are continuously running.",
+    "Create or activate a worker only when a bounded task requires it.",
+    "All worker outputs require source attribution and evidence where applicable.",
+    "Workers never supersede the Project Overseer or Head Overseer.",
+    "Do not create a parallel scheduler, router, runtime, persistence or assurance engine.",
+    "Independent verification must remain independent from the worker making the consequential claim."
+  ]
+}
