@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createGreenAgent } from '../runtime/green-agent.mjs';
+import { createGreenAgent, evaluateAssurancePacket } from '../runtime/green-agent.mjs';
 
 function makePersistence() {
   const records = new Map([['artifact', new Map()], ['event', new Map()]]);
@@ -25,26 +25,13 @@ const evidence = [{ type: 'test', source: 'fixture/portfolio-scan', status: 'ver
 
 function finding(overrides = {}) {
   return {
-    finding_id: 'F-001',
-    scan_id: 'S-001',
-    project: 'GlobalShopCo',
-    state: 'red',
-    severity: 'critical',
-    confidence: 'high',
-    evidence_refs: evidence,
-    root_cause: 'fixture drift',
-    recommended_action: 'reconcile fixture',
-    expected_benefit: 'restore evidence continuity',
-    risk_of_action: 'low',
-    required_authority: 'owner',
-    auto_taskable: true,
-    ...overrides,
+    finding_id: 'F-001', scan_id: 'S-001', project: 'GlobalShopCo', state: 'red', severity: 'critical', confidence: 'high', evidence_refs: evidence,
+    root_cause: 'fixture drift', recommended_action: 'reconcile fixture', expected_benefit: 'restore evidence continuity', risk_of_action: 'low', required_authority: 'owner', auto_taskable: true, ...overrides,
   };
 }
 
 test('Green Agent produces ranked evidence-backed report and authority-limited task handoff', async () => {
-  const persistence = makePersistence();
-  const tasks = [];
+  const persistence = makePersistence(); const tasks = [];
   const agent = createGreenAgent({
     persistence,
     scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding(), finding({ finding_id: 'F-002', severity: 'warning', confidence: 'medium', state: 'yellow', auto_taskable: false })] }),
@@ -52,55 +39,60 @@ test('Green Agent produces ranked evidence-backed report and authority-limited t
     rescan: async () => ({ findingPresent: false, evidence: { status: 'verified', source: 'independent-rescan' } }),
   });
   const outcome = await agent.runScan({ scanId: 'S-001', scope: 'fixture' });
-  assert.equal(outcome.report.status, 'red');
-  assert.equal(outcome.report.findings[0].finding_id, 'F-001');
+  assert.equal(outcome.report.status, 'red'); assert.equal(outcome.report.findings[0].finding_id, 'F-001');
   assert.equal(outcome.report.findings[0].rank > outcome.report.findings[1].rank, true);
   assert.deepEqual(outcome.handoffs, [{ findingId: 'F-001', taskId: 'TASK-001' }]);
-  assert.deepEqual(tasks[0].authority.granted_capabilities, []);
-  assert.equal(tasks[0].authority.execution_authority, false);
+  assert.deepEqual(tasks[0].authority.granted_capabilities, []); assert.equal(tasks[0].authority.execution_authority, false);
   assert.deepEqual((await persistence.list('event')).map((event) => event.eventType), ['green.scan.completed', 'green.finding.created', 'green.task.handoff', 'green.finding.created']);
 });
 
 test('Green Agent preserves historical findings and correlates duplicate observations', async () => {
   const persistence = makePersistence();
   const agent = createGreenAgent({
-    persistence,
-    scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, auto_taskable: false })] }),
-    createTask: async () => ({ task_id: 'unused' }),
-    rescan: async () => ({ findingPresent: true, evidence: { status: 'verified', source: 'independent-rescan' } }),
+    persistence, scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, auto_taskable: false })] }),
+    createTask: async () => ({ task_id: 'unused' }), rescan: async () => ({ findingPresent: true, evidence: { status: 'verified', source: 'independent-rescan' } }),
   });
-  await agent.runScan({ scanId: 'S-001' });
-  await agent.runScan({ scanId: 'S-002' });
+  await agent.runScan({ scanId: 'S-001' }); await agent.runScan({ scanId: 'S-002' });
   const findings = (await persistence.list('artifact')).filter((item) => item.kind === 'green-finding');
-  assert.equal(findings.length, 2);
-  assert.equal(findings[0].current, false);
-  assert.equal(findings[1].current, true);
-  assert.equal(findings[1].supersedes, findings[0].id);
+  assert.equal(findings.length, 2); assert.equal(findings[0].current, false); assert.equal(findings[1].current, true); assert.equal(findings[1].supersedes, findings[0].id);
 });
 
 test('Green Agent requires independent verified evidence to close and never self-confirms', async () => {
-  const persistence = makePersistence();
-  let rescans = 0;
+  const persistence = makePersistence(); let rescans = 0;
   const agent = createGreenAgent({
-    persistence,
-    scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, auto_taskable: false })] }),
-    createTask: async () => ({ task_id: 'unused' }),
-    rescan: async () => { rescans += 1; return { findingPresent: false, evidence: { status: 'verified', source: 'independent-rescan' } }; },
+    persistence, scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, auto_taskable: false })] }),
+    createTask: async () => ({ task_id: 'unused' }), rescan: async () => { rescans += 1; return { findingPresent: false, evidence: { status: 'verified', source: 'independent-rescan' } }; },
   });
   await agent.runScan({ scanId: 'S-001' });
   await assert.rejects(() => agent.closeAfterRescan({ findingKey: 'GlobalShopCo:F-001', taskId: 'TASK-001', resultEvidence: { status: 'unverified' } }), /verified worker result evidence/);
   const closed = await agent.closeAfterRescan({ findingKey: 'GlobalShopCo:F-001', taskId: 'TASK-001', resultEvidence: { status: 'verified', source: 'worker-ledger' } });
-  assert.equal(closed.status, 'closed');
-  assert.equal(rescans, 1);
+  assert.equal(closed.status, 'closed'); assert.equal(rescans, 1);
 });
 
 test('Green Agent rejects empty evidence and unsupported scan findings', async () => {
   const persistence = makePersistence();
-  const agent = createGreenAgent({
-    persistence,
-    scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, evidence_refs: [] })] }),
-    createTask: async () => ({ task_id: 'unused' }),
-    rescan: async () => ({ findingPresent: false, evidence: { status: 'verified', source: 'independent-rescan' } }),
-  });
+  const agent = createGreenAgent({ persistence, scan: async ({ scanId }) => ({ scan_id: scanId, findings: [finding({ scan_id: scanId, evidence_refs: [] })] }), createTask: async () => ({ task_id: 'unused' }), rescan: async () => ({ findingPresent: false, evidence: { status: 'verified', source: 'independent-rescan' } }) });
   await assert.rejects(() => agent.runScan({ scanId: 'S-001' }), /evidence_refs must be non-empty/);
+});
+
+test('Green Agent challenge blocks promotion when a claim lacks verified evidence', () => {
+  const result = evaluateAssurancePacket({
+    packet: {
+      packet_id: 'MISSION-037', project: 'AgentOS', repository: 'darrinbaldwindev/AgentOS', commit_sha: '5a020421fc1b3645ce8b65dfc86634c7095655e5',
+      claims: [
+        { claim_id: 'lease-race', summary: 'Concurrent lease race has one winner', evidence_refs: [{ status: 'verified', source: 'deterministic-race-test' }] },
+        { claim_id: 'live-runner', summary: 'Live multi-runner GitHub behavior is proven', evidence_refs: [{ status: 'missing', source: 'live-experiment' }] },
+      ],
+      limitations: [{ summary: 'Fake backing service only', non_blocking: false }],
+    }, timestamp: '2026-09-02T00:00:00Z',
+  });
+  assert.equal(result.disposition, 'red'); assert.equal(result.production_promotion_allowed, false); assert.equal(result.claims[0].status, 'verified'); assert.equal(result.claims[1].status, 'insufficient_evidence');
+});
+
+test('Green Agent challenge can reach GREEN only with verified claims and no blocking limitations', () => {
+  const result = evaluateAssurancePacket({
+    packet: { packet_id: 'PASS-001', project: 'fixture', repository: 'fixture/repo', commit_sha: 'abc123', claims: [{ claim_id: 'claim-1', summary: 'Evidence is reproducible', evidence_refs: [{ status: 'verified', source: 'independent-check' }] }], limitations: [{ summary: 'Fixture-only scope', non_blocking: true }] },
+    timestamp: '2026-09-02T00:00:00Z',
+  });
+  assert.equal(result.disposition, 'green'); assert.equal(result.production_promotion_allowed, true);
 });
