@@ -2,6 +2,8 @@ name: Project Overseer Wake
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   schedule:
