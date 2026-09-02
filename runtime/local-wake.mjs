@@ -1,5 +1,5 @@
-// LOCAL-RUNTIME-005 / MISSION-050: persistent manual wake attached to the installed AgentOS runtime.
-// Reuses canonical boot, dispatch, authority and durable persistence primitives.
+// LOCAL-RUNTIME-006 / MISSION-051: persistent manual wake bound to the existing governed worker registry.
+// Reuses canonical boot, dispatch, authority, worker-contract and durable persistence primitives.
 // Safe by default: DRY_RUN only, autonomy disabled, no provider or production writes.
 
 import { randomUUID } from 'node:crypto';
@@ -11,12 +11,15 @@ import { createMissionBudget } from './mission-budget.mjs';
 import { bootAgentOS } from './agentos-boot.mjs';
 import { runNextTask } from '../src/dispatch/runner.mjs';
 import { createAuthorityPolicy, authoriseDispatch } from '../src/dispatch/authority.mjs';
+import { createWorkerRegistry } from '../src/dispatch/worker-registry.mjs';
+import { createDeterministicSkillAgent } from '../src/workers/deterministic-skill-agent.mjs';
 import { validateProjectOverseerResponse } from '../scripts/validate-project-overseer-response.mjs';
 
 const PROJECT_ID = 'agentos-local';
 const RECEIVER = 'agentos:project-overseer';
 const ISSUER = 'agentos:overseer';
 const CAPABILITY = 'repository:read';
+const WORKER_ID = 'agentos:deterministic-skill-agent';
 
 async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
@@ -39,10 +42,31 @@ function validateExecutionEnvelope(task) {
   if (!Array.isArray(required) || !required.every((capability) => granted.includes(capability))) {
     throw new Error('CAPABILITY_MATCH_FAILED');
   }
-  // Local wake has no file/tool execution boundary beyond the read-only inspection below.
   if (task.scope?.includes('production') || task.constraints?.some((value) => /production write/i.test(value))) {
     throw new Error('PRODUCTION_SCOPE_PROHIBITED');
   }
+}
+
+function createLocalWorkerRegistry() {
+  const registry = createWorkerRegistry();
+  const worker = createDeterministicSkillAgent({
+    id: WORKER_ID,
+    capabilities: [CAPABILITY],
+    handler: async (task) => ({
+      action: 'bounded-local-project-overseer-cycle',
+      task_id: task.task_id,
+      wake_trace_id: task.wake_trace_id,
+      scope: task.scope,
+      mode: 'DRY_RUN',
+    }),
+  });
+  registry.register({
+    ...worker.worker,
+    name: 'Deterministic Local Skill Agent',
+    type: 'deterministic',
+    enabled: true,
+  });
+  return registry;
 }
 
 export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
@@ -74,7 +98,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     consent_mode: 'PRE_AUTHORIZED',
     required_capabilities: [CAPABILITY],
     authority: { action: 'execute', granted_capabilities: [CAPABILITY] },
-    acceptance_criteria: ['bounded action verified', 'response schema validated', 'budget reconciled'],
+    acceptance_criteria: ['bounded action verified', 'response schema validated', 'budget reconciled', 'registered worker selected'],
     status: 'queued',
     created_at: createdAt,
     wake_trace_id: wakeTraceId,
@@ -84,15 +108,17 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
   validateExecutionEnvelope(task);
   authoriseDispatch(task, createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] }));
 
-  // Persist before execution so an interrupted wake remains recoverable and auditable.
   await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
 
-  // Two-phase budget: reserve before worker execution; reconcile immediately after.
   const reservation = budget.reserve({ project_id: PROJECT_ID, mission_id: task.mission_id, limit_units: 1 });
   let budgetOutcome;
   try {
     const dispatchStore = createLocalDispatchStore(persistence);
     const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] });
+    const registry = createLocalWorkerRegistry();
+    const selectedWorker = registry.findMatching({ requiredCapabilities: task.required_capabilities });
+    if (!selectedWorker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
+
     const completedTask = await runNextTask({
       tasks: await dispatchStore.list(),
       receiver: RECEIVER,
@@ -100,17 +126,26 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
       store: dispatchStore,
       execute: async (started) => {
         validateExecutionEnvelope(started);
+        const worker = registry.findMatching({ requiredCapabilities: started.required_capabilities });
+        if (!worker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
+        const workerResult = await worker.execute(started);
+        if (!workerResult.success) throw new Error(`WORKER_EXECUTION_FAILED: ${workerResult.error}`);
         return {
-          source_agent: 'agentos:local-wake-worker',
-          implemented: ['executed one bounded local Project Overseer control cycle'],
+          source_agent: workerResult.workerId,
+          worker_id: workerResult.workerId,
+          worker_output: workerResult.output,
+          worker_latency_ms: workerResult.latencyMs,
+          implemented: ['executed one bounded local Project Overseer control cycle through the registered deterministic worker'],
           verification: [
             'canonical runner completed claimed → working → verification → completed',
             'issuer, consent mode and required/granted capability match were validated before execution',
+            'registered worker was enabled, executable and matched every required capability',
             'DRY_RUN/no-production-credential constraints were preserved',
           ],
           evidence: [
             `local:wake:${started.wake_trace_id}`,
             `local:task:${started.task_id}`,
+            `worker:${workerResult.workerId}`,
             `budget:reservation:${reservation.reservation_id}`,
           ],
           repository_commit: 'local-runtime',
@@ -126,17 +161,17 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     const executionEvidence = completedTask.evidence ?? {};
     const response = {
       mission_id: completedTask.task_id,
-      source_agent: executionEvidence.source_agent ?? 'agentos:local-wake-worker',
+      source_agent: executionEvidence.source_agent ?? WORKER_ID,
       wake_trace_id: completedTask.wake_trace_id,
       status: 'COMPLETED',
       started_at: completedTask.created_at,
       completed_at: completedAt,
       repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
-      inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed',
+      inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed; registered worker selected by strict capability match',
       work_claimed: [completedTask.objective],
       work_implemented: executionEvidence.implemented ?? [],
       verification: [...(executionEvidence.verification ?? []), `budget reconciled: ${budgetOutcome.status}`],
-      evidence: executionEvidence.evidence ?? [],
+      evidence: [...(executionEvidence.evidence ?? []), `worker-output:${JSON.stringify(executionEvidence.worker_output)}`],
       blockers: [],
       escalations: [],
       next_action: executionEvidence.next_action ?? 'await upstream reconciliation',
@@ -157,6 +192,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
       wakeTraceId: response.wake_trace_id,
       missionId: response.mission_id,
       projectId: PROJECT_ID,
+      workerId: response.source_agent,
       budgetReservationId: reservation.reservation_id,
       status: response.status,
     });
