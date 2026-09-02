@@ -2,26 +2,14 @@ name: Scheduler Roundtrip Test
 
 on:
   workflow_dispatch:
-    inputs:
-      phase:
-        description: 'Manual test mode'
-        required: true
-        default: 'full'
-        type: choice
-        options: ['full', '1', '2', '3']
   schedule:
-    # GitHub Actions schedules are best-effort rather than real-time timers.
-    # The scheduled invocation therefore runs the complete test chain in one
-    # job; timing jitter cannot strand the mailbox between phases.
+    # GitHub Actions is the clock only. The complete wake test runs in one
+    # invocation through the same governed GitHub wake contract used by tests.
     - cron: '*/5 * * * *'
 
 permissions:
   contents: read
   issues: write
-
-env:
-  TEST_ISSUE: '62'
-  TEST_ID: 'scheduler-roundtrip-001'
 
 concurrency:
   group: scheduler-roundtrip-test
@@ -33,76 +21,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Execute governed scheduler test
+      - name: Check out AgentOS
+        uses: actions/checkout@v4
+
+      - name: Execute canonical governed wake
+        id: wake
         env:
-          GH_TOKEN: ${{ github.token }}
-          SCHEDULED_CRON: ${{ github.event.schedule }}
-          MANUAL_MODE: ${{ inputs.phase }}
+          AGENTOS_TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
         shell: bash
         run: |
           set -euo pipefail
+          result="$(node scripts/scheduled-wake-test.mjs)"
+          echo "$result" | jq .
+          test "$(echo "$result" | jq -r .status)" = "GREEN"
+          echo "result=$result" >> "$GITHUB_OUTPUT"
 
-          comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
-          run_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:heartbeat -->"))] | length')"
-          completed_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:complete -->"))] | length')"
-          failed_count="$(echo "$comments" | jq '[.[] | select(.body | contains("<!-- scheduler-test:failure -->"))] | length')"
-          next_run_count=$((run_count + 1))
-          observed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          mode="${MANUAL_MODE:-full}"
-
-          echo "event=${GITHUB_EVENT_NAME} mode=${mode} cron=${SCHEDULED_CRON:-manual} run_count=${next_run_count} completed=${completed_count} failures=${failed_count}"
-
-          if [ "$mode" = "1" ]; then
-            trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
-            task_id="${TEST_ID}-${GITHUB_RUN_ID}"
-            body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- run_count: ${next_run_count}\n- completed_round_trips: ${completed_count}\n- failed_runs: ${failed_count}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: ${observed_at}\n- phase: 1\n\n<!-- scheduler-test:task -->\n## Automated Scheduler → Test Mailbox\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- objective: exercise the governed scheduler mailbox round-trip\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-            exit 0
-          fi
-
-          if [ "$mode" = "2" ]; then
-            task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
-            test -n "$task_body"
-            trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-            task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-            test -n "$trace"; test -n "$task_id"
-            body="<!-- scheduler-test:response -->\n## Automated Test Worker → Mailbox\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: COMPLETED\n- source_agent: agentos:project-overseer-test\n- implemented: bounded scheduler-chain execution\n- verification: task and trace correlation preserved\n- evidence: manual phase-2 mailbox response"
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-            exit 0
-          fi
-
-          if [ "$mode" = "3" ]; then
-            task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
-            response_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:response -->")) | .body] | last // empty')"
-            test -n "$task_body"; test -n "$response_body"
-            task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-            task_trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-            response_id="$(printf '%s\n' "$response_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-            response_trace="$(printf '%s\n' "$response_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-            test "$task_id" = "$response_id"; test "$task_trace" = "$response_trace"
-            body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${task_trace}\n- status: GREEN\n- run_count: ${next_run_count}\n- completed_round_trips: $((completed_count + 1))\n- failed_runs: ${failed_count}\n- evidence: manual phase chain correlation verified\n- observed_at: ${observed_at}\n- evidence_boundary: manual mailbox verification only; it does not prove scheduled unattended execution"
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-            exit 0
-          fi
-
-          # Scheduled/full mode: perform all three phases inside one invocation.
-          # This deliberately removes dependence on exact GitHub scheduler timing.
-          trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID}"
-          task_id="${TEST_ID}-${GITHUB_RUN_ID}"
-
-          heartbeat="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- run_count: ${next_run_count}\n- completed_round_trips: ${completed_count}\n- failed_runs: ${failed_count}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: ${observed_at}\n- phase: full\n- timing_policy: scheduler timing is best-effort; chain is execution-local\n\n<!-- scheduler-test:task -->\n## Automated Scheduler → Test Mailbox\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- objective: exercise the governed scheduler mailbox round-trip\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$heartbeat"
-
-          response="<!-- scheduler-test:response -->\n## Automated Test Worker → Mailbox\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: COMPLETED\n- source_agent: agentos:project-overseer-test\n- implemented: bounded scheduler-chain execution\n- verification: task and trace correlation preserved\n- evidence: same-invocation automated test worker response"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$response"
-
-          task_id_check="$(printf '%s\n' "$heartbeat" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-          task_trace_check="$(printf '%s\n' "$heartbeat" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-          response_id="$(printf '%s\n' "$response" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-          response_trace="$(printf '%s\n' "$response" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-          test "$task_id_check" = "$response_id"
-          test "$task_trace_check" = "$response_trace"
-
-          body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: GREEN\n- run_count: ${next_run_count}\n- completed_round_trips: $((completed_count + 1))\n- failed_runs: ${failed_count}\n- evidence: scheduled wake → test task → automated test worker response → correlation verification, all within one scheduled invocation\n- observed_at: ${observed_at}\n- timing_policy: GitHub scheduler timing is best-effort; correctness does not depend on a five-minute phase boundary\n- evidence_boundary: this proves the GitHub scheduled mailbox test path; it does not prove an independent production Project Overseer process executed the test"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-          echo "GREEN TEST EVIDENCE: scheduled invocation completed the full governed mailbox correlation chain."
+      - name: Record durable scheduler evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.wake.outputs.result }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULED_CRON: ${{ github.event.schedule }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          task_id="$(echo "$RESULT" | jq -r .task_id)"
+          trace="$(echo "$RESULT" | jq -r .wake_trace_id)"
+          source_agent="$(echo "$RESULT" | jq -r .source_agent)"
+          status="$(echo "$RESULT" | jq -r .status)"
+          trigger="$(echo "$RESULT" | jq -r .trigger)"
+          body="<!-- scheduler-test:complete -->\n## Scheduler Round-Trip GREEN Evidence\n- test_id: scheduler-roundtrip-002\n- trigger: ${trigger}\n- event: ${EVENT_NAME}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- source_agent: ${source_agent}\n- status: ${status}\n- evidence: scheduler trigger → canonical GitHub wake contract → governed dispatch → registered test worker → correlation verification\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- timing_policy: GitHub scheduler timing is best-effort; correctness does not depend on phase boundaries\n- evidence_boundary: this proves the canonical governed GitHub wake contract in the scheduled test environment; it does not prove an installed local AgentOS process was independently awakened by GitHub"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/62/comments" -f body="$body"
