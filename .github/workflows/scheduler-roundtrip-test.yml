@@ -29,6 +29,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  scheduler-heartbeat:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record scheduled trigger heartbeat
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${GITHUB_EVENT_SCHEDULE}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- conclusion: scheduled workflow trigger reached GitHub Actions"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
+          echo "Scheduled trigger observed for ${GITHUB_EVENT_SCHEDULE}"
+
   chatgpt-delegation:
     if: github.event.schedule == '57 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.phase == '1')
     runs-on: ubuntu-latest
