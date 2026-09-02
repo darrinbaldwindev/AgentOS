@@ -1,9 +1,14 @@
+import { executeWorker } from '../workers/worker-contract.mjs';
+
 export function createWorkerRegistry() {
   const workers = new Map();
 
   function register(worker) {
     if (!worker?.id || !worker?.name || !Array.isArray(worker.capabilities) || !worker.capabilities.length) {
       throw new Error('worker requires id, name and capabilities');
+    }
+    if (typeof worker.execute !== 'function') {
+      throw new Error('worker requires execute(task)');
     }
     const record = {
       ...worker,
@@ -27,10 +32,19 @@ export function createWorkerRegistry() {
   function findMatching({ requiredCapabilities = [], workerId } = {}) {
     const required = Array.isArray(requiredCapabilities) ? requiredCapabilities : [];
     const candidates = list().filter(worker => !workerId || worker.id === workerId);
-    return candidates.find(worker =>
+    const selected = candidates.find(worker =>
       typeof worker.execute === 'function' &&
       required.every(capability => worker.capabilities.includes(capability)),
-    ) ?? null;
+    );
+    if (!selected) return null;
+
+    // Return the registry record with the canonical worker-contract execution
+    // wrapper. This keeps registered workers provider-neutral and preserves the
+    // structured success/error/latency/workerId result at the execution boundary.
+    return Object.freeze({
+      ...selected,
+      execute: (input) => executeWorker(selected, input),
+    });
   }
 
   return { register, get, list, findByCapability, findMatching };
