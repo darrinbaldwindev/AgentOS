@@ -1,40 +1,54 @@
 # Project Overseer Wake Runner
 
-The scheduled workflow is a trigger source for the Project Overseer wake path. The scheduler supplies the clock; it is not a second execution architecture.
+## Architecture
 
-## Canonical trigger model
-
-Manual and scheduled test invocations enter the same governed GitHub wake contract (`runGitHubWakeCycle`). The scheduled workflow checks out AgentOS and invokes `scripts/scheduled-wake-test.mjs`, which creates a test task and executes the canonical wake contract. This keeps scheduler timing separate from dispatch correctness.
+GitHub Actions is a **trigger source/clock**, not the AgentOS scheduler or execution authority. Manual and scheduled test invocations enter the same governed `runGitHubWakeCycle()` contract.
 
 ```text
 manual or scheduled trigger
-          ↓
-   canonical wake contract
-          ↓
- authority + lease + idempotency
-          ↓
-      governed dispatch
-          ↓
-     registered worker
-          ↓
- verification + durable response
+        ↓
+canonical governed wake contract
+        ↓
+authority → lease → idempotency
+        ↓
+governed Project Overseer dispatch
+        ↓
+registered worker
+        ↓
+verification + durable evidence
 ```
+
+The scheduler must not grow a second execution path. A different trigger source may call the same wake contract.
 
 ## Safety boundary
 
-- The workflow is read-only for repository contents (`contents: read`) and has only the issue-write permission required for test evidence.
-- The test worker is deterministic and test-only.
+- The hosted scheduler test is test-only.
+- Repository contents remain read-only; issue-write permission is limited to designated test evidence.
 - No production credentials or production task writes are used.
-- A concurrency group prevents overlapping scheduled runs from being cancelled.
-- The runtime timeout bounds execution.
+- Concurrency prevents overlapping scheduled runs from being cancelled.
+- Runtime execution is bounded.
 - Actual repository mutations remain behind separately authorised execution paths.
 
 ## Evidence boundary
 
-A successful scheduled run proves that GitHub's scheduler can trigger the canonical governed GitHub wake contract in the hosted test environment. It does **not** prove that an installed local AgentOS process was independently awakened by GitHub, nor that real portfolio tasks were executed.
+A successful scheduled run proves:
 
-For installed local AgentOS, the eventual scheduler should run on the installed host (or another explicitly authorised runner) and invoke the same wake contract rather than introducing a second dispatch implementation.
+1. the scheduled trigger fired;
+2. the canonical governed wake contract executed;
+3. authority, lease and idempotency controls were exercised;
+4. the registered test worker completed the bounded task;
+5. task/wake-trace correlation and worker provenance were verified.
+
+It does **not** prove that an installed local AgentOS process was independently awakened by GitHub Actions, nor that real portfolio tasks were executed.
+
+For installed local AgentOS, the eventual scheduler should run on the installed host (or another explicitly authorised runner) and invoke the same wake contract rather than introducing a second dispatch implementation. No public production endpoint or credential should be introduced merely to make the scheduler test green.
+
+## Current verification state
+
+The underlying governed wake suite has fresh CI evidence: the Project Overseer Wake run completed successfully and its job executed 23 tests with 23 passing and 0 failing. This is repository/CI verification, not installed-host verification.
+
+The scheduler workflow has been refactored so a scheduled invocation performs the complete test chain in one invocation rather than depending on multiple cron ticks. Fresh post-refactor scheduled-run evidence is still required before the scheduled path itself is promoted to VERIFIED.
 
 ## Promotion gate
 
-Do not add production write permissions or external-provider execution until the deterministic suite is green and the required authority, lease/idempotency, audit, rollback and independent assurance controls are present.
+Do not add production write permissions, external-provider execution or production autonomy until deterministic tests, authority, lease/idempotency, audit, rollback and independent assurance controls are present and a separately authorised runtime boundary exists.
