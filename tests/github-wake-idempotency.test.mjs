@@ -13,9 +13,15 @@ test('completed task cannot be completed twice', async () => {
   const leases = new LeaseStore();
   const idem = new IdempotencyStore();
   const a = adapter();
-  const result = await runGitHubWakeCycle(a, task.target, policy, async () => ({ summary: 'inspected' }), async () => ({ evidence: ['commit:abcdef1234567'], verification: ['passed'], repository_commit: 'abcdef1234567' }), leases, idem, 1000);
+  let inspected = 0;
+  let acted = 0;
+  const result = await runGitHubWakeCycle(a, task.target, policy, async () => { inspected += 1; return { summary: 'inspected' }; }, async () => { acted += 1; return { evidence: ['commit:abcdef1234567'], verification: ['passed'], repository_commit: 'abcdef1234567' }; }, leases, idem, 1000);
   assert.equal(result.status, 'COMPLETED');
-  const duplicate = await runGitHubWakeCycle(a, task.target, policy, async () => ({ summary: 'must not inspect' }), async () => ({ evidence: ['must-not-run'], repository_commit: 'abcdef1234567' }), leases, idem, 2000);
+  assert.equal(inspected, 1);
+  assert.equal(acted, 1);
+  const duplicate = await runGitHubWakeCycle(a, task.target, policy, async () => { inspected += 1; return { summary: 'must not inspect' }; }, async () => { acted += 1; return { evidence: ['must-not-run'], repository_commit: 'abcdef1234567' }; }, leases, idem, 2000);
   assert.equal(duplicate.status, 'IDLE');
-  assert.equal(duplicate.reason, 'already_completed');
+  assert.equal(duplicate.response, null);
+  assert.equal(inspected, 1);
+  assert.equal(acted, 1);
 });
