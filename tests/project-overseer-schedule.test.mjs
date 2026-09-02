@@ -12,8 +12,9 @@ function countExact(line) {
   return workflow.split('\n').filter((entry) => entry === line).length;
 }
 
-test('Project Overseer wake schedule is explicitly hourly and dispatchable', () => {
-  assert.equal(countExact("    - cron: '0 * * * *'"), 1);
+test('Project Overseer wake schedule is hourly but avoids the top-of-hour load peak', () => {
+  assert.equal(countExact("    - cron: '17 * * * *'"), 1);
+  assert.equal(countExact("    - cron: '0 * * * *'"), 0);
   assert.equal(countExact('  workflow_dispatch:'), 1);
   assert.equal(countExact('  push:'), 1);
   assert.equal(countExact('    branches: [main]'), 1);
