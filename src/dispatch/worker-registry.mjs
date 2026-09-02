@@ -2,7 +2,7 @@ export function createWorkerRegistry() {
   const workers = new Map();
 
   function register(worker) {
-    if (!worker?.id || !worker?.name || !worker?.capabilities?.length) {
+    if (!worker?.id || !worker?.name || !Array.isArray(worker.capabilities) || !worker.capabilities.length) {
       throw new Error('worker requires id, name and capabilities');
     }
     const record = {
@@ -22,5 +22,16 @@ export function createWorkerRegistry() {
     return list().filter(worker => worker.capabilities.includes(capability));
   }
 
-  return { register, get, list, findByCapability };
+  // Strict assignment boundary: every requested capability must match, the worker
+  // must be enabled, and execution must be available. No partial matches.
+  function findMatching({ requiredCapabilities = [], workerId } = {}) {
+    const required = Array.isArray(requiredCapabilities) ? requiredCapabilities : [];
+    const candidates = list().filter(worker => !workerId || worker.id === workerId);
+    return candidates.find(worker =>
+      typeof worker.execute === 'function' &&
+      required.every(capability => worker.capabilities.includes(capability)),
+    ) ?? null;
+  }
+
+  return { register, get, list, findByCapability, findMatching };
 }
