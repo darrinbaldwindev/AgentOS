@@ -10,11 +10,9 @@ on:
         type: choice
         options: ['1', '2', '3']
   schedule:
-    # GitHub Actions shortest supported schedule interval is 5 minutes.
-    # Three phases are intentionally offset by 5 minutes: ChatGPT -> Project -> ChatGPT.
-    - cron: '57 * * * *'
-    - cron: '2 * * * *'
-    - cron: '7 * * * *'
+    # Test cadence is intentionally 15 minutes. Each scheduled wake advances
+    # the bounded mailbox chain by exactly one phase.
+    - cron: '*/15 * * * *'
 
 permissions:
   contents: read
@@ -25,94 +23,89 @@ env:
   TEST_ID: 'scheduler-roundtrip-001'
 
 concurrency:
-  group: scheduler-roundtrip-test-${{ github.event.schedule || inputs.phase }}
+  group: scheduler-roundtrip-test
   cancel-in-progress: false
 
 jobs:
-  scheduler-heartbeat:
-    if: github.event_name == 'schedule'
+  scheduler-roundtrip:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Record scheduled trigger heartbeat
+      - name: Advance one scheduled test phase
         env:
           GH_TOKEN: ${{ github.token }}
           SCHEDULED_CRON: ${{ github.event.schedule }}
+          MANUAL_PHASE: ${{ inputs.phase }}
+        shell: bash
         run: |
-          body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${SCHEDULED_CRON}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- conclusion: scheduled workflow trigger reached GitHub Actions"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-          echo "Scheduled trigger observed for ${SCHEDULED_CRON}"
+          set -euo pipefail
 
-  chatgpt-delegation:
-    if: github.event.schedule == '57 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.phase == '1')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Create ChatGPT Overseer test task
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
           comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
-          if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:task -->"))' >/dev/null; then
-            echo "Task already exists; refusing duplicate delegation."
-            exit 0
-          fi
-          trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)"
-          body="<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${TEST_ID}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-          echo "Delegated task with trace $trace"
 
-  project-overseer-execution:
-    if: github.event.schedule == '2 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.phase == '2')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Consume task and return Project Overseer response
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
-          task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
-          if [ -z "$task_body" ]; then
-            echo "ERROR: ChatGPT task has not arrived before Project Overseer wake."
-            exit 1
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            phase="${MANUAL_PHASE}"
+          elif echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:response -->"))' >/dev/null; then
+            phase="3"
+          elif echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:task -->"))' >/dev/null; then
+            phase="2"
+          else
+            phase="1"
           fi
-          trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-          task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-          if [ -z "$trace" ] || [ -z "$task_id" ]; then
-            echo "ERROR: task correlation fields missing."
-            exit 1
-          fi
-          if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:response -->"))' >/dev/null; then
-            echo "Response already exists; refusing duplicate execution."
-            exit 0
-          fi
-          body="<!-- scheduler-test:response -->\n## Project Overseer → ChatGPT Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: COMPLETED\n- source_agent: agentos:project-overseer-test\n- implemented: bounded scheduler-chain execution\n- verification: task and trace correlation preserved\n- evidence: scheduled test mailbox round-trip"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
-          echo "Returned response for $task_id with trace $trace"
 
-  chatgpt-reconciliation:
-    if: github.event.schedule == '7 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.phase == '3')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Consume Project Overseer response and close chain
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments")"
-          task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
-          response_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:response -->")) | .body] | last // empty')"
-          if [ -z "$task_body" ] || [ -z "$response_body" ]; then
-            echo "ERROR: round-trip is incomplete."
-            exit 1
-          fi
-          task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-          task_trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-          response_id="$(printf '%s\n' "$response_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
-          response_trace="$(printf '%s\n' "$response_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
-          test "$task_id" = "$response_id"
-          test "$task_trace" = "$response_trace"
-          echo "GREEN TEST EVIDENCE: ChatGPT delegation -> Project Overseer execution -> ChatGPT reconciliation completed with preserved task_id and wake_trace_id."
-          echo "task_id=$task_id"
-          echo "wake_trace_id=$task_trace"
+          echo "Scheduled cron=${SCHEDULED_CRON:-manual}; selected phase=${phase}"
+
+          case "$phase" in
+            1)
+              if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:task -->"))' >/dev/null; then
+                echo "Task already exists; refusing duplicate delegation."
+                exit 0
+              fi
+              trace="${TEST_ID}-$(date -u +%Y%m%d%H%M%S)"
+              body="<!-- scheduler-test:heartbeat -->\n## Scheduler Trigger Heartbeat\n- test_id: ${TEST_ID}\n- scheduled_cron: ${SCHEDULED_CRON:-manual}\n- run_id: ${GITHUB_RUN_ID}\n- observed_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n- phase: 1\n\n<!-- scheduler-test:task -->\n## ChatGPT Overseer → Project Overseer\n- test_id: ${TEST_ID}\n- task_id: ${TEST_ID}\n- wake_trace_id: ${trace}\n- objective: execute bounded scheduler round-trip test\n- authority: test-only, no production side effects\n- expected_response: return the same task_id and wake_trace_id with verification evidence"
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
+              ;;
+
+            2)
+              task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
+              if [ -z "$task_body" ]; then
+                echo "ERROR: ChatGPT task has not arrived before Project Overseer phase."
+                exit 1
+              fi
+              trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
+              task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
+              if [ -z "$trace" ] || [ -z "$task_id" ]; then
+                echo "ERROR: task correlation fields missing."
+                exit 1
+              fi
+              if echo "$comments" | jq -e '.[] | select(.body | contains("<!-- scheduler-test:response -->"))' >/dev/null; then
+                echo "Response already exists; refusing duplicate execution."
+                exit 0
+              fi
+              body="<!-- scheduler-test:response -->\n## Project Overseer → ChatGPT Overseer\n- test_id: ${TEST_ID}\n- task_id: ${task_id}\n- wake_trace_id: ${trace}\n- status: COMPLETED\n- source_agent: agentos:project-overseer-test\n- implemented: bounded scheduler-chain execution\n- verification: task and trace correlation preserved\n- evidence: scheduled test mailbox round-trip"
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${TEST_ISSUE}/comments" -f body="$body"
+              ;;
+
+            3)
+              task_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:task -->")) | .body] | last // empty')"
+              response_body="$(echo "$comments" | jq -r '[.[] | select(.body | contains("<!-- scheduler-test:response -->")) | .body] | last // empty')"
+              if [ -z "$task_body" ] || [ -z "$response_body" ]; then
+                echo "ERROR: round-trip is incomplete."
+                exit 1
+              fi
+              task_id="$(printf '%s\n' "$task_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
+              task_trace="$(printf '%s\n' "$task_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
+              response_id="$(printf '%s\n' "$response_body" | sed -n 's/.*task_id: \([^ ]*\).*/\1/p')"
+              response_trace="$(printf '%s\n' "$response_body" | sed -n 's/.*wake_trace_id: \([^ ]*\).*/\1/p')"
+              test "$task_id" = "$response_id"
+              test "$task_trace" = "$response_trace"
+              echo "GREEN TEST EVIDENCE: ChatGPT delegation -> Project Overseer execution -> ChatGPT reconciliation completed with preserved task_id and wake_trace_id."
+              echo "task_id=$task_id"
+              echo "wake_trace_id=$task_trace"
+              ;;
+
+            *)
+              echo "ERROR: invalid phase $phase"
+              exit 1
+              ;;
+          esac
