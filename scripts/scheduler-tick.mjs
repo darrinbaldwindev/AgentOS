@@ -45,10 +45,27 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective } =
   }
 }
 
+function parseArgs(argv) {
+  const args = [...argv];
+  let root;
+  const objective = [];
+  while (args.length) {
+    const value = args.shift();
+    if (value === '--root') {
+      root = args.shift();
+      if (!root) throw new Error('SCHEDULER_ROOT_REQUIRED');
+    } else {
+      objective.push(value);
+    }
+  }
+  return { root, objective: objective.join(' ').trim() || undefined };
+}
+
 async function main() {
+  const args = parseArgs(process.argv.slice(2));
   const result = await schedulerTick({
-    root: process.env.AGENTOS_HOME,
-    objective: process.argv.slice(2).join(' ').trim() || undefined,
+    root: args.root || process.env.AGENTOS_HOME || resolveInstallRoot(),
+    objective: args.objective,
   });
   console.log(JSON.stringify(result, null, 2));
   if (result.status !== 'COMPLETED') process.exitCode = 1;
