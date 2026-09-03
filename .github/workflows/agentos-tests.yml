@@ -18,3 +18,5 @@ jobs:
           node-version: 22
       - name: Run test suite
         run: npm test
+      - name: Audit npm dependency tree
+        run: npm audit --audit-level=high --omit=dev
