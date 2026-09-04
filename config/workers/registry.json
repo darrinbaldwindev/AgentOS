@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "selectionPolicy": {
+    "providerNeutral": true,
+    "subscriptionRequiredForPrimary": true,
+    "preferActiveOverInactive": true,
+    "costAware": true,
+    "neverUseCommercialAttributionAsRanking": true
+  },
+  "workers": [
+    {
+      "id": "openai:gptchat",
+      "displayName": "GPTChat",
+      "kind": "model",
+      "provider": "openai",
+      "status": "active",
+      "subscriptionClass": "primary-intelligence",
+      "capabilities": ["general-intelligence", "orchestration", "delegation", "planning", "review"],
+      "fallbackFor": [],
+      "adapter": "openai"
+    },
+    {
+      "id": "anthropic:claude",
+      "displayName": "Claude",
+      "kind": "model",
+      "provider": "anthropic",
+      "status": "inactive-until-connected",
+      "subscriptionClass": "technical-overseer",
+      "capabilities": ["architecture", "code-review", "repository-analysis", "security-review", "planning", "adversarial-review"],
+      "adapter": "anthropic"
+    },
+    {
+      "id": "google:gemini",
+      "displayName": "Gemini",
+      "kind": "model",
+      "provider": "google",
+      "status": "active",
+      "subscriptionClass": "research-overseer",
+      "capabilities": ["research", "architecture", "long-context-analysis", "google-workspace", "web-research"],
+      "adapter": "google-gemini"
+    },
+    {
+      "id": "perplexity:research",
+      "displayName": "Perplexity",
+      "kind": "external-agent",
+      "provider": "perplexity",
+      "status": "inactive-until-connected",
+      "subscriptionClass": "research",
+      "capabilities": ["deep-research", "competitive-intelligence", "source-discovery", "web-research"],
+      "adapter": "perplexity"
+    },
+    {
+      "id": "manus:worker",
+      "displayName": "Manus",
+      "kind": "external-agent",
+      "provider": "manus",
+      "status": "available",
+      "subscriptionClass": "external-worker",
+      "capabilities": ["research", "planning", "execution", "review"],
+      "adapter": "manus"
+    },
+    {
+      "id": "openai:codex",
+      "displayName": "Codex",
+      "kind": "model-agent",
+      "provider": "openai",
+      "status": "active",
+      "subscriptionClass": "engineering",
+      "capabilities": ["coding", "repository-analysis", "testing", "implementation", "code-review"],
+      "adapter": "openai-codex"
+    },
+    {
+      "id": "cursor:engineer",
+      "displayName": "Cursor",
+      "kind": "external-agent",
+      "provider": "cursor",
+      "status": "inactive-until-connected",
+      "subscriptionClass": "engineering",
+      "capabilities": ["coding", "implementation", "repository-editing", "testing"],
+      "adapter": "cursor"
+    },
+    {
+      "id": "devin:engineer",
+      "displayName": "Devin",
+      "kind": "external-agent",
+      "provider": "devin",
+      "status": "inactive-until-connected",
+      "subscriptionClass": "autonomous-development",
+      "capabilities": ["coding", "implementation", "testing", "pull-request", "autonomous-development"],
+      "adapter": "devin"
+    },
+    {
+      "id": "replit:builder",
+      "displayName": "Replit",
+      "kind": "external-agent",
+      "provider": "replit",
+      "status": "inactive-until-connected",
+      "subscriptionClass": "rapid-prototyping",
+      "capabilities": ["rapid-prototyping", "application-building", "deployment", "ui-prototyping"],
+      "adapter": "replit"
+    }
+  ]
+}
