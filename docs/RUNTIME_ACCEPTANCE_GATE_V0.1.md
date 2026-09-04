@@ -1,7 +1,7 @@
 # AgentOS Runtime Acceptance Gate v0.1
 
-**Status:** OPEN — evidence capture required before launch GREEN
-**Date:** 2026-09-05
+**Status:** OPEN — evidence capture required before launch GREEN  
+**Date:** 2026-09-05  
 **Purpose:** Provide a deterministic, operator-executable acceptance record for the remaining clean-machine runtime gate without changing runtime architecture, scheduler state, provider credentials, deployment authority, or billing.
 
 ## Gate boundary
@@ -16,39 +16,53 @@ This document is an acceptance checklist, not an implementation of a new runtime
 - [ ] No production credentials, billing accounts, or live-provider secrets are required for the baseline gate.
 - [ ] Existing AgentOS scheduler remains paused unless separately authorized.
 
+## Canonical repository commands
+
+The current `package.json` exposes these local acceptance commands. Run them from the repository root using the exact tested commit:
+
+| Gate step | Canonical command | Evidence to capture |
+|---|---|---|
+| Install | `npm run install:local` | command output, exit status, installed build/path |
+| Doctor | `npm run doctor:local` | stdout/stderr, exit status, dependency/config findings |
+| Boot | `npm run boot:local` | startup output, exit status, relevant logs |
+| Wake | `npm run wake:local` | lifecycle response, stdout/stderr, exit status |
+| Test suite (supporting) | `npm test` | test output and exit status; supporting evidence only |
+
+`npm test` is supporting verification and does not substitute for the clean-machine runtime acceptance sequence. The acceptance gate remains Install → Doctor → Boot → Wake → Restart/Persistence.
+
 ## Acceptance sequence
 
 ### 1. Install
 
 - [ ] Obtain the exact build/package associated with the tested commit.
-- [ ] Install on the clean Windows environment.
+- [ ] Run `npm run install:local` on the clean Windows environment.
 - [ ] Record installer/build identifier and any installer errors.
 - [ ] Result: PASS / FAIL / BLOCKED.
 
 ### 2. Doctor / health check
 
-- [ ] Run the repository's documented health/doctor command, if present.
+- [ ] Run `npm run doctor:local`.
 - [ ] Capture stdout/stderr and exit status.
 - [ ] Record missing dependencies, permissions, or configuration failures.
 - [ ] Result: PASS / FAIL / BLOCKED.
 
 ### 3. Boot / startup
 
-- [ ] Launch AgentOS from the installed state.
+- [ ] Run `npm run boot:local` from the supported installed state.
 - [ ] Confirm the application reaches its expected usable startup state.
 - [ ] Capture startup errors and relevant logs.
 - [ ] Result: PASS / FAIL / BLOCKED.
 
 ### 4. Wake / core operation
 
-- [ ] Exercise the supported local wake/start path using the repository's documented operator procedure.
+- [ ] Run `npm run wake:local` using the repository's supported local wake path.
 - [ ] Confirm the expected service/agent lifecycle response without enabling production providers or credentials.
 - [ ] Capture observable result and logs.
 - [ ] Result: PASS / FAIL / BLOCKED.
 
 ### 5. Restart / persistence
 
-- [ ] Close/restart the application using the normal supported procedure.
+- [ ] Close/restart the application using the normal supported procedure after the wake test.
 - [ ] Confirm required local state persists according to documented expectations.
 - [ ] Confirm restart does not silently enable a paused scheduler or production authority.
 - [ ] Capture observable result and logs.
@@ -60,10 +74,10 @@ Record one row per gate step:
 
 | Step | Exact command/action | Commit/build | Result | Evidence location | Operator | Date/time | Notes |
 |---|---|---|---|---|---|---|---|
-| Install | | | | | | | |
-| Doctor | | | | | | | |
-| Boot | | | | | | | |
-| Wake | | | | | | | |
+| Install | `npm run install:local` | | | | | | |
+| Doctor | `npm run doctor:local` | | | | | | |
+| Boot | `npm run boot:local` | | | | | | |
+| Wake | `npm run wake:local` | | | | | | |
 | Restart/persistence | | | | | | | |
 
 ## Disposition rules
@@ -76,7 +90,7 @@ Record one row per gate step:
 
 ## Current state
 
-**AMBER / OPEN.** The GitHub repository connector can inspect and modify repository contents but cannot substitute for a clean Windows operator environment for this acceptance gate. No runtime acceptance claim is made by this document.
+**AMBER / OPEN.** The GitHub repository connector can inspect and modify repository contents but cannot substitute for a clean Windows operator environment for this acceptance gate. The canonical commands are now explicitly captured, but no runtime acceptance claim is made by this document.
 
 ## Governance
 
