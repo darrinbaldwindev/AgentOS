@@ -20,16 +20,18 @@
 - Formal Continuity Protocol
 - AgentOS agent capability eligibility contract
 - Agent connectivity health report
+- Deterministic assurance evidence gate closure work
+- Explicit runtime acceptance gate and canonical local acceptance commands
 
 ## In progress
 
-- Runtime shell boundary
+- Clean-machine supported-Windows runtime acceptance: Install → Doctor → Boot → Wake → Restart/Persistence
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
 
 ## Next highest-priority action
 
-Build the local runtime shell contract around the existing domain/runtime modules. The shell must probe GitHub and local workspace access before granting AgentOS execution eligibility.
+Execute the documented runtime acceptance gate on a clean supported Windows environment against one exact AgentOS commit, capturing reproducible evidence for Install, Doctor, Boot, Wake, and Restart/Persistence.
 
 ## Agent eligibility rule
 
@@ -50,7 +52,9 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 
 ## Blockers
 
-None known at this checkpoint.
+- Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
+- AgentOS PR #56 remains open/draft and unmerged; normal review/merge governance is still required.
+- No production authority is granted by this checkpoint.
 
 ## Risks
 
@@ -58,3 +62,9 @@ None known at this checkpoint.
 - Persistence semantics still need a real durable adapter.
 - Security policy will need stronger isolation before powerful tools such as shell/deployment are enabled.
 - Capability probes must be real integration checks; they must never be inferred from provider names.
+- Runtime acceptance evidence must remain tied to the exact tested commit/build and environment.
+
+## Governance / scheduler
+
+- AgentOS scheduler remains paused unless separately authorized.
+- This checkpoint does not authorize merging PRs, enabling schedules, activating providers, adding credentials, charging users, or deploying production artifacts.
