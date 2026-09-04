@@ -22,16 +22,18 @@
 - Agent connectivity health report
 - Deterministic assurance evidence gate closure work
 - Explicit runtime acceptance gate and canonical local acceptance commands
+- Green Agent observation-only production boundary: assurance GREEN observations cannot authorize production promotion
 
 ## In progress
 
 - Clean-machine supported-Windows runtime acceptance: Install → Doctor → Boot → Wake → Restart/Persistence
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
+- CI verification of the latest Green Agent security-boundary commits
 
 ## Next highest-priority action
 
-Execute the documented runtime acceptance gate on a clean supported Windows environment against one exact AgentOS commit, capturing reproducible evidence for Install, Doctor, Boot, Wake, and Restart/Persistence.
+Execute the documented runtime acceptance gate on a clean supported Windows environment against one exact AgentOS commit, capturing reproducible evidence for Install, Doctor, Boot, Wake, and Restart/Persistence. In parallel, require CI evidence for the latest security-boundary commits before treating those changes as fully verified.
 
 ## Agent eligibility rule
 
@@ -49,11 +51,13 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 8. If checkpoint and code/runtime state disagree, code/runtime state wins and the discrepancy is recorded.
 9. An AI agent without reliable GitHub/continuity access is not eligible for autonomous AgentOS project work.
 10. Local workspace access is preferred when available because it provides direct access to the active working tree.
+11. Green Agent assurance output is observation-only; it cannot authorize production promotion.
 
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
 - AgentOS PR #56 remains open/draft and unmerged; normal review/merge governance is still required.
+- Latest Green Agent security-boundary commits have not yet been independently confirmed by accessible CI evidence in this cycle.
 - No production authority is granted by this checkpoint.
 
 ## Risks
@@ -63,6 +67,7 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 - Security policy will need stronger isolation before powerful tools such as shell/deployment are enabled.
 - Capability probes must be real integration checks; they must never be inferred from provider names.
 - Runtime acceptance evidence must remain tied to the exact tested commit/build and environment.
+- A GREEN assurance observation must never be treated as a deployment or production authorization signal.
 
 ## Governance / scheduler
 
