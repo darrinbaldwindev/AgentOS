@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const workflowPath = path.join(here, '..', '.github', 'workflows', 'project-overseer-wake.yml');
-const workflow = fs.readFileSync(workflowPath, 'utf8');
+const workflow = fs.readFileSync(workflowPath, 'utf8').replace(/\r\n/g, '\n');
 
 function countExact(line) {
   return workflow.split('\n').filter((entry) => entry === line).length;

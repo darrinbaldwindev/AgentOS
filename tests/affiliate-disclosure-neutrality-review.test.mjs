@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -24,7 +24,7 @@ for (const requiredText of [
 
 assert.match(fallbackManager, /referralStatus: "none"/);
 assert.match(fallbackManager, /referralStatus: "verified"/);
-const rankingBlock = fallbackManager.match(/export function rankFallbackProviders[\s\S]*?\n}\n\nfunction recoveryMessage/);
+const rankingBlock = fallbackManager.match(/export function rankFallbackProviders[\s\S]*?\r?\n}\r?\n\r?\nfunction recoveryMessage/);
 assert.ok(rankingBlock, "fallback manager must expose a bounded ranking block");
 assert.equal(/referralStatus/.test(rankingBlock[0]), false, "affiliate metadata must not influence fallback ranking");
 assert.match(fallbackManager, /Local Runtime/);

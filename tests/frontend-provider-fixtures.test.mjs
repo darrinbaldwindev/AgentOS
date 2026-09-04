@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -65,7 +65,7 @@ assert.equal(Object.isFrozen(FRONTEND_MODEL_FIXTURES), true);
 assert.equal(Object.isFrozen(PROVIDER_HEALTH_TRANSITIONS), true);
 
 const source = readFileSync(resolve("fixtures/frontend-provider-fixtures.mjs"), "utf8");
-const scoringBlock = source.match(/const score\s*=\s*[\s\S]*?;\n\n\s*return Object\.freeze/);
+const scoringBlock = source.match(/const score\s*=\s*[\s\S]*?;\r?\n\r?\n\s*return Object\.freeze/);
 assert.ok(scoringBlock, "fixture source must expose a bounded score calculation");
 assert.equal(/affiliate/i.test(scoringBlock[0]), false, "affiliate metadata must not influence capability scoring");
 for (const prohibitedPattern of [/\bfetch\s*\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/, /\bhttps?:\/\//, /\bprocess\.env\b/]) {

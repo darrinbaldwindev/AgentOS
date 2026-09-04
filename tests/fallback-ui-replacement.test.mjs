@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -51,7 +51,7 @@ assert.match(manager, /Context window is nearly full/);
 assert.match(manager, /Streaming recovery/);
 assert.match(manager, /No provider connection, credential access, redirect, or persistence/);
 
-const rankingBlock = manager.match(/export function rankFallbackProviders[\s\S]*?\n}\n\nfunction recoveryMessage/);
+const rankingBlock = manager.match(/export function rankFallbackProviders[\s\S]*?\r?\n}\r?\n\r?\nfunction recoveryMessage/);
 assert.ok(rankingBlock, "manager must expose a bounded fallback ranking function");
 assert.equal(/referralStatus/.test(rankingBlock[0]), false, "referral status must not influence local fallback ranking");
 for (const prohibitedPattern of [/\bfetch\s*\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/, /\bhttps?:\/\//, /\bprocess\.env\b/, /\blocalStorage\b/]) {

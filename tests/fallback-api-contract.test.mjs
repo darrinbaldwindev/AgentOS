@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -39,7 +39,7 @@ for (const requiredToken of [
   assert.match(contract, new RegExp(requiredToken.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `missing contract token ${requiredToken}`);
 }
 
-const codeBlocks = [...contract.matchAll(/```(?:json|text)?\n([\s\S]*?)```/g)].map((match) => match[1]);
+const codeBlocks = [...contract.matchAll(/```(?:json|text)?\r?\n([\s\S]*?)```/g)].map((match) => match[1]);
 assert.ok(codeBlocks.length >= 8, "contract should include request/response examples");
 for (const block of codeBlocks) {
   assert.equal(/"(?:prompt|secret|password|credential|apiKey|token|repositoryContent|artifactPayload|rawInput|rawOutput)"\s*:/i.test(block), false, "examples must not declare private payload fields");
