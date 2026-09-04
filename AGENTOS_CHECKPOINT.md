@@ -31,6 +31,7 @@
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
 - PR #56 budget-reservation hardening requires rebase/revalidation before it can be considered merge-ready
+- PR #55 elastic worker pool policy/fixture requires rebase/revalidation before its historical branch/CI state can be considered merge-ready
 
 ## Next highest-priority action
 
@@ -57,7 +58,8 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- PR #56 remains open/draft/unmerged and is now **diverged from current `main`**: the branch is 4 commits ahead and 172 commits behind current `main` (`b2770a6dbcc380eb4c2caf5b695adbd1df98b60c`). Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
+- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 172 commits behind current `main` (`14ec87252ba89975830b25ffab4773471f8301ef`). Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
+- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 169 commits behind current `main` (`14ec87252ba89975830b25ffab4773471f8301ef`). No workflow runs are currently attached to its head, so its fixture has no fresh CI evidence in the accessible Actions state.
 - No production authority is granted by this checkpoint.
 
 ## Risks
