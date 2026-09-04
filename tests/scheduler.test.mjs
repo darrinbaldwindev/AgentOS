@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createScheduler } from '../src/dispatch/scheduler.mjs';
 import { createRuntimeControl } from '../src/dispatch/control.mjs';
