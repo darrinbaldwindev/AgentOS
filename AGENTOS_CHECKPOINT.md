@@ -30,6 +30,7 @@
 - Clean-machine supported-Windows runtime acceptance: Install → Doctor → Boot → Wake → Restart/Persistence
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
+- PR #56 budget-reservation hardening requires rebase/revalidation before it can be considered merge-ready
 
 ## Next highest-priority action
 
@@ -56,7 +57,7 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- AgentOS PR #56 remains open/draft and unmerged; normal review/merge governance is still required.
+- PR #56 remains open/draft/unmerged and is now **diverged from current `main`**: the branch is 4 commits ahead and 172 commits behind current `main` (`b2770a6dbcc380eb4c2caf5b695adbd1df98b60c`). Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
 - No production authority is granted by this checkpoint.
 
 ## Risks
@@ -67,6 +68,7 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 - Capability probes must be real integration checks; they must never be inferred from provider names.
 - Runtime acceptance evidence must remain tied to the exact tested commit/build and environment.
 - A GREEN assurance observation must never be treated as a deployment or production authorization signal.
+- Stale PR branches can make otherwise-valid CI evidence misleading; CI must be reconciled to the current merge base before merge/green decisions.
 
 ## Governance / scheduler
 
