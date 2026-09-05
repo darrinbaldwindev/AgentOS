@@ -28,6 +28,7 @@
 - CI verification of the Green Agent promotion-boundary security changes
 - Local wake default-root hardening, with focused tests and exact-head CI verification
 - Real installed-Windows local wake invocation with autonomy disabled and dry-run semantics, independently reconciled in Mission 027
+- Mission 011 elastic-worker deterministic proof refreshed onto current `main` in draft PR #66; exact-head CI passed on its current branch head
 
 ## In progress
 
@@ -35,7 +36,8 @@
 - Durable checkpoint/change-log integration
 - Stronger end-to-end tests
 - PR #56 budget-reservation hardening requires rebase/revalidation before it can be considered merge-ready
-- PR #55 elastic worker pool policy/fixture requires rebase/revalidation before its historical branch/CI state can be considered merge-ready
+- PR #55 historical elastic-worker branch remains governed and stale; its capability proof is now represented by current-main draft PR #66 for fresh validation/review
+- PR #66 requires normal review/merge governance; its fresh CI does not authorize merging or production promotion
 
 ## Next highest-priority action
 
@@ -62,13 +64,13 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 179 commits behind current `main` (`1db76577f9e7900b9c78fb6836bf52f42d809507`). Merge base is `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`. Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
-- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 175 commits behind current `main` (`1db76577f9e7900b9c78fb6836bf52f42d809507`). Merge base is `7351985aba1b0f4aedddbee272f81a3e21c330f3`. Its fixture has no fresh CI evidence in the accessible Actions state.
+- PR #56 remains open/draft/unmerged and is diverged from current `main`: 4 commits ahead / 179 commits behind at the last recorded comparison against current main `1db76577f9e7900b9c78fb6836bf52f42d809507`; merge base `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`.
+- PR #55 remains open/draft/unmerged and historically diverged from current `main`; its Mission 011 content has been refreshed into draft PR #66 instead of mutating the governed historical branch.
 - No production authority is granted by this checkpoint.
 
 ## Evidence boundary
 
-Mission 027 records fresh evidence for local wake default-root behavior: focused coverage passed, the full suite passed 257/257, diff-check passed, exact-head CI passed, and a real Windows invocation completed in DRY_RUN with autonomy disabled. This evidence is useful but does not substitute for the required clean-environment Install → Doctor → Boot → Wake → Restart/Persistence acceptance record.
+Draft PR #66 ports the already-reviewed Mission 011 elastic-worker contract/fixture/test onto current `main` without rebasing or force-pushing PR #55. Its exact head `bcf2ff2ce3907a16320374b5572ab59c17d9ca59` has fresh successful GitHub Actions runs for `Project Overseer Wake` and `AgentOS Tests` (run numbers 182 and 336, respectively). This proves current-branch CI execution for the port, not clean-machine runtime acceptance, production concurrency, distributed execution, provider integration, merge authorization, or production promotion.
 
 ## Risks
 
