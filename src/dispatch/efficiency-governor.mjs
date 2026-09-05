@@ -67,13 +67,21 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
       calls: actual.calls ?? held.calls,
       tokens: actual.tokens ?? held.tokens,
     });
+    const projected = {
+      cost: spent.cost + usage.cost,
+      calls: spent.calls + usage.calls,
+      tokens: spent.tokens + usage.tokens,
+    };
+    const overBudget = projected.cost > limits.maxCost ||
+      projected.calls > limits.maxCalls ||
+      projected.tokens > limits.maxTokens;
+    if (overBudget) throw new Error('actual usage exceeds budget limits');
+
     const totals = record(usage);
     return {
       ...totals,
       reservationId: id,
-      overBudget: totals.cost > limits.maxCost ||
-        totals.calls > limits.maxCalls ||
-        totals.tokens > limits.maxTokens,
+      overBudget: false,
     };
   };
 
