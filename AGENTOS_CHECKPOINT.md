@@ -4,7 +4,7 @@
 
 **Phase:** CORE-001 runtime foundation / continuity and agent-connectivity hardening.
 
-**Current main:** `47a36db869fdf156d372f234743586b0a50ed321` (verified 2026-09-05)
+**Current main:** `6b16316212476348d7c2fe06ea2926430478c72c` (verified 2026-09-05)
 
 ## Completed
 
@@ -60,8 +60,8 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 175 commits behind current `main` (`47a36db869fdf156d372f234743586b0a50ed321`). Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
-- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 171 commits behind current `main` (`47a36db869fdf156d372f234743586b0a50ed321`). Its fixture has no fresh CI evidence in the accessible Actions state.
+- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 176 commits behind current `main` (`6b16316212476348d7c2fe06ea2926430478c72c`). Merge base is `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`. Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
+- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 172 commits behind current `main` (`6b16316212476348d7c2fe06ea2926430478c72c`). Merge base is `7351985aba1b0f4aedddbee272f81a3e21c330f3`. Its fixture has no fresh CI evidence in the accessible Actions state.
 - No production authority is granted by this checkpoint.
 
 ## Risks
