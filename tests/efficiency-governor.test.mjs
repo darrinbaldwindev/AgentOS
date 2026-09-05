@@ -35,11 +35,15 @@ test('reconciliation releases the reservation and records actual usage', () => {
   assert.throws(() => governor.reconcile({ reservation, actual: { cost: 0.1 } }), /unknown or already reconciled reservation/);
 });
 
-test('reconciliation reports an actual usage total above the hard ceiling', () => {
+test('reconciliation rejects actual usage above the hard ceiling without consuming the reservation', () => {
   const governor = createEfficiencyGovernor({ budget: { maxCost: 1, maxCalls: 2, maxTokens: 1000 } });
   const reservation = governor.reserve({ cost: 0.5, calls: 1, tokens: 500 });
-  const result = governor.reconcile({ reservation, actual: { cost: 1.2, calls: 1, tokens: 500 } });
-  assert.equal(result.overBudget, true);
+  assert.throws(
+    () => governor.reconcile({ reservation, actual: { cost: 1.2, calls: 1, tokens: 500 } }),
+    /actual usage exceeds budget limits/,
+  );
+  assert.deepEqual(governor.remaining(), { cost: 0.5, calls: 1, tokens: 500 });
+  assert.equal(governor.release(reservation).reservationId, reservation.id);
 });
 
 test('released reservations become available without recording spend', () => {
