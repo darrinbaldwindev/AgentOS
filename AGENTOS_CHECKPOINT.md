@@ -4,7 +4,7 @@
 
 **Phase:** CORE-001 runtime foundation / continuity and agent-connectivity hardening.
 
-**Current main:** `6b16316212476348d7c2fe06ea2926430478c72c` (verified 2026-09-05)
+**Current main:** `1db76577f9e7900b9c78fb6836bf52f42d809507` (verified 2026-09-05)
 
 ## Completed
 
@@ -26,6 +26,8 @@
 - Explicit runtime acceptance gate and canonical local acceptance commands
 - Green Agent observation-only production boundary: assurance GREEN observations cannot authorize production promotion
 - CI verification of the Green Agent promotion-boundary security changes
+- Local wake default-root hardening, with focused tests and exact-head CI verification
+- Real installed-Windows local wake invocation with autonomy disabled and dry-run semantics, independently reconciled in Mission 027
 
 ## In progress
 
@@ -53,16 +55,20 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 6. Provider chat history is advisory; repository/runtime state is canonical.
 7. Secrets and credentials do not belong in continuity snapshots or checkpoints.
 8. If checkpoint and code/runtime state disagree, code/runtime state wins and the discrepancy is recorded.
-9. An AI agent without reliable GitHub/continuity access is not eligible for autonomous AgentOS project work.
+9. An AI agent without reliable GitHub/continuity access is not eligible for autonomous AgentOS project execution.
 10. Local workspace access is preferred when available because it provides direct access to the active working tree.
 11. Green Agent assurance output is observation-only; it cannot authorize production promotion.
 
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 176 commits behind current `main` (`6b16316212476348d7c2fe06ea2926430478c72c`). Merge base is `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`. Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
-- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 172 commits behind current `main` (`6b16316212476348d7c2fe06ea2926430478c72c`). Merge base is `7351985aba1b0f4aedddbee272f81a3e21c330f3`. Its fixture has no fresh CI evidence in the accessible Actions state.
+- PR #56 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 4 commits ahead and 179 commits behind current `main` (`1db76577f9e7900b9c78fb6836bf52f42d809507`). Merge base is `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`. Its historical CI evidence must not be treated as current-main verification until the branch is rebased/revalidated.
+- PR #55 remains open/draft/unmerged and is **diverged from current `main`**: the branch is 2 commits ahead and 175 commits behind current `main` (`1db76577f9e7900b9c78fb6836bf52f42d809507`). Merge base is `7351985aba1b0f4aedddbee272f81a3e21c330f3`. Its fixture has no fresh CI evidence in the accessible Actions state.
 - No production authority is granted by this checkpoint.
+
+## Evidence boundary
+
+Mission 027 records fresh evidence for local wake default-root behavior: focused coverage passed, the full suite passed 257/257, diff-check passed, exact-head CI passed, and a real Windows invocation completed in DRY_RUN with autonomy disabled. This evidence is useful but does not substitute for the required clean-environment Install → Doctor → Boot → Wake → Restart/Persistence acceptance record.
 
 ## Risks
 
