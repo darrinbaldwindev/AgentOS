@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { DEFAULT_CONFIG, MIN_NODE_MAJOR, assertSupportedNode, installLocal } from '../scripts/install-local.mjs';
 
 test('local installer rejects unsupported Node versions', () => {
