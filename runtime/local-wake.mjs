@@ -4,7 +4,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { createLocalDispatchStore } from './local-dispatch-store.mjs';
 import { createMissionBudget } from './mission-budget.mjs';
@@ -208,9 +209,12 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
   }
 }
 
-export async function main({ env = process.env, argv = process.argv } = {}) {
-  const root = env.AGENTOS_HOME;
-  if (!root) throw new Error('AGENTOS_HOME is required for local wake');
+export function resolveLocalWakeRoot(env = process.env, platformHome = homedir()) {
+  return resolve(env.AGENTOS_HOME || join(platformHome, '.agentos'));
+}
+
+export async function main({ env = process.env, argv = process.argv, platformHome = homedir() } = {}) {
+  const root = resolveLocalWakeRoot(env, platformHome);
   const objective = argv.slice(2).join(' ').trim() || undefined;
   const result = await wakeLocal({ root, objective });
   console.log(JSON.stringify({
