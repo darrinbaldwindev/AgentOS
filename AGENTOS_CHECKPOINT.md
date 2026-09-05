@@ -4,7 +4,7 @@
 
 **Phase:** CORE-001 runtime foundation / continuity and agent-connectivity hardening.
 
-**Current main:** `1db76577f9e7900b9c78fb6836bf52f42d809507` (verified 2026-09-05)
+**Current main:** `68828cf63ccdfab16943399e81b900c270d23ac6` (verified 2026-09-05)
 
 ## Completed
 
@@ -64,7 +64,7 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Blockers
 
 - Clean supported-Windows runtime acceptance cannot be established by repository inspection alone.
-- PR #56 remains open/draft/unmerged and is diverged from current `main`: 4 commits ahead / 179 commits behind at the last recorded comparison against current main `1db76577f9e7900b9c78fb6836bf52f42d809507`; merge base `1c27ad2530cae4987ee2de6d731a7c6e1a12946f`.
+- PR #56 remains open/draft/unmerged and is diverged from current `main`; its historical CI cannot be treated as current-main evidence until rebase/revalidation.
 - PR #55 remains open/draft/unmerged and historically diverged from current `main`; its Mission 011 content has been refreshed into draft PR #66 instead of mutating the governed historical branch.
 - No production authority is granted by this checkpoint.
 
