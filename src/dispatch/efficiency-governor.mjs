@@ -57,11 +57,6 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
     const held = reservations.get(id);
     if (!held) throw new Error('unknown or already reconciled reservation');
 
-    reservations.delete(id);
-    reserved.cost -= held.cost;
-    reserved.calls -= held.calls;
-    reserved.tokens -= held.tokens;
-
     const usage = normalise({
       cost: actual.cost ?? held.cost,
       calls: actual.calls ?? held.calls,
@@ -76,6 +71,11 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
       projected.calls > limits.maxCalls ||
       projected.tokens > limits.maxTokens;
     if (overBudget) throw new Error('actual usage exceeds budget limits');
+
+    reservations.delete(id);
+    reserved.cost -= held.cost;
+    reserved.calls -= held.calls;
+    reserved.tokens -= held.tokens;
 
     const totals = record(usage);
     return {
