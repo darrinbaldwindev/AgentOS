@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { DEFAULT_CONFIG, MIN_NODE_MAJOR, assertSupportedNode, installLocal } from '../scripts/install-local.mjs';
 
 test('local installer rejects unsupported Node versions', () => {
@@ -10,7 +9,7 @@ test('local installer rejects unsupported Node versions', () => {
   assert.doesNotThrow(() => assertSupportedNode(`${MIN_NODE_MAJOR}.0.0`));
 });
 
-test('local installer creates durable safe defaults without enabling autonomy', async () => {
+test('local installer creates durable safe defaults without enabling autonomy or scheduler', async () => {
   const root = await mkdtemp(join(tmpdir(), 'agentos-install-test-'));
   const result = await installLocal({ root });
   assert.equal(result.created, true);
@@ -19,6 +18,8 @@ test('local installer creates durable safe defaults without enabling autonomy', 
   assert.deepEqual(config, DEFAULT_CONFIG);
   assert.equal(config.mode, 'DRY_RUN');
   assert.equal(config.autonomyEnabled, false);
+  assert.equal(config.scheduler.enabled, false);
+  assert.equal(config.scheduler.cadenceMinutes, 5);
   assert.equal(state.schemaVersion, 1);
 
   const second = await installLocal({ root });
