@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   autonomyEnabled: false,
   workspaceRoot: 'workspaces',
   stateFile: 'state/agentos.json',
-  scheduler: Object.freeze({ enabled: true, cadenceMinutes: 5 }),
+  scheduler: Object.freeze({ enabled: false, cadenceMinutes: 5 }),
   github: Object.freeze({ canonicalSync: true }),
 });
 
