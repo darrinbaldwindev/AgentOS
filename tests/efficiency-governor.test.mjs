@@ -10,6 +10,16 @@ test('governor prevents spending beyond token, call and cost budgets', () => {
   assert.deepEqual(governor.remaining(), { cost: 0.5, calls: 1, tokens: 500 });
 });
 
+test('record rejects direct usage that would exceed the hard budget', () => {
+  const governor = createEfficiencyGovernor({ budget: { maxCost: 1, maxCalls: 2, maxTokens: 1000 } });
+  governor.record({ cost: 0.5, calls: 1, tokens: 500 });
+  assert.throws(
+    () => governor.record({ cost: 0.6, calls: 1, tokens: 500 }),
+    /usage would exceed budget limits/,
+  );
+  assert.deepEqual(governor.remaining(), { cost: 0.5, calls: 1, tokens: 500 });
+});
+
 test('reservations consume remaining budget before execution', () => {
   const governor = createEfficiencyGovernor({ budget: { maxCost: 1, maxCalls: 2, maxTokens: 1000 } });
   const first = governor.reserve({ cost: 0.6, calls: 1, tokens: 600 });
