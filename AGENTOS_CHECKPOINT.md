@@ -4,7 +4,7 @@
 
 **Phase:** CORE-001 runtime foundation / continuity and agent-connectivity hardening.
 
-**Current main:** `191bb52ef6e6272a9da46f43d0191c2791b7c169` (verified 2026-09-05)
+**Current main:** `bfe45ef16462c780daf6f820df51a2af76656a61` (verified 2026-09-05)
 
 ## Completed
 
@@ -71,6 +71,8 @@ Required capabilities: `github.read`, `continuity.read`, and `handoff`. Local wo
 ## Evidence boundary
 
 Draft PR #66 ports the already-reviewed Mission 011 elastic-worker contract/fixture/test onto current `main` without rebasing or force-pushing PR #55. Its exact head `bcf2ff2ce3907a16320374b5572ab59c17d9ca59` has fresh successful GitHub Actions runs for `Project Overseer Wake` and `AgentOS Tests` (run numbers 182 and 336, respectively). This proves current-branch CI execution for the port, not clean-machine runtime acceptance, production concurrency, distributed execution, provider integration, merge authorization, or production promotion.
+
+The current `main` checkpoint commit itself currently has no GitHub commit-status entries; this is not treated as CI success.
 
 ## Risks
 
