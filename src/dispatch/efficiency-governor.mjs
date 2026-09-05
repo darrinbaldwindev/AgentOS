@@ -30,6 +30,12 @@ export function createEfficiencyGovernor({ budget = {}, costs = {} } = {}) {
 
   const record = ({ cost = 0, calls = 1, tokens = 0 } = {}) => {
     const usage = normalise({ cost, calls, tokens });
+    const projected = {
+      cost: spent.cost + usage.cost,
+      calls: spent.calls + usage.calls,
+      tokens: spent.tokens + usage.tokens,
+    };
+    if (!canSpend(projected)) throw new Error('usage would exceed budget limits');
     spent.cost += usage.cost;
     spent.calls += usage.calls;
     spent.tokens += usage.tokens;
