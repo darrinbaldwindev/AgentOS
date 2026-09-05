@@ -4,7 +4,7 @@
 
 **Phase:** CORE-001 runtime foundation / continuity and agent-connectivity hardening.
 
-**Current main:** `68828cf63ccdfab16943399e81b900c270d23ac6` (verified 2026-09-05)
+**Current main:** `191bb52ef6e6272a9da46f43d0191c2791b7c169` (verified 2026-09-05)
 
 ## Completed
 
