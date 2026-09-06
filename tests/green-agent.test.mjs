@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createGreenAgent, evaluateAssurancePacket } from '../runtime/green-agent.mjs';
+import { createGreenAgent, evaluateAssurancePacket, evaluateTaskCompletion } from '../runtime/green-agent.mjs';
 
 function makePersistence() {
   const records = new Map([['artifact', new Map()], ['event', new Map()]]);
@@ -43,4 +43,69 @@ test('Green Agent challenge blocks promotion when a claim lacks verified evidenc
 test('Green Agent GREEN observation never authorizes production promotion', () => {
   const result = evaluateAssurancePacket({ packet: { packet_id: 'PASS-001', project: 'fixture', repository: 'fixture/repo', commit_sha: 'abc123', claims: [{ claim_id: 'claim-1', summary: 'Evidence is reproducible', evidence_refs: [{ status: 'verified', source: 'independent-check' }] }], limitations: [{ summary: 'Fixture-only scope', non_blocking: true }] }, timestamp: '2026-09-02T00:00:00Z' });
   assert.equal(result.disposition, 'green'); assert.equal(result.production_promotion_allowed, false);
+});
+
+test('Green Agent blocks worker completion claim when any acceptance evidence is missing', () => {
+  const result = evaluateTaskCompletion({
+    task: { task_id: 'TASK-100', acceptance_criteria: ['code implemented', 'tests pass'] },
+    workerResult: { task_id: 'TASK-100', status: 'complete' },
+    evidence: {
+      acceptance_criteria: [{ criterion: 'code implemented', status: 'verified', source: 'diff-review' }],
+      implementation: { status: 'verified', source: 'repo-diff' },
+      tests: { status: 'verified', source: 'ci' },
+      authorization: { status: 'verified', unauthorized_changes: [] },
+      side_effects: [],
+      gaps: [],
+    },
+    timestamp: '2026-09-06T00:00:00Z',
+  });
+  assert.equal(result.disposition, 'fail');
+  assert.equal(result.task_status, 'incomplete');
+  assert.equal(result.advance_to_prs, false);
+  assert.equal(result.remediation_required, true);
+  assert.match(result.failures.join(' | '), /tests pass/);
+});
+
+test('Green Agent only passes completion when task identity, criteria, implementation, tests and authority are independently verified', () => {
+  const result = evaluateTaskCompletion({
+    task: { task_id: 'TASK-101', acceptance_criteria: ['code implemented', 'tests pass'] },
+    workerResult: { task_id: 'TASK-101', status: 'completed' },
+    evidence: {
+      acceptance_criteria: [
+        { criterion: 'code implemented', status: 'verified', source: 'independent-diff-review' },
+        { criterion: 'tests pass', status: 'verified', source: 'ci' },
+      ],
+      implementation: { status: 'verified', source: 'repo-diff' },
+      tests: { status: 'verified', source: 'ci' },
+      authorization: { status: 'verified', unauthorized_changes: [] },
+      side_effects: [],
+      gaps: [],
+    },
+    timestamp: '2026-09-06T00:00:00Z',
+  });
+  assert.equal(result.disposition, 'pass');
+  assert.equal(result.task_status, 'green_verified_complete');
+  assert.equal(result.advance_to_prs, true);
+  assert.equal(result.remediation_required, false);
+  assert.equal(result.production_promotion_allowed, false);
+});
+
+test('Green Agent fails completion on wrong task, unauthorized changes, side effects or unresolved gaps', () => {
+  const result = evaluateTaskCompletion({
+    task: { task_id: 'TASK-102', acceptance_criteria: ['done'] },
+    workerResult: { task_id: 'TASK-WRONG', status: 'complete' },
+    evidence: {
+      acceptance_criteria: [{ criterion: 'done', status: 'verified' }],
+      implementation: { status: 'verified' },
+      tests: { status: 'verified' },
+      authorization: { status: 'verified', unauthorized_changes: ['runtime/credentials.json'] },
+      side_effects: [{ description: 'changed unrelated file', allowed: false }],
+      gaps: ['acceptance environment not exercised'],
+    },
+  });
+  assert.equal(result.disposition, 'fail');
+  assert.equal(result.advance_to_prs, false);
+  assert.equal(result.task_identity.status, 'failed');
+  assert.equal(result.authorization.status, 'failed');
+  assert.ok(result.failures.length >= 4);
 });
