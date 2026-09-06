@@ -105,7 +105,8 @@ test('persistence boundary maintains continuity across wake cycles', async () =>
   // Both processes shared the same AGENTOS_HOME, so second wake demonstrates
   // that persisted state from first wake was successfully loaded in separate process
   assert.ok(result1.budget_status, 'first wake should have budget status');
-  assert.ok(result2.budget_status, 'second wake should have budget status');
+  assert.ok(result2.budget_status, 'second wake should have budget status from reloaded state');
+  assert.equal(typeof result2.budget_status, 'string', 'budget status should maintain string type across process boundary');
   
   // Verify persistence continuity: second process successfully reloaded state
   assert.equal(typeof result2.budget_status, typeof result1.budget_status, 'budget status type should persist across process boundary');
