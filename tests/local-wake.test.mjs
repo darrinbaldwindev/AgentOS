@@ -4,6 +4,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
 import { main, wakeLocal } from '../runtime/local-wake.mjs';
@@ -17,9 +18,9 @@ async function makeInstall() {
 }
 
 async function runWakeProcess(root, objective) {
-  const runtimePath = new URL('../runtime/local-wake.mjs', import.meta.url);
+  const runtimePath = fileURLToPath(new URL('../runtime/local-wake.mjs', import.meta.url));
   const { stdout } = await execFile(process.execPath, [runtimePath, objective], {
-    env: { ...process.env, AGENTOS_HOME: root },
+    env: { ...process.env, AGENTOS_HOME: root, NODE_NO_WARNINGS: '1' },
   });
   return JSON.parse(stdout);
 }
