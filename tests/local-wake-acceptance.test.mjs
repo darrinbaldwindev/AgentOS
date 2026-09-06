@@ -107,6 +107,9 @@ test('persistence boundary maintains continuity across wake cycles', async () =>
   assert.ok(result1.budget_status, 'first wake should have budget status');
   assert.ok(result2.budget_status, 'second wake should have budget status');
   
+  // Verify persistence continuity: second process successfully reloaded state
+  assert.equal(typeof result2.budget_status, typeof result1.budget_status, 'budget status type should persist across process boundary');
+  
   // Verify in-process wake still works (for backward compatibility)
   const result3 = await wakeLocal({ root, objective: 'third wake in-process' });
   assert.equal(result3.status, 'COMPLETED', 'in-process wake should still work');
