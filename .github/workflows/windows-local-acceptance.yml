@@ -71,7 +71,7 @@ jobs:
         run: |
           $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
           $env:NODE_NO_WARNINGS = '1'
-          $wakeOutput = npm run wake:local 2>&1 | Out-String
+          $wakeOutput = node runtime/local-wake.mjs 2>&1 | Out-String
           $wakeOutput
           if ($LASTEXITCODE -ne 0) { throw 'WAKE_EXECUTION_FAILED' }
           $wakeJson = $wakeOutput | ConvertFrom-Json
@@ -90,7 +90,7 @@ jobs:
           $env:NODE_NO_WARNINGS = '1'
           npm run doctor:local
           if ($LASTEXITCODE -ne 0) { throw 'DOCTOR_POST_WAKE_FAILED' }
-          $wakeOutput2 = npm run wake:local 2>&1 | Out-String
+          $wakeOutput2 = node runtime/local-wake.mjs 2>&1 | Out-String
           $wakeOutput2
           if ($LASTEXITCODE -ne 0) { throw 'SECOND_WAKE_EXECUTION_FAILED' }
           $wakeJson2 = $wakeOutput2 | ConvertFrom-Json
@@ -98,4 +98,3 @@ jobs:
           if ($wakeJson2.mode -ne 'DRY_RUN') { throw 'SECOND_WAKE_MODE_NOT_DRY_RUN' }
           if ($wakeJson2.autonomyEnabled -ne $false) { throw 'SECOND_WAKE_AUTONOMY_NOT_DISABLED' }
           Write-Host "✓ Second wake after persistence boundary demonstrates continuity"
-
