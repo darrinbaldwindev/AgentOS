@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "system": "AgentOS",
+  "stage": "C",
+  "status": "blocked_predecessor_recovery",
+  "recordedAt": "2026-09-06T21:40:49+10:00",
+  "predecessor": {
+    "stage": "B",
+    "required": true,
+    "identity": null,
+    "valid": false,
+    "fresh": false,
+    "correlated": false,
+    "ready_for_C": false,
+    "reason": "No durable Control Loop B checkpoint with ready_for_C was found in canonical AgentOS state."
+  },
+  "result": {
+    "action": "recovery_only",
+    "workExecuted": false,
+    "evidence": [
+      "Canonical .agentos/state/current.json recovered; state authority is .agentos/state and repository authority is github.",
+      "Branch agent/overseer/basic-chat-vertical-slice is at commit 7b0874772eb479e3dc42b872e333becdd42e9cdb.",
+      "Search for ready_for_C returned no durable checkpoint evidence."
+    ]
+  },
+  "safety": {
+    "dryRun": true,
+    "autonomyEnabled": false,
+    "schedulerDisabledByDefault": true,
+    "credentialsOrProvidersChanged": false,
+    "productionWrites": false,
+    "deploymentOrRelease": false,
+    "mergeApproveReadyRebase": false
+  },
+  "nextActionForA": "Recover or establish a valid, fresh, correlated Control Loop B checkpoint with explicit ready_for_C before any new substantive A-cycle work is selected or executed. Do not advance unrelated work until that predecessor boundary is repaired."
+}
