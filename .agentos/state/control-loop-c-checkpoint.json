@@ -3,7 +3,7 @@
   "system": "AgentOS",
   "stage": "C",
   "status": "blocked_predecessor_recovery",
-  "recordedAt": "2026-09-06T21:40:49+10:00",
+  "recordedAt": "2026-09-06T22:38:36+10:00",
   "predecessor": {
     "stage": "B",
     "required": true,
@@ -12,15 +12,16 @@
     "fresh": false,
     "correlated": false,
     "ready_for_C": false,
-    "reason": "No durable Control Loop B checkpoint with ready_for_C was found in canonical AgentOS state."
+    "reason": "No durable Control Loop B checkpoint with ready_for_C exists in canonical AgentOS state; direct lookup on main and the active progression branch returned not found."
   },
   "result": {
     "action": "recovery_only",
     "workExecuted": false,
     "evidence": [
-      "Canonical .agentos/state/current.json recovered; state authority is .agentos/state and repository authority is github.",
-      "Branch agent/overseer/basic-chat-vertical-slice is at commit 7b0874772eb479e3dc42b872e333becdd42e9cdb.",
-      "Search for ready_for_C returned no durable checkpoint evidence."
+      "Canonical .agentos/state/current.json recovered; it declares .agentos/state as state authority and github as repository authority.",
+      "Required .agentos/state/control-loop-b-checkpoint.json is absent on main.",
+      "Required .agentos/state/control-loop-b-checkpoint.json is also absent on agent/overseer/basic-chat-vertical-slice.",
+      "No valid predecessor identity, freshness proof, correlation proof, or ready_for_C flag could be recovered."
     ]
   },
   "safety": {
