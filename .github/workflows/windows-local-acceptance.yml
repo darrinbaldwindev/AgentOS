@@ -70,6 +70,7 @@ jobs:
         shell: pwsh
         run: |
           $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          $env:NODE_NO_WARNINGS = '1'
           $wakeOutput = npm run wake:local 2>&1 | Out-String
           $wakeOutput
           if ($LASTEXITCODE -ne 0) { throw 'WAKE_EXECUTION_FAILED' }
@@ -86,6 +87,7 @@ jobs:
         shell: pwsh
         run: |
           $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          $env:NODE_NO_WARNINGS = '1'
           npm run doctor:local
           if ($LASTEXITCODE -ne 0) { throw 'DOCTOR_POST_WAKE_FAILED' }
           $wakeOutput2 = npm run wake:local 2>&1 | Out-String
