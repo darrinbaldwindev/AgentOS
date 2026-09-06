@@ -96,3 +96,4 @@ jobs:
           if ($wakeJson2.mode -ne 'DRY_RUN') { throw 'SECOND_WAKE_MODE_NOT_DRY_RUN' }
           if ($wakeJson2.autonomyEnabled -ne $false) { throw 'SECOND_WAKE_AUTONOMY_NOT_DISABLED' }
           Write-Host "✓ Second wake after persistence boundary demonstrates continuity"
+
