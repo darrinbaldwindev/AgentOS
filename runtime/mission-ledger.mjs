@@ -47,7 +47,7 @@ export function createMissionRecord({ stage, scheduleId, predecessorCheckpointId
     intended_next_action: intendedNextAction,
     actions: Object.freeze([...actions]),
     worker,
-    touched,
+    touched: Object.freeze({ ...touched }),
     tests: Object.freeze([...tests]),
     evidence: Object.freeze([...evidence]),
     safety: Object.freeze([...safety]),
@@ -81,7 +81,13 @@ export async function readMissionLedger({ ledgerPath }) {
   requireText(ledgerPath, 'ledgerPath');
   try {
     const text = await fs.readFile(ledgerPath, 'utf8');
-    return text.split('\n').filter(Boolean).map((line) => validateMissionRecord(JSON.parse(line)));
+    return text.split('\n').filter(Boolean).map((line) => {
+      try {
+        return validateMissionRecord(JSON.parse(line));
+      } catch (error) {
+        throw new Error(`Failed to parse mission record: ${error.message}`);
+      }
+    });
   } catch (error) {
     if (error.code === 'ENOENT') return [];
     throw error;
@@ -89,7 +95,7 @@ export async function readMissionLedger({ ledgerPath }) {
 }
 
 export function summarizeMissionLedger(records = []) {
-  const ordered = [...records].sort((a, b) => a.timestamps.utc.localeCompare(b.timestamps.utc));
+  const ordered = [...records].map(validateMissionRecord).sort((a, b) => a.timestamps.utc.localeCompare(b.timestamps.utc));
   const latestByStage = {};
   for (const record of ordered) latestByStage[record.stage] = record;
   const latest = ordered.at(-1) ?? null;
