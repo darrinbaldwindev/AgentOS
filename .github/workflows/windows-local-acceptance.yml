@@ -1,0 +1,67 @@
+name: Windows Local Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/install-local.mjs'
+      - 'scripts/doctor-local.mjs'
+      - 'scripts/boot-local.mjs'
+      - 'runtime/**'
+      - 'tests/**'
+      - '.github/workflows/windows-local-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-local-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-local-acceptance:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out AgentOS
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run repository tests
+        shell: pwsh
+        run: npm test
+
+      - name: Install into isolated clean home
+        shell: pwsh
+        run: |
+          $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          npm run install:local
+
+      - name: Verify safe install with doctor
+        shell: pwsh
+        run: |
+          $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          npm run doctor:local
+
+      - name: Verify safe boot
+        shell: pwsh
+        run: |
+          $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          $result = npm run boot:local 2>&1 | Out-String
+          $result
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify install idempotence and scheduler remains disabled
+        shell: pwsh
+        run: |
+          $env:AGENTOS_HOME = Join-Path $env:RUNNER_TEMP 'agentos-clean'
+          npm run install:local
+          $configPath = Join-Path $env:AGENTOS_HOME 'config.json'
+          $config = Get-Content $configPath -Raw | ConvertFrom-Json
+          if ($config.mode -ne 'DRY_RUN') { throw 'MODE_NOT_DRY_RUN' }
+          if ($config.autonomyEnabled -ne $false) { throw 'AUTONOMY_NOT_DISABLED' }
+          if ($config.scheduler.enabled -ne $false) { throw 'SCHEDULER_NOT_DISABLED' }
