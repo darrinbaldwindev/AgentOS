@@ -31,9 +31,10 @@ function resolveRepoHead(result) {
   return result?.response?.repository_commit || process.env.AGENTOS_REPO_HEAD || 'unknown:local-runtime';
 }
 
-async function appendMission(root, { stage, scheduleId, predecessorCheckpointId, repoHead, intendedNextAction, actions, worker, touched, tests, evidence, safety, blockers, outcome, nextCheckpointId, now }) {
+async function appendMission(root, { missionId, stage, scheduleId, predecessorCheckpointId, repoHead, intendedNextAction, actions, worker, touched, tests, evidence, safety, blockers, outcome, nextCheckpointId, now }) {
   const paths = missionLedgerPaths(resolve(root));
   const record = createMissionRecord({
+    missionId,
     stage,
     scheduleId,
     predecessorCheckpointId,
@@ -74,6 +75,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
     };
     const evidencePath = await appendRecord(root, record);
     const mission = await appendMission(root, {
+      missionId: result.response.mission_id,
       stage,
       scheduleId,
       predecessorCheckpointId,
@@ -83,7 +85,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
       worker: result.response.source_agent,
       touched: { evidence_path: evidencePath },
       tests: result.response.verification || [],
-      evidence: [...(result.response.evidence || []), `scheduler-run:${evidencePath}`],
+      evidence: [...(result.response.evidence || []), `scheduler-run:${evidencePath}`, `wake-trace:${result.response.wake_trace_id}`],
       safety: ['scheduler firing is not completion', 'DRY_RUN/autonomy-disabled boundary preserved by local wake'],
       blockers: result.response.blockers || [],
       outcome: 'executed_awaiting_green',
@@ -101,6 +103,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
     };
     const evidencePath = await appendRecord(root, record);
     const mission = await appendMission(root, {
+      missionId: `scheduler:${scheduleId}:${startedAt}`,
       stage,
       scheduleId,
       predecessorCheckpointId,
