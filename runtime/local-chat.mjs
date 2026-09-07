@@ -7,11 +7,17 @@ import { wakeLocal } from './local-wake.mjs';
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
-export async function createLocalChat({ root }) {
+async function readSafeChatConfig(root) {
   const config = JSON.parse(await readFile(join(root, 'config.json'), 'utf8'));
+  if (config?.schemaVersion !== 1) throw new Error('LOCAL_CONFIG_SCHEMA_INVALID');
   if (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false || config.scheduler?.enabled !== false) {
     throw new Error('CHAT_REQUIRES_DRY_RUN_AUTONOMY_AND_SCHEDULER_DISABLED');
   }
+  return config;
+}
+
+export async function createLocalChat({ root }) {
+  const config = await readSafeChatConfig(root);
   // Exclusive chat host; never attach this slice to the physical scheduler home.
   const lockPath = join(root, 'basic-chat.lock');
   const lock = await open(lockPath, 'wx');
@@ -33,7 +39,7 @@ export async function createLocalChat({ root }) {
           projectId: task.requirements.projectId, source: task.source, freePreferred: task.freePreferred,
         });
         try {
-          const result = await wakeLocal({ root, persistence, missionId, threadId: THREAD, objective: message });
+          const result = await wakeLocal({ root, persistence, missionId, threadId: THREAD, objective: message, requireSchedulerDisabled: true });
           await persistence.update('run', run.id, { status: 'completed', taskId: result.task_id,
             responseArtifactId: `response:${result.task_id}`, wakeTraceId: result.response.wake_trace_id });
           return { result: { runId: run.id, output: 'Completed one bounded local check through the governed AgentOS pipeline. Your message was recorded as the task objective. DRY_RUN; no external actions were taken.' } };
@@ -57,6 +63,7 @@ export async function createLocalChat({ root }) {
       send: text => serial(async () => {
         if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw new Error('MESSAGE_REQUIRES_1_TO_4000_CHARACTERS');
         if ((await persistence.get('artifact', CONTROL)).status !== 'ready') throw new Error('CHAT_PAUSED_OR_STOPPED');
+        await readSafeChatConfig(root);
         return chat.sendMessage({ text, threadId: THREAD });
       }),
       control: action => serial(async () => {

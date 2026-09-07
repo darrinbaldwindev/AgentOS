@@ -7,6 +7,7 @@ import { request } from 'node:http';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
 import { startBasicChat } from '../runtime/basic-chat-server.mjs';
 import { createLocalChat } from '../runtime/local-chat.mjs';
+import { promises as fs } from 'node:fs';
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'agentos-chat-'));
@@ -82,11 +83,81 @@ test('unsafe config fails closed at startup and again before worker execution', 
   const result = await post(f.app, '/api/send', { text: 'fail closed' });
   assert.equal(result.status, 400);
   const snapshot = await state(f.app);
-  assert.equal(snapshot.history.length, 1);
-  assert.equal(snapshot.runs[0].status, 'failed');
+  assert.equal(snapshot.history.length, 0);
+  assert.equal(snapshot.runs.length, 0);
   const persisted = JSON.parse(await readFile(join(f.root, DEFAULT_CONFIG.stateFile), 'utf8'));
   assert.equal(Object.values(persisted.records.artifact).filter(a => a.artifactType === 'dispatch.task').length, 0);
 });
+
+test('running chat rejects scheduler configuration changes before admitting a turn', async t => {
+  const f = await fixture(t);
+  const before = await readFile(join(f.root, DEFAULT_CONFIG.stateFile), 'utf8');
+  for (const patch of [{ scheduler: { enabled: true } }, { scheduler: {} }, { mode: 'LIVE' }, { schemaVersion: 999 }]) {
+    await writeFile(join(f.root, 'config.json'), JSON.stringify({ ...DEFAULT_CONFIG, ...patch }));
+    const response = await post(f.app, '/api/send', { text: 'must not dispatch' });
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /CHAT_REQUIRES|LOCAL_CONFIG_SCHEMA_INVALID/);
+    assert.equal((await state(f.app)).runs.length, 0);
+    assert.equal((await state(f.app)).history.length, 0);
+    assert.equal(await readFile(join(f.root, DEFAULT_CONFIG.stateFile), 'utf8'), before);
+  }
+  await writeFile(join(f.root, 'config.json'), JSON.stringify(DEFAULT_CONFIG));
+  assert.equal((await post(f.app, '/api/send', { text: 'safe again' })).status, 200);
+});
+
+test('wake boundary rejects scheduler changes after chat admission without completing the turn', async t => {
+  const f = await fixture(t);
+  const filePath = join(f.root, DEFAULT_CONFIG.stateFile);
+  const original = fs.rename;
+  let changed = false;
+  t.mock.method(fs, 'rename', async (source, target) => {
+    await original(source, target);
+    if (target === filePath && !changed) {
+      changed = true;
+      await writeFile(join(f.root, 'config.json'), JSON.stringify({ ...DEFAULT_CONFIG, scheduler: { enabled: true } }));
+    }
+  });
+  const response = await post(f.app, '/api/send', { text: 'admitted before config changed' });
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, 'LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED');
+  assert.equal(changed, true);
+  const snapshot = await state(f.app);
+  assert.equal(snapshot.history.length, 1);
+  assert.equal(snapshot.history[0].role, 'user');
+  assert.equal(snapshot.runs.length, 1);
+  assert.equal(snapshot.runs[0].status, 'failed');
+  const persisted = JSON.parse(await readFile(filePath, 'utf8'));
+  assert.equal(Object.values(persisted.records.artifact).filter(a => ['dispatch.task', 'project-overseer.response'].includes(a.artifactType)).length, 0);
+  assert.equal(Object.values(persisted.records.event).filter(e => ['basic-chat.turn.completed', 'agentos.manual-wake.completed'].includes(e.eventType)).length, 0);
+});
+
+for (const action of ['pause', 'stop']) {
+  test(`failed durable resume leaves ${action} admission blocked in the running host`, async t => {
+    const f = await fixture(t);
+    assert.equal((await post(f.app, '/api/control', { action })).status, 200);
+    const before = await state(f.app);
+    const filePath = join(f.root, DEFAULT_CONFIG.stateFile);
+    const diskBefore = await readFile(filePath, 'utf8');
+    const original = fs.rename;
+    const fault = t.mock.method(fs, 'rename', async (source, target) => {
+      if (target === filePath) throw Object.assign(new Error('INJECTED_DURABLE_RENAME_FAILURE'), { code: 'EIO' });
+      return original(source, target);
+    });
+    const result = await post(f.app, '/api/control', { action: 'resume' });
+    assert.equal(result.status, 400);
+    assert.equal((await result.json()).error, 'INJECTED_DURABLE_RENAME_FAILURE');
+    assert.deepEqual(await state(f.app), before);
+    assert.equal(await readFile(filePath, 'utf8'), diskBefore);
+    fault.mock.restore();
+    const blocked = await post(f.app, '/api/send', { text: 'must stay blocked after storage recovers' });
+    assert.equal((await blocked.json()).error, 'CHAT_PAUSED_OR_STOPPED');
+    assert.deepEqual(await state(f.app), before);
+    await f.restart();
+    assert.deepEqual(await state(f.app), before);
+    assert.equal((await post(f.app, '/api/control', { action: 'resume' })).status, 200);
+    assert.equal((await post(f.app, '/api/send', { text: 'explicit resume succeeded' })).status, 200);
+  });
+}
 
 test('second chat host is rejected and concurrent sends preserve both turns', async t => {
   const f = await fixture(t);

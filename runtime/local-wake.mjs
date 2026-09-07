@@ -26,10 +26,13 @@ async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
 }
 
-function safeRuntimeConfig(config) {
+function safeRuntimeConfig(config, requireSchedulerDisabled) {
   if (config?.schemaVersion !== 1) throw new Error('LOCAL_CONFIG_SCHEMA_INVALID');
   if (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false) {
     throw new Error('LOCAL_WAKE_REQUIRES_SAFE_MODE');
+  }
+  if (requireSchedulerDisabled && config.scheduler?.enabled !== false) {
+    throw new Error('LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED');
   }
   return config;
 }
@@ -70,9 +73,9 @@ function createLocalWorkerRegistry() {
   return registry;
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', persistence: sharedPersistence, missionId, threadId } = {}) {
+export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', persistence: sharedPersistence, missionId, threadId, requireSchedulerDisabled = false } = {}) {
   if (!root) throw new TypeError('root is required');
-  const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
+  const config = safeRuntimeConfig(await readJson(join(root, 'config.json')), requireSchedulerDisabled);
   const persistence = sharedPersistence ?? await createLocalPersistence({ filePath: join(root, config.stateFile) });
   const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
 
