@@ -14,59 +14,75 @@ Workers/providers = execution layer (Repo/Code, QA/Test, Research, Architecture,
 
 AgentOS is intended to be installable and operable on the owner's PC. The installed AgentOS runtime is therefore an execution environment, not merely a remote coordinator or cache of GitHub state.
 
-**Local repository access is opt-in.** Installing AgentOS, signing into GitHub, or opening a remote repository must never by itself grant AgentOS access to the owner's filesystem or local repositories.
+**Local repository/workspace operation is the default AgentOS operating model.** AgentOS is expected to work on repositories available in its authorised local workspace without requiring GitHub. Internet connectivity and remote services are additional capabilities, not prerequisites for local operation.
 
-The local installation may, only after the owner explicitly enables Local Workspace mode and subject to operating-system permissions and configured security policy:
+Local filesystem and repository authority remains bounded by AgentOS policy. AgentOS must never treat the entire computer as an unrestricted workspace. Only approved repository/workspace roots and explicitly authorised operations are available.
+
+The local installation may, subject to the owner's configured security policy and operating-system permissions:
 
 - maintain local working copies of approved repositories;
 - clone, fetch, checkout, compare, branch, test and inspect repositories locally;
 - execute approved local build, test, lint, scan and development commands;
-- synchronize local repositories against canonical GitHub state before task execution;
+- synchronize local repositories against canonical GitHub state when Internet access is available and GitHub is configured;
 - maintain a durable local task/state database and execution queue;
 - run the deterministic local scheduler/controller and recover after restart;
 - manage worker processes and local sub-workers;
 - provide approved workers with filesystem/repository context without repeatedly transferring repository contents through remote services;
-- use locally installed development tools and runtimes where explicitly permitted;
+- use locally installed development tools and runtimes where permitted;
 - retain local execution evidence, logs and checkpoints according to policy;
 - detect local repository divergence, dirty worktrees and stale task claims before dispatch;
-- perform offline-capable work where the task and required dependencies permit it, while clearly recording unavailable network/provider operations.
+- perform offline-capable work when the task and dependencies permit it, while clearly recording unavailable network/provider operations.
 
 ## Repository and Network Access Modes
 
-AgentOS must expose an explicit user-controlled access mode rather than treating local access as an implicit consequence of installation.
+AgentOS must distinguish repository location from network availability. **Local is always the primary workspace. GitHub becomes the recommended/default remote source of truth when Internet connectivity is available.**
 
-### Remote/GitHub mode — default
+### Local Workspace mode — default
 
-- AgentOS may work with repositories explicitly authorised through the configured remote/GitHub integration.
-- AgentOS has no filesystem access to the owner's PC solely because a GitHub repository is authorised.
-- AgentOS does not run local commands, inspect unrelated local files or access local Git credentials in this mode.
+The installed AgentOS runtime operates against authorised local repositories/workspaces by default. Local work can continue without Internet when the task and dependencies permit it.
 
-### Local Workspace mode — opt-in
+Local access does not mean unrestricted computer access. Filesystem paths, Git operations, process execution, credentials and destructive actions remain separately governed by capability and policy.
 
-The owner explicitly chooses a local repository/workspace and grants the required capabilities. AgentOS may then use that workspace subject to path, repository and operation policy.
+### GitHub/Remote synchronization — recommended when Internet is available
 
-### Hybrid mode — opt-in
+When Internet connectivity is available and a repository has an authorised GitHub remote, AgentOS should prefer GitHub as the canonical shared repository reference for synchronization, freshness checks, publishing and verification.
 
-The owner explicitly enables both remote/GitHub and Local Workspace access. GitHub remains the canonical shared repository state while the selected local workspace is the controlled execution environment.
+GitHub availability must never be treated as permission to access unrelated local files. A GitHub repository may be used only when its remote access is authorised/configured.
 
-### Internet/network access — separately governed
+If Internet or GitHub is unavailable, AgentOS can continue using the authorised local workspace for offline-capable work and must record the unavailable remote operation rather than falsely claiming synchronization.
 
-**Local mode does not automatically mean unrestricted Internet access.** Network access is an independent capability that must be represented and enforced separately from filesystem access.
+### Hybrid mode — normal connected experience
 
-When the owner enables Internet/Network access, AgentOS may use approved network operations needed for the task, such as GitHub synchronization, package/dependency retrieval, documentation/research, provider APIs or other explicitly allowed services. Network policy must still restrict destinations, credentials and sensitive operations where configured.
+The normal connected experience is **Local + Internet + GitHub**:
 
-This separation allows useful combinations such as:
+1. AgentOS works in the authorised local workspace.
+2. If Internet is available, AgentOS checks the authorised GitHub remote for current canonical state.
+3. AgentOS establishes and records the base commit SHA.
+4. AgentOS performs the work locally and runs local tests/tools.
+5. AgentOS records evidence locally.
+6. When publishing is authorised, AgentOS commits/pushes through the approved Git workflow.
+7. AgentOS refreshes GitHub and verifies the resulting state.
 
-- GitHub only, with no local access;
-- local repository only, with no Internet access;
-- local repository + Internet access;
-- GitHub + local repository + Internet access.
+This gives AgentOS the benefits of local execution while retaining GitHub as the preferred shared source of truth whenever connectivity permits.
 
-The last configuration is the intended full local-development experience, but it must remain explicitly user-enabled.
+### Network access — separately governed
+
+Internet/network access is an independent capability. Local operation must not require Internet access, and enabling local repository access must not automatically grant unrestricted network access.
+
+When Network access is authorised and available, AgentOS may perform approved operations such as GitHub synchronization, package/dependency retrieval, documentation/research and provider/API calls. Network policy must restrict destinations, credentials and sensitive operations where configured.
+
+Useful configurations include:
+
+- local repository only, offline;
+- local repository + Internet;
+- local repository + authorised GitHub synchronization;
+- local repository + Internet + GitHub + authorised providers.
+
+The final configuration is the intended full connected local-development experience.
 
 ## Local Access Does Not Mean Unrestricted Computer Access
 
-Local access does **not** automatically grant unrestricted authority. AgentOS must maintain explicit capability and permission boundaries for filesystem paths, Git operations, shell/process execution, network access, credentials, provider accounts and destructive operations. The installation must expose only the minimum required capabilities to each worker.
+AgentOS must maintain explicit capability and permission boundaries for filesystem paths, Git operations, shell/process execution, network access, credentials, provider accounts and destructive operations. Workers receive only the minimum capabilities required for their assigned task.
 
 At minimum, the capability model must distinguish:
 
@@ -81,41 +97,41 @@ At minimum, the capability model must distinguish:
 - `PROVIDER_API_ACCESS`
 - `CREDENTIAL_ACCESS`
 
-Each capability requires policy authorisation appropriate to the selected mode. Disabling Local Workspace mode must revoke local filesystem/repository capabilities for subsequent work. Disabling Network access must prevent subsequent network operations even when Local Workspace mode remains enabled.
+Each capability requires policy authorisation appropriate to the selected operation. Disabling local repository access must revoke local filesystem/repository capabilities for subsequent work. Disabling Network access must prevent subsequent network operations while leaving authorised offline local work available.
 
 ## Canonical Repository / Local Workspace Model
 
-GitHub remains the canonical source of truth for shared project code and repository state. The local installation is the controlled execution workspace.
+GitHub remains the preferred canonical source of truth for shared project code and repository state when Internet connectivity and an authorised remote are available. The local installation is always the controlled execution workspace.
 
-Required synchronization lifecycle:
+Required synchronization lifecycle when GitHub/network is available:
 
 1. Resolve the approved repository from the canonical portfolio registry.
-2. Fetch/refresh the repository metadata and current approved ref when network access is enabled and required.
+2. Fetch/refresh the authorised GitHub repository metadata and current approved ref.
 3. Establish the canonical base commit SHA.
-4. Synchronize the local workspace to that approved state before substantive work.
+4. Synchronize the authorised local workspace to that approved state before substantive work where policy requires it.
 5. Detect and handle unexpected local modifications according to policy; never silently overwrite owner work.
-6. Execute the assigned task in the synchronized workspace.
+6. Execute the assigned task in the local workspace.
 7. Run required local tests/scans and capture evidence.
 8. Commit/publish changes through the approved Git workflow where authorised.
-9. Refresh GitHub state after execution when network access is enabled.
+9. Refresh GitHub state after execution.
 10. Verify the result against the current repository state, not against the pre-task snapshot alone.
 
-A stale local clone, stale scan, cached API response, old task context or previous conversation is insufficient to establish current repository state.
+When GitHub/network is unavailable, steps requiring remote state are skipped explicitly and the resulting offline status is recorded. A stale local clone, stale scan, cached API response, old task context or previous conversation is insufficient to establish current remote repository state.
 
 ## Runtime loop
 
 1. Scheduler wakes on supported runtime trigger.
-2. Read canonical state and dispatch queue.
+2. Read local canonical control state and dispatch queue.
 3. Recover stale claims where policy permits.
-4. Refresh approved repository state before substantive work when network access is enabled and required.
-5. Synchronize the relevant local workspace and record the base SHA when Local Workspace mode is enabled.
+4. If Internet/network is available and GitHub is authorised, refresh the approved remote repository state.
+5. Synchronize the relevant local workspace when remote synchronization is required by policy.
 6. Select eligible work deterministically.
 7. Ask local control model for routing/prioritisation only when needed.
 8. Validate authority, dependencies and provider capability.
-9. Dispatch worker with the synchronized local workspace/context.
+9. Dispatch worker with the local workspace/context.
 10. Persist claim/execution/checkpoint/evidence.
 11. Run required local tests/scans.
-12. Refresh and verify against canonical GitHub state when network access is enabled.
+12. If Internet/network is available and GitHub is authorised, refresh and verify against canonical GitHub state.
 13. Queue the next eligible task or escalate.
 
 ## Local Worker Capability Model
@@ -178,12 +194,10 @@ Local installation does not by itself enable AUTONOMOUS mode.
 
 - Wake at target cadence.
 - Deterministic/idempotent task claim.
-- Fresh canonical repository state established before every substantive task where network access is required.
-- Local workspace synchronization to recorded base SHA when Local Workspace mode is enabled.
-- Local access remains unavailable when Local Workspace mode is disabled.
-- Network access remains unavailable when Network capability is disabled.
-- Dirty-worktree detection and safe recovery.
-- Worker dispatch and response checkpoint.
+- Local workspace is the default execution target.
+- AgentOS can continue offline for offline-capable local tasks.
+- Fresh canonical GitHub repository state is established before substantive connected tasks where remote synchronization is required.
+- Local workspace synchronization to recorded base SHA when GitHub/network is available and policy requires it.
 - Local command/test execution where capability is available.
 - Evidence-gated verification.
 - Duplicate wake does not duplicate work.
@@ -194,9 +208,10 @@ Local installation does not by itself enable AUTONOMOUS mode.
 - Repository divergence detection.
 - Complete log/state reconciliation.
 - End-to-end local installation test on a supported PC environment.
-- End-to-end Local Workspace + Internet test with both capabilities explicitly enabled.
-- End-to-end denial test proving GitHub-only mode cannot access local repositories.
-- End-to-end denial test proving Local Workspace mode without Network cannot perform network operations.
+- End-to-end Local Workspace + Internet + authorised GitHub test.
+- End-to-end offline Local Workspace test with no Internet.
+- End-to-end denial test proving unrelated local filesystem paths remain inaccessible.
+- End-to-end denial test proving disabled Network prevents network operations.
 
 ## Current limitation
 
