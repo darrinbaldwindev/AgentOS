@@ -70,10 +70,10 @@ function createLocalWorkerRegistry() {
   return registry;
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
+export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', persistence: sharedPersistence, missionId, threadId } = {}) {
   if (!root) throw new TypeError('root is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
-  const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
+  const persistence = sharedPersistence ?? await createLocalPersistence({ filePath: join(root, config.stateFile) });
   const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
 
   const boot = await bootAgentOS({
@@ -88,7 +88,8 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
   const createdAt = new Date().toISOString();
   const task = {
     task_id: taskId,
-    mission_id: `mission:${taskId}`,
+    mission_id: missionId ?? `mission:${taskId}`,
+    ...(threadId ? { thread_id: threadId } : {}),
     project_id: PROJECT_ID,
     issuer: ISSUER,
     target: RECEIVER,
@@ -121,7 +122,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     if (!selectedWorker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
 
     const completedTask = await runNextTask({
-      tasks: await dispatchStore.list(),
+      tasks: (await dispatchStore.list()).filter((candidate) => candidate.task_id === taskId),
       receiver: RECEIVER,
       authorityPolicy: policy,
       store: dispatchStore,
@@ -161,7 +162,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     const completedAt = new Date().toISOString();
     const executionEvidence = completedTask.evidence ?? {};
     const response = {
-      mission_id: completedTask.task_id,
+      mission_id: completedTask.mission_id,
       source_agent: executionEvidence.source_agent ?? WORKER_ID,
       wake_trace_id: completedTask.wake_trace_id,
       status: 'COMPLETED',

@@ -8,7 +8,7 @@ Define the smallest user-facing vertical slice that connects the AgentOS Basic c
 
 ```text
 Basic Chat UI
-  -> Tauri `invoke('send_message', ...)`
+  -> loopback HTTP send adapter (minimal local shell)
   -> existing session/task pipeline
   -> governed mission/task execution
   -> deterministic/local worker in v1
@@ -55,3 +55,11 @@ A Basic Chat vertical slice is complete only when a clean local runtime can:
 ## Implementation rule
 
 The UI is an adapter to AgentOS control-plane/runtime contracts. It must not become a second source of truth for missions, tasks, permissions, evidence, or durable state.
+
+## Local implementation
+
+Run `npm run chat:local` and open `http://127.0.0.1:4317`.
+The browser shell uses the existing installer/persistence contracts in a dedicated
+`.basic-chat` development home. It does not attach to the physical scheduler home.
+See [local acceptance evidence](BASIC_CHAT_LOCAL_EVIDENCE.md) for the verified flow,
+restart behavior, bounded pause/stop semantics, safety boundaries and registry assessment.
