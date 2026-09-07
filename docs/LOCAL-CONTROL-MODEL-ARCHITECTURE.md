@@ -12,9 +12,11 @@ Workers/providers = execution layer (Repo/Code, QA/Test, Research, Architecture,
 
 ## Local Installation Is a First-Class Capability
 
-AgentOS is intended to be installed and operated on the owner's PC. The installed AgentOS runtime is therefore an execution environment, not merely a remote coordinator or cache of GitHub state.
+AgentOS is intended to be installable and operable on the owner's PC. The installed AgentOS runtime is therefore an execution environment, not merely a remote coordinator or cache of GitHub state.
 
-The local installation may, subject to explicit owner-granted operating-system permissions and configured security policy:
+**Local repository access is opt-in.** Installing AgentOS, signing into GitHub, or opening a remote repository must never by itself grant AgentOS access to the owner's filesystem or local repositories.
+
+The local installation may, only after the owner explicitly enables Local Workspace mode and subject to operating-system permissions and configured security policy:
 
 - maintain local working copies of approved repositories;
 - clone, fetch, checkout, compare, branch, test and inspect repositories locally;
@@ -29,7 +31,57 @@ The local installation may, subject to explicit owner-granted operating-system p
 - detect local repository divergence, dirty worktrees and stale task claims before dispatch;
 - perform offline-capable work where the task and required dependencies permit it, while clearly recording unavailable network/provider operations.
 
+## Repository and Network Access Modes
+
+AgentOS must expose an explicit user-controlled access mode rather than treating local access as an implicit consequence of installation.
+
+### Remote/GitHub mode — default
+
+- AgentOS may work with repositories explicitly authorised through the configured remote/GitHub integration.
+- AgentOS has no filesystem access to the owner's PC solely because a GitHub repository is authorised.
+- AgentOS does not run local commands, inspect unrelated local files or access local Git credentials in this mode.
+
+### Local Workspace mode — opt-in
+
+The owner explicitly chooses a local repository/workspace and grants the required capabilities. AgentOS may then use that workspace subject to path, repository and operation policy.
+
+### Hybrid mode — opt-in
+
+The owner explicitly enables both remote/GitHub and Local Workspace access. GitHub remains the canonical shared repository state while the selected local workspace is the controlled execution environment.
+
+### Internet/network access — separately governed
+
+**Local mode does not automatically mean unrestricted Internet access.** Network access is an independent capability that must be represented and enforced separately from filesystem access.
+
+When the owner enables Internet/Network access, AgentOS may use approved network operations needed for the task, such as GitHub synchronization, package/dependency retrieval, documentation/research, provider APIs or other explicitly allowed services. Network policy must still restrict destinations, credentials and sensitive operations where configured.
+
+This separation allows useful combinations such as:
+
+- GitHub only, with no local access;
+- local repository only, with no Internet access;
+- local repository + Internet access;
+- GitHub + local repository + Internet access.
+
+The last configuration is the intended full local-development experience, but it must remain explicitly user-enabled.
+
+## Local Access Does Not Mean Unrestricted Computer Access
+
 Local access does **not** automatically grant unrestricted authority. AgentOS must maintain explicit capability and permission boundaries for filesystem paths, Git operations, shell/process execution, network access, credentials, provider accounts and destructive operations. The installation must expose only the minimum required capabilities to each worker.
+
+At minimum, the capability model must distinguish:
+
+- `LOCAL_REPO_READ`
+- `LOCAL_REPO_WRITE`
+- `LOCAL_GIT_READ`
+- `LOCAL_GIT_COMMIT`
+- `LOCAL_GIT_PUSH`
+- `LOCAL_TEST_EXECUTION`
+- `LOCAL_PROCESS_EXECUTION`
+- `NETWORK_ACCESS`
+- `PROVIDER_API_ACCESS`
+- `CREDENTIAL_ACCESS`
+
+Each capability requires policy authorisation appropriate to the selected mode. Disabling Local Workspace mode must revoke local filesystem/repository capabilities for subsequent work. Disabling Network access must prevent subsequent network operations even when Local Workspace mode remains enabled.
 
 ## Canonical Repository / Local Workspace Model
 
@@ -38,14 +90,14 @@ GitHub remains the canonical source of truth for shared project code and reposit
 Required synchronization lifecycle:
 
 1. Resolve the approved repository from the canonical portfolio registry.
-2. Fetch/refresh the repository metadata and current approved ref.
+2. Fetch/refresh the repository metadata and current approved ref when network access is enabled and required.
 3. Establish the canonical base commit SHA.
 4. Synchronize the local workspace to that approved state before substantive work.
 5. Detect and handle unexpected local modifications according to policy; never silently overwrite owner work.
 6. Execute the assigned task in the synchronized workspace.
 7. Run required local tests/scans and capture evidence.
 8. Commit/publish changes through the approved Git workflow where authorised.
-9. Refresh GitHub state after execution.
+9. Refresh GitHub state after execution when network access is enabled.
 10. Verify the result against the current repository state, not against the pre-task snapshot alone.
 
 A stale local clone, stale scan, cached API response, old task context or previous conversation is insufficient to establish current repository state.
@@ -55,15 +107,15 @@ A stale local clone, stale scan, cached API response, old task context or previo
 1. Scheduler wakes on supported runtime trigger.
 2. Read canonical state and dispatch queue.
 3. Recover stale claims where policy permits.
-4. Refresh approved repository state before substantive work.
-5. Synchronize the relevant local workspace and record the base SHA.
+4. Refresh approved repository state before substantive work when network access is enabled and required.
+5. Synchronize the relevant local workspace and record the base SHA when Local Workspace mode is enabled.
 6. Select eligible work deterministically.
 7. Ask local control model for routing/prioritisation only when needed.
 8. Validate authority, dependencies and provider capability.
 9. Dispatch worker with the synchronized local workspace/context.
 10. Persist claim/execution/checkpoint/evidence.
 11. Run required local tests/scans.
-12. Refresh and verify against canonical GitHub state.
+12. Refresh and verify against canonical GitHub state when network access is enabled.
 13. Queue the next eligible task or escalate.
 
 ## Local Worker Capability Model
@@ -95,7 +147,8 @@ AgentOS should actively use the advantages of being installed locally when they 
 - local health checks for installed tools and worker providers;
 - local provider connectors where available;
 - secure local handling of credentials without putting secrets in repository logs;
-- deterministic access to project-specific development environments.
+- deterministic access to project-specific development environments;
+- Internet connectivity when explicitly enabled and required by the task.
 
 These benefits must be implemented as explicit capabilities and tested; they must not be assumed merely because AgentOS is installed.
 
@@ -125,8 +178,10 @@ Local installation does not by itself enable AUTONOMOUS mode.
 
 - Wake at target cadence.
 - Deterministic/idempotent task claim.
-- Fresh canonical repository state established before every substantive task.
-- Local workspace synchronization to recorded base SHA.
+- Fresh canonical repository state established before every substantive task where network access is required.
+- Local workspace synchronization to recorded base SHA when Local Workspace mode is enabled.
+- Local access remains unavailable when Local Workspace mode is disabled.
+- Network access remains unavailable when Network capability is disabled.
 - Dirty-worktree detection and safe recovery.
 - Worker dispatch and response checkpoint.
 - Local command/test execution where capability is available.
@@ -139,7 +194,10 @@ Local installation does not by itself enable AUTONOMOUS mode.
 - Repository divergence detection.
 - Complete log/state reconciliation.
 - End-to-end local installation test on a supported PC environment.
+- End-to-end Local Workspace + Internet test with both capabilities explicitly enabled.
+- End-to-end denial test proving GitHub-only mode cannot access local repositories.
+- End-to-end denial test proving Local Workspace mode without Network cannot perform network operations.
 
 ## Current limitation
 
-This document defines the architecture; it does not claim that a local runtime or model is installed, running, or connected. Implementation and runtime tests must provide evidence before those states are reported.
+This document defines the architecture and policy baseline; it does not claim that a local runtime or model is installed, running, or connected. Implementation and runtime tests must provide evidence before those states are reported.
