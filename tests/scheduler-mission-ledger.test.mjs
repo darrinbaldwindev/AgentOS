@@ -38,6 +38,7 @@ test('scheduler tick appends an execution mission record and current-state index
   });
 
   assert.equal(result.status, 'COMPLETED');
+  assert.equal(result.mission_record.mission_id, 'mission:test');
   assert.equal(result.mission_record.stage, 'A');
   assert.equal(result.mission_record.schedule_id, 'test:A');
   assert.equal(result.mission_record.predecessor_checkpoint_id, 'checkpoint:C:previous');
@@ -45,11 +46,12 @@ test('scheduler tick appends an execution mission record and current-state index
   assert.equal(result.mission_record.outcome, 'executed_awaiting_green');
   assert.equal(result.mission_record.next_checkpoint_id, 'checkpoint:A:test');
   assert.equal(result.mission_record.scheduler_firing_is_not_completion, true);
+  assert.ok(result.mission_record.evidence.includes('wake-trace:wake:test'));
 
   const ledger = await readMissionLedger({ ledgerPath: join(root, 'state', 'mission-ledger.ndjson') });
   assert.equal(ledger.length, 1);
   const index = JSON.parse(await readFile(join(root, 'state', 'mission-ledger-index.json'), 'utf8'));
-  assert.equal(index.latest_mission_id, result.mission_record.mission_id);
+  assert.equal(index.latest_mission_id, 'mission:test');
   assert.equal(index.latest_by_stage.A.outcome, 'executed_awaiting_green');
 });
 
@@ -70,5 +72,6 @@ test('scheduler failure is durably recorded as failed mission evidence', async (
 
   const ledger = await readMissionLedger({ ledgerPath: join(root, 'state', 'mission-ledger.ndjson') });
   assert.equal(ledger.length, 1);
+  assert.equal(ledger[0].mission_id.startsWith('scheduler:test:B:'), true);
   assert.equal(ledger[0].outcome, 'failed');
 });
