@@ -49,18 +49,9 @@ Persisted acceptance identifiers:
 
 Automated HTTP tests additionally prove full service close/reopen continuity, task/mission/run/response identity agreement, registered worker evidence, reconciled budget, pause/stop enforcement after restart, explicit resume, invalid input rejection, cross-origin rejection, failure without fabricated assistant completion, unsafe configuration rejection, exclusive host rejection, and concurrent-turn persistence.
 
-## Connected capabilities: planned registry entries only
+## External capability boundary
 
-The available assistant tool inventory exposes the following tools; none were invoked for this implementation:
-
-| Capability | Observed interface | AgentOS disposition |
-|---|---|---|
-| AgentMail | Inboxes, threads, drafts, send/reply, attachments | Candidate; planned communication adapter; disabled |
-| Agent Ready | Start site scan, retrieve scan | Candidate; planned readiness worker; disabled |
-| Tavily AI | Search, extract, crawl, map, research | Candidate; planned research worker; disabled |
-| Manus | Initiate research, slides, website, video, mobile app | Existing candidate updated; planned specialist worker; disabled |
-
-The existing ecosystem opportunity registry contains these records with `status: candidate`, planned activation and `agentosEnabled: false`. Connected assistant tools are not proof of runtime API access, validated entitlements, credential ownership or authority to act. Before any future activation, use the existing capability, entitlement, budget and governance contracts and verify cancellation, result provenance and permissible side effects. No account identifiers or credentials were copied into the registry. No credits were consumed.
+External capability registration is tracked separately in Issue #81. The scope cleanup restores the ecosystem opportunity registry to main; no external adapter or capability execution is part of Basic Chat. Earlier registry review statements below describe the historical pre-cleanup checkpoint only.
 
 ## Scope boundary
 
@@ -73,3 +64,20 @@ Owner authorized review, commit, push and fresh CI on the exact branch head, kee
 Reviewed the runtime changes, HTTP boundary, browser rendering, tests, registry and evidence. Fixed two findings before commit: control actions now use an explicit string allowlist (rejecting inherited object keys and non-string values), and HTTP input uses streaming UTF-8 decoding so split multibyte characters remain intact. Added a regression test for each.
 
 Fresh local validation after fixes: 271 tests passed, 0 failed, 0 skipped; npm dependency audit found 0 vulnerabilities. The focused HTTP integration suite passed all 7 tests. Fetch confirmed the remote branch still matched baseline f8b1bfe5db9fc96b33a4b92574434e682f387af6 before commit. No rebase or merge was needed. DRY_RUN, disabled autonomy, local-only execution and disabled external capability entries remain intact. Exact pushed-head CI results are reported separately after publication to avoid treating these local results as remote CI evidence.
+
+## PR #80 scope cleanup — 2026-09-07
+
+Compared original head 0ee3a9bf34c565baf815e05a0ed6df62fb094848 with main 33dc6979d98a94d4282fb2640fcd38441df38405 and PR #71 head 87f2bf90e4857e8784a93782c31b261b640e1366 in an independent repository copy. No existing checkout or physical scheduler home was modified.
+
+- Basic Chat commits retained: 7b08747 (acceptance contract), 6148295 (adapter), f8b1bfe (adapter tests), and 0ee3a9b (local slice), excluding its unrelated external registry edits.
+- Required safe-install dependency retained: 00fc9e0, 78ebc5c, d7444cb and 99fc15f. Chat calls the existing installer and refuses startup unless scheduler.enabled is false; the doctor and install regression must agree. These three files intentionally still overlap PR #71.
+- Unrelated acceptance delta removed: Windows Local Acceptance workflow, local-wake-acceptance tests, and additions to local-wake tests from 584370d through 4e121d3. These remain in PR #71. Main's local-wake tests remain intact.
+- Control-loop checkpoint from b5b734e/f4ed1b8 removed; it is operational state unrelated to the chat slice.
+- Shared local-wake runtime changes retained for shared persistence, mission/thread identity, response correlation and dispatch of only the admitted chat task.
+- External capability registry restored to main; follow-up belongs to Issue #81.
+
+Cleanup uses a forward commit, so inherited commits remain in history while their unrelated file delta is removed. No rebase or history rewrite. PR #71 is unchanged.
+
+Validation on Windows Node v26.8.1: focused adapter, HTTP chat, local wake, persistence and install suites: 18 passed; full npm test: 267 passed, 0 failed, 0 skipped; dependency audit: 0 vulnerabilities; git diff --check passed. The four removed tests are scheduler/wake-only acceptance tests, not chat coverage. Existing HTTP tests verify restart, lineage, bounded controls, unsafe-config rejection, origin checks, exclusive hosting and concurrent turns. No physical scheduler acceptance was run.
+
+The inherited Windows workflow is intentionally absent from this PR. Fresh exact-head AgentOS Tests and Project Overseer Wake CI are reported after push; historical Windows CI above is not evidence for the cleaned head. DRY_RUN and autonomy-disabled defaults remain enforced; no provider credentials, production writes, external capabilities or scheduler activation changes.
