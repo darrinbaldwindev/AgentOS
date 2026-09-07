@@ -121,7 +121,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     if (!selectedWorker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
 
     const completedTask = await runNextTask({
-      tasks: await dispatchStore.list(),
+      tasks: (await dispatchStore.list()).filter((candidate) => candidate.task_id === taskId),
       receiver: RECEIVER,
       authorityPolicy: policy,
       store: dispatchStore,
@@ -161,7 +161,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     const completedAt = new Date().toISOString();
     const executionEvidence = completedTask.evidence ?? {};
     const response = {
-      mission_id: completedTask.task_id,
+      mission_id: completedTask.mission_id,
       source_agent: executionEvidence.source_agent ?? WORKER_ID,
       wake_trace_id: completedTask.wake_trace_id,
       status: 'COMPLETED',

@@ -17,8 +17,20 @@ async function appendRecord(root, record) {
 }
 
 export async function schedulerTick({ root = resolveInstallRoot(), objective } = {}) {
+  root = await fs.realpath(resolve(root));
   const startedAt = new Date().toISOString();
+  const lockPath = join(root, 'state', 'scheduler-tick.lock');
+  // Single-host scheduler admission only. Never steal a lock by age or PID:
+  // an interrupted wake may have durable effects that require reconciliation.
   try {
+    await fs.mkdir(lockPath);
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    return Object.freeze({ status: 'BLOCKED', started_at: startedAt,
+      error: { code: 'SCHEDULER_LOCKED', message: 'Active or interrupted tick; reconcile before removing the lock.' } });
+  }
+  try {
+    await fs.writeFile(join(lockPath, 'owner.json'), JSON.stringify({ pid: process.pid, started_at: startedAt }), { flag: 'wx', mode: 0o600 });
     const result = await wakeLocal({ root, objective });
     const record = {
       status: result.status,
@@ -32,8 +44,12 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective } =
       evidence: result.response.evidence,
     };
     const evidencePath = await appendRecord(root, record);
+    await fs.unlink(join(lockPath, 'owner.json'));
+    await fs.rmdir(lockPath);
     return Object.freeze({ ...record, evidence_path: evidencePath });
   } catch (error) {
+    // Retain the lock on failure. Retrying an uncertain partial wake must be
+    // an explicit recovery decision, not another automatic worker execution.
     const record = {
       status: 'FAILED',
       started_at: startedAt,

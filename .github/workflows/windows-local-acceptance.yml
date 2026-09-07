@@ -6,6 +6,8 @@ on:
       - 'scripts/install-local.mjs'
       - 'scripts/doctor-local.mjs'
       - 'scripts/boot-local.mjs'
+      - 'scripts/scheduler-tick.mjs'
+      - 'scripts/install-windows-scheduler.ps1'
       - 'runtime/**'
       - 'tests/**'
       - '.github/workflows/windows-local-acceptance.yml'
@@ -25,6 +27,12 @@ jobs:
     steps:
       - name: Check out AgentOS
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact acceptance head
+        shell: pwsh
+        run: git rev-parse HEAD
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
