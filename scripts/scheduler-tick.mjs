@@ -27,6 +27,13 @@ function resolveScheduleId(scheduleId = process.env.AGENTOS_SCHEDULE_ID || 'loca
   return scheduleId;
 }
 
+function resolveCheckpointId(value, envName) {
+  const resolved = value ?? process.env[envName] ?? null;
+  if (resolved === null) return null;
+  if (typeof resolved !== 'string' || !resolved.trim()) throw new Error(`${envName}_INVALID`);
+  return resolved;
+}
+
 function resolveRepoHead(result) {
   return result?.response?.repository_commit || process.env.AGENTOS_REPO_HEAD || 'unknown:local-runtime';
 }
@@ -69,7 +76,7 @@ export async function appendMission(root, { missionId, stage, scheduleId, predec
   return record;
 }
 
-export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = null, nextCheckpointId = null, now = new Date(), wake = wakeLocal, missionAppender = appendMission, evidenceAppender = appendRecord } = {}) {
+export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = resolveCheckpointId(undefined, 'AGENTOS_PREDECESSOR_CHECKPOINT_ID'), nextCheckpointId = resolveCheckpointId(undefined, 'AGENTOS_NEXT_CHECKPOINT_ID'), now = new Date(), wake = wakeLocal, missionAppender = appendMission, evidenceAppender = appendRecord } = {}) {
   const startedAt = now instanceof Date ? now.toISOString() : new Date(now).toISOString();
   const intendedNextAction = objective || 'perform one bounded local AgentOS control-cycle action';
   try {
@@ -165,27 +172,50 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
   }
 }
 
-function parseArgs(argv) {
+export function parseSchedulerArgs(argv) {
   const args = [...argv];
   let root;
+  let stage;
+  let scheduleId;
+  let predecessorCheckpointId;
+  let nextCheckpointId;
   const objective = [];
   while (args.length) {
     const value = args.shift();
     if (value === '--root') {
       root = args.shift();
       if (!root) throw new Error('SCHEDULER_ROOT_REQUIRED');
+    } else if (value === '--stage') {
+      stage = resolveStage(args.shift());
+    } else if (value === '--schedule-id') {
+      scheduleId = resolveScheduleId(args.shift());
+    } else if (value === '--predecessor-checkpoint-id') {
+      predecessorCheckpointId = resolveCheckpointId(args.shift(), 'AGENTOS_PREDECESSOR_CHECKPOINT_ID');
+    } else if (value === '--next-checkpoint-id') {
+      nextCheckpointId = resolveCheckpointId(args.shift(), 'AGENTOS_NEXT_CHECKPOINT_ID');
     } else {
       objective.push(value);
     }
   }
-  return { root, objective: objective.join(' ').trim() || undefined };
+  return {
+    root,
+    stage,
+    scheduleId,
+    predecessorCheckpointId,
+    nextCheckpointId,
+    objective: objective.join(' ').trim() || undefined,
+  };
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseSchedulerArgs(process.argv.slice(2));
   const result = await schedulerTick({
     root: args.root || process.env.AGENTOS_HOME || resolveInstallRoot(),
     objective: args.objective,
+    stage: args.stage ?? resolveStage(),
+    scheduleId: args.scheduleId ?? resolveScheduleId(),
+    predecessorCheckpointId: args.predecessorCheckpointId ?? resolveCheckpointId(undefined, 'AGENTOS_PREDECESSOR_CHECKPOINT_ID'),
+    nextCheckpointId: args.nextCheckpointId ?? resolveCheckpointId(undefined, 'AGENTOS_NEXT_CHECKPOINT_ID'),
   });
   console.log(JSON.stringify(result, null, 2));
   if (result.status !== 'COMPLETED') process.exitCode = 1;
