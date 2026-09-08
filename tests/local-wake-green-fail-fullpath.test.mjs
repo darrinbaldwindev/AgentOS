@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
-import { wakeLocal } from '../runtime/local-wake.mjs';
+import { __testOnlyWakeLocal as wakeLocal } from '../runtime/local-wake.mjs';
 
 async function makeInstall() {
   const root = await mkdtemp(join(tmpdir(), 'agentos-gfail-'));
