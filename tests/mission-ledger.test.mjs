@@ -38,7 +38,10 @@ test('append/read ledger is durable and index exposes current state', async () =
     const b = createMissionRecord({ ...base, stage: 'B', missionId: 'B-1', predecessorCheckpointId: 'A-CP-1', outcome: 'executed_awaiting_green' });
     await appendMissionRecord({ ledgerPath: ledger, record: a }); await appendMissionRecord({ ledgerPath: ledger, record: b });
     const records = await readMissionLedger({ ledgerPath: ledger }); const summary = await writeMissionLedgerIndex({ indexPath: index, records });
-    assert.equal(records.length, 2); assert.deepEqual(summary.awaiting_verification, ['B-1']); assert.equal(JSON.parse(await readFile(index, 'utf8')).latest_mission_id, 'B-1');
+    const persistedIndex = JSON.parse(await readFile(index, 'utf8'));
+    assert.equal(records.length, 2); assert.deepEqual(summary.awaiting_verification, ['B-1']); assert.equal(persistedIndex.latest_mission_id, 'B-1');
+    assert.equal(persistedIndex.latest_by_stage.B.schedule_id, 'AgentOS Control Loop A');
+    assert.equal(persistedIndex.latest_by_stage.B.predecessor_checkpoint_id, 'A-CP-1');
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
