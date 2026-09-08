@@ -60,6 +60,19 @@ test('wrong cadence is detected without autonomous cadence mutation', () => {
   assert.equal(result.findings[0].self_repairable, false);
 });
 
+test('missing live minute is fail-closed as wrong cadence', () => {
+  const schedules = healthy();
+  schedules[2] = { id: 'c1', stage: 'C', enabled: true };
+  const result = inspectControlLoopSchedules({ schedules });
+  assert.equal(result.disposition, 'yellow');
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].type, 'WRONG_SCHEDULE_CADENCE');
+  assert.equal(result.findings[0].stage, 'C');
+  assert.equal(result.findings[0].expected_minute, 40);
+  assert.equal(result.findings[0].actual_minute, null);
+  assert.equal(result.findings[0].self_repairable, false);
+});
+
 test('only a uniquely disabled required schedule produces an enable repair', () => {
   const schedules = healthy();
   schedules[1] = { ...schedules[1], enabled: false };
