@@ -69,13 +69,24 @@ export function validateMissionRecord(record) {
   return record;
 }
 
-export async function appendMissionRecord({ ledgerPath, record }) {
+async function defaultAppendMissionRecord({ ledgerPath, record }) {
   requireText(ledgerPath, 'ledgerPath');
   validateMissionRecord(record);
   await fs.mkdir(dirname(ledgerPath), { recursive: true });
   const line = `${JSON.stringify(record)}\n`;
   await fs.appendFile(ledgerPath, line, 'utf8');
   return record;
+}
+
+let appendMissionRecordImpl = defaultAppendMissionRecord;
+
+export async function appendMissionRecord(args) {
+  return appendMissionRecordImpl(args);
+}
+
+/** Test-only: swap append implementation. Pass null to restore. */
+export function __testOnlySetAppendMissionRecord(fn) {
+  appendMissionRecordImpl = typeof fn === 'function' ? fn : defaultAppendMissionRecord;
 }
 
 export async function readMissionLedger({ ledgerPath }) {
