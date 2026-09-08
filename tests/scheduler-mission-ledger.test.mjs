@@ -1,13 +1,52 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { appendFile, mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { schedulerTick } from '../scripts/scheduler-tick.mjs';
-import { readMissionLedger } from '../runtime/mission-ledger.mjs';
+import { appendMission, schedulerTick } from '../scripts/scheduler-tick.mjs';
+import { readMissionLedger, writeMissionLedgerIndex } from '../runtime/mission-ledger.mjs';
 
 async function tempRoot() {
   return mkdtemp(join(tmpdir(), 'agentos-scheduler-ledger-'));
+}
+
+function completedWake(missionId = 'mission:test') {
+  return async () => ({
+    status: 'COMPLETED',
+    task_id: `task:${missionId}`,
+    response: {
+      mission_id: missionId,
+      wake_trace_id: `wake:${missionId}`,
+      source_agent: 'worker:test',
+      completed_at: '2026-09-08T01:00:01.000Z',
+      repository_commit: 'repo:test-head',
+      verification: [],
+      evidence: [],
+      blockers: [],
+    },
+  });
+}
+
+async function assertControlledVerificationFailure({ expectedError, missionAppender }) {
+  const root = await tempRoot();
+  const result = await schedulerTick({
+    root,
+    stage: 'C',
+    scheduleId: `test:${expectedError}`,
+    predecessorCheckpointId: 'checkpoint:B:test',
+    objective: 'assure exact scheduled control-loop action',
+    now: new Date('2026-09-08T01:00:00.000Z'),
+    wake: completedWake(`mission:${expectedError}`),
+    missionAppender,
+  });
+
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.mission_record, null);
+  assert.equal(result.mission_persistence_failed, true);
+  assert.equal(result.fail_closed, true);
+  assert.equal(result.mission_persistence_error.message, expectedError);
+  assert.ok(result.fallback_evidence_path.endsWith('scheduler-runs.jsonl'));
+  return { root, result };
 }
 
 test('scheduler tick appends an execution mission record and current-state index', async () => {
@@ -76,52 +115,61 @@ test('scheduler failure is durably recorded as failed mission evidence', async (
   assert.equal(ledger[0].outcome, 'failed');
 });
 
-test('mission-ledger persistence verification failure returns a controlled fail-closed result', async () => {
-  const root = await tempRoot();
-  let attempts = 0;
-  const result = await schedulerTick({
-    root,
-    stage: 'C',
-    scheduleId: 'test:C',
-    predecessorCheckpointId: 'checkpoint:B:test',
-    objective: 'assure exact scheduled control-loop action',
-    now: new Date('2026-09-08T01:00:00.000Z'),
-    wake: async () => ({
-      status: 'COMPLETED',
-      task_id: 'task:persistence-failure',
-      response: {
-        mission_id: 'mission:persistence-failure',
-        wake_trace_id: 'wake:persistence-failure',
-        source_agent: 'worker:test',
-        completed_at: '2026-09-08T01:00:01.000Z',
-        repository_commit: 'repo:test-head',
-        verification: [],
-        evidence: [],
-        blockers: [],
+test('missing mission re-read record reaches controlled fail-closed fallback with original error', async () => {
+  await assertControlledVerificationFailure({
+    expectedError: 'MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED',
+    missionAppender: (root, args) => appendMission(root, { ...args, ledgerReader: async () => [] }),
+  });
+});
+
+test('mission correlation mismatch reaches controlled fail-closed fallback with original error', async () => {
+  await assertControlledVerificationFailure({
+    expectedError: 'MISSION_LEDGER_CORRELATION_VERIFICATION_FAILED',
+    missionAppender: (root, args) => appendMission(root, {
+      ...args,
+      ledgerReader: async (options) => (await readMissionLedger(options)).map((record) => record.mission_id === args.missionId ? { ...record, stage: record.stage === 'A' ? 'B' : 'A' } : record),
+    }),
+  });
+});
+
+test('mission index verification failure reaches controlled fail-closed fallback with original error', async () => {
+  await assertControlledVerificationFailure({
+    expectedError: 'MISSION_LEDGER_INDEX_VERIFICATION_FAILED',
+    missionAppender: (root, args) => appendMission(root, {
+      ...args,
+      indexWriter: async ({ indexPath, records }) => {
+        const index = await writeMissionLedgerIndex({ indexPath, records });
+        return { ...index, latest_by_stage: { ...index.latest_by_stage, [args.stage]: { ...index.latest_by_stage[args.stage], mission_id: 'mission:wrong-index-pointer' } } };
       },
     }),
-    missionAppender: async () => {
-      attempts += 1;
-      throw new Error('MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
-    },
   });
+});
 
-  assert.equal(attempts, 2);
-  assert.equal(result.status, 'FAILED');
-  assert.equal(result.mission_record, null);
-  assert.equal(result.mission_persistence_failed, true);
-  assert.equal(result.fail_closed, true);
-  assert.equal(result.mission_persistence_error.message, 'MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
-  assert.ok(result.fallback_evidence_path.endsWith('scheduler-runs.jsonl'));
+test('fallback evidence write failure surfaces explicitly and cannot return success', async () => {
+  const root = await tempRoot();
+  let evidenceWrites = 0;
+  const evidenceAppender = async (targetRoot, record) => {
+    evidenceWrites += 1;
+    if (evidenceWrites === 3) throw new Error('SCHEDULER_FALLBACK_EVIDENCE_WRITE_FAILED');
+    const stateDir = join(targetRoot, 'state');
+    const path = join(stateDir, 'scheduler-runs.jsonl');
+    await mkdir(stateDir, { recursive: true });
+    await appendFile(path, `${JSON.stringify(record)}\n`, 'utf8');
+    return path;
+  };
 
-  const schedulerRuns = (await readFile(join(root, 'state', 'scheduler-runs.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
-  assert.equal(schedulerRuns.length, 3);
-  const fallback = schedulerRuns.at(-1);
-  assert.equal(fallback.status, 'FAILED');
-  assert.equal(fallback.stage, 'C');
-  assert.equal(fallback.schedule_id, 'test:C');
-  assert.equal(fallback.predecessor_checkpoint_id, 'checkpoint:B:test');
-  assert.equal(fallback.outcome, 'failed');
-  assert.equal(fallback.fail_closed, true);
-  assert.equal(fallback.mission_persistence_error.message, 'MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
+  await assert.rejects(
+    schedulerTick({
+      root,
+      stage: 'C',
+      scheduleId: 'test:fallback-write-failure',
+      predecessorCheckpointId: 'checkpoint:B:test',
+      now: new Date('2026-09-08T01:00:00.000Z'),
+      wake: completedWake('mission:fallback-write-failure'),
+      missionAppender: async () => { throw new Error('MISSION_LEDGER_INDEX_VERIFICATION_FAILED'); },
+      evidenceAppender,
+    }),
+    /SCHEDULER_FALLBACK_EVIDENCE_WRITE_FAILED/,
+  );
+  assert.equal(evidenceWrites, 3);
 });
