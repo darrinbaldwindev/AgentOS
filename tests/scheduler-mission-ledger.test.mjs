@@ -75,3 +75,53 @@ test('scheduler failure is durably recorded as failed mission evidence', async (
   assert.equal(ledger[0].mission_id.startsWith('scheduler:test:B:'), true);
   assert.equal(ledger[0].outcome, 'failed');
 });
+
+test('mission-ledger persistence verification failure returns a controlled fail-closed result', async () => {
+  const root = await tempRoot();
+  let attempts = 0;
+  const result = await schedulerTick({
+    root,
+    stage: 'C',
+    scheduleId: 'test:C',
+    predecessorCheckpointId: 'checkpoint:B:test',
+    objective: 'assure exact scheduled control-loop action',
+    now: new Date('2026-09-08T01:00:00.000Z'),
+    wake: async () => ({
+      status: 'COMPLETED',
+      task_id: 'task:persistence-failure',
+      response: {
+        mission_id: 'mission:persistence-failure',
+        wake_trace_id: 'wake:persistence-failure',
+        source_agent: 'worker:test',
+        completed_at: '2026-09-08T01:00:01.000Z',
+        repository_commit: 'repo:test-head',
+        verification: [],
+        evidence: [],
+        blockers: [],
+      },
+    }),
+    missionAppender: async () => {
+      attempts += 1;
+      throw new Error('MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
+    },
+  });
+
+  assert.equal(attempts, 2);
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.mission_record, null);
+  assert.equal(result.mission_persistence_failed, true);
+  assert.equal(result.fail_closed, true);
+  assert.equal(result.mission_persistence_error.message, 'MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
+  assert.ok(result.fallback_evidence_path.endsWith('scheduler-runs.jsonl'));
+
+  const schedulerRuns = (await readFile(join(root, 'state', 'scheduler-runs.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
+  assert.equal(schedulerRuns.length, 3);
+  const fallback = schedulerRuns.at(-1);
+  assert.equal(fallback.status, 'FAILED');
+  assert.equal(fallback.stage, 'C');
+  assert.equal(fallback.schedule_id, 'test:C');
+  assert.equal(fallback.predecessor_checkpoint_id, 'checkpoint:B:test');
+  assert.equal(fallback.outcome, 'failed');
+  assert.equal(fallback.fail_closed, true);
+  assert.equal(fallback.mission_persistence_error.message, 'MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
+});
