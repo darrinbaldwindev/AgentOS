@@ -52,8 +52,20 @@ async function appendMission(root, { missionId, stage, scheduleId, predecessorCh
     now,
   });
   await appendMissionRecord({ ledgerPath: paths.ledger, record });
+
+  // A scheduler write is not accepted as durable evidence until it can be
+  // immediately recovered and correlated from the append-only ledger.
   const records = await readMissionLedger({ ledgerPath: paths.ledger });
-  await writeMissionLedgerIndex({ indexPath: paths.index, records });
+  const persisted = records.find((candidate) => candidate.mission_id === record.mission_id);
+  if (!persisted) throw new Error('MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
+  if (persisted.stage !== record.stage || persisted.schedule_id !== record.schedule_id || persisted.predecessor_checkpoint_id !== record.predecessor_checkpoint_id || persisted.outcome !== record.outcome) {
+    throw new Error('MISSION_LEDGER_CORRELATION_VERIFICATION_FAILED');
+  }
+
+  const index = await writeMissionLedgerIndex({ indexPath: paths.index, records });
+  if (index.latest_by_stage?.[record.stage]?.mission_id !== record.mission_id) {
+    throw new Error('MISSION_LEDGER_INDEX_VERIFICATION_FAILED');
+  }
   return record;
 }
 
