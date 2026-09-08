@@ -1,7 +1,8 @@
-// LOCAL-RUNTIME-006 / MISSION-051 + V1 Mission A/B-repair
+// LOCAL-RUNTIME-006 / MISSION-051 + V1 Mission A/B-repair + Mission C seam restriction
 // Safe by default: DRY_RUN only, autonomy disabled, no provider or production writes.
 // Mission A: final COMPLETED requires Green PASS.
 // Mission B: requireSchedulerDisabled + mission ledger hot path.
+// Mission C: greenEvaluate is NOT a public named parameter.
 
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -133,7 +134,19 @@ export function buildGreenEvidencePacket({ task, workerResult, reservation, budg
   };
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', requireSchedulerDisabled = false, greenEvaluate = evaluateTaskCompletion } = {}) {
+const INTERNAL_GREEN_EVALUATE = Symbol('agentos.internal.greenEvaluate');
+
+/** Test-only seam. Do not use from production/chat callers. */
+export function __testOnlyWakeLocal(options = {}) {
+  const { greenEvaluate, ...rest } = options;
+  if (typeof greenEvaluate !== 'function') {
+    return wakeLocal(rest);
+  }
+  return wakeLocal({ ...rest, [INTERNAL_GREEN_EVALUATE]: greenEvaluate });
+}
+
+export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', requireSchedulerDisabled = false, ...rest } = {}) {
+  const greenEvaluate = typeof rest[INTERNAL_GREEN_EVALUATE] === 'function' ? rest[INTERNAL_GREEN_EVALUATE] : evaluateTaskCompletion;
   if (!root) throw new TypeError('root is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')), { requireSchedulerDisabled });
   const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
