@@ -104,7 +104,7 @@ export function summarizeMissionLedger(records = []) {
     latest_mission_id: latest?.mission_id ?? null,
     latest_timestamp_utc: latest?.timestamps.utc ?? null,
     latest_timestamp_brisbane: latest?.timestamps.brisbane ?? null,
-    latest_by_stage: Object.freeze(Object.fromEntries(Object.entries(latestByStage).map(([stage, record]) => [stage, Object.freeze({ mission_id: record.mission_id, timestamp_utc: record.timestamps.utc, outcome: record.outcome, next_action: record.intended_next_action, next_checkpoint_id: record.next_checkpoint_id })]))),
+    latest_by_stage: Object.freeze(Object.fromEntries(Object.entries(latestByStage).map(([stage, record]) => [stage, Object.freeze({ mission_id: record.mission_id, timestamp_utc: record.timestamps.utc, schedule_id: record.schedule_id, predecessor_checkpoint_id: record.predecessor_checkpoint_id, outcome: record.outcome, next_action: record.intended_next_action, next_checkpoint_id: record.next_checkpoint_id })]))),
     awaiting_verification: ordered.filter((record) => record.outcome === 'executed_awaiting_green').map((record) => record.mission_id),
     blockers: ordered.flatMap((record) => record.blockers.map((blocker) => ({ mission_id: record.mission_id, blocker }))),
   });
