@@ -195,6 +195,7 @@ test('scheduler failure is durably recorded as failed mission evidence', async (
     root,
     stage: 'B',
     scheduleId: 'test:B',
+    predecessorCheckpointId: 'checkpoint:A:test',
     objective: 'verify scheduled control-loop action',
     wake: async () => { throw Object.assign(new Error('WAKE_TEST_FAILURE'), { code: 'WAKE_TEST_FAILURE' }); },
   });
@@ -208,6 +209,51 @@ test('scheduler failure is durably recorded as failed mission evidence', async (
   assert.equal(ledger.length, 1);
   assert.equal(ledger[0].mission_id.startsWith('scheduler:test:B:'), true);
   assert.equal(ledger[0].outcome, 'failed');
+});
+
+test('missing predecessor fails closed before wake invocation', async () => {
+  const root = await tempRoot();
+  let wakeCalls = 0;
+  try {
+    const result = await schedulerTick({
+      root,
+      stage: 'B',
+      scheduleId: 'AgentOS Control Loop B',
+      objective: 'prove missing predecessor prevents wake',
+      wake: async () => { wakeCalls += 1; return completedWake('mission:should-not-run')(); },
+    });
+
+    assert.equal(result.status, 'FAILED');
+    assert.equal(result.error.message, 'CONTROL_PREDECESSOR_REQUIRED');
+    assert.equal(result.mission_record, null);
+    assert.equal(result.fail_closed, true);
+    assert.equal(wakeCalls, 0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('canonical stage schedule mismatch fails closed before wake invocation', async () => {
+  const root = await tempRoot();
+  let wakeCalls = 0;
+  try {
+    const result = await schedulerTick({
+      root,
+      stage: 'B',
+      scheduleId: 'AgentOS Control Loop A',
+      predecessorCheckpointId: 'checkpoint:A:test',
+      objective: 'prove stage schedule mismatch prevents wake',
+      wake: async () => { wakeCalls += 1; return completedWake('mission:should-not-run')(); },
+    });
+
+    assert.equal(result.status, 'FAILED');
+    assert.equal(result.error.message, 'CONTROL_STAGE_SCHEDULE_MISMATCH');
+    assert.equal(result.mission_record, null);
+    assert.equal(result.fail_closed, true);
+    assert.equal(wakeCalls, 0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test('missing mission re-read record reaches controlled fail-closed fallback with original error', async () => {
