@@ -141,7 +141,7 @@ test('fresh scheduler process writes and verifies correlated mission-ledger evid
       entrypoint,
       '--root', root,
       '--stage', 'A',
-      '--schedule-id', 'AgentOS Control Loop A process test',
+      '--schedule-id', 'AgentOS Control Loop A',
       '--predecessor-checkpoint-id', 'checkpoint:C:process-001',
       '--next-checkpoint-id', 'checkpoint:A:process-001',
       'execute fresh-process scheduled mission-ledger proof',
@@ -165,7 +165,7 @@ test('fresh scheduler process writes and verifies correlated mission-ledger evid
     const result = JSON.parse(stdout);
     assert.equal(result.status, 'COMPLETED');
     assert.equal(result.mission_record.stage, 'A');
-    assert.equal(result.mission_record.schedule_id, 'AgentOS Control Loop A process test');
+    assert.equal(result.mission_record.schedule_id, 'AgentOS Control Loop A');
     assert.equal(result.mission_record.predecessor_checkpoint_id, 'checkpoint:C:process-001');
     assert.equal(result.mission_record.next_checkpoint_id, 'checkpoint:A:process-001');
     assert.equal(result.mission_record.outcome, 'executed_awaiting_green');
@@ -174,7 +174,7 @@ test('fresh scheduler process writes and verifies correlated mission-ledger evid
     const persisted = ledger.find((record) => record.mission_id === result.mission_record.mission_id);
     assert.ok(persisted);
     assert.equal(persisted.stage, 'A');
-    assert.equal(persisted.schedule_id, 'AgentOS Control Loop A process test');
+    assert.equal(persisted.schedule_id, 'AgentOS Control Loop A');
     assert.equal(persisted.predecessor_checkpoint_id, 'checkpoint:C:process-001');
     assert.equal(persisted.next_checkpoint_id, 'checkpoint:A:process-001');
     assert.equal(persisted.outcome, 'executed_awaiting_green');
