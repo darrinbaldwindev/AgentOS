@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { appendFile, mkdir, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { appendMission, schedulerTick } from '../scripts/scheduler-tick.mjs';
+import { appendMission, parseSchedulerArgs, schedulerTick } from '../scripts/scheduler-tick.mjs';
 import { readMissionLedger, writeMissionLedgerIndex } from '../runtime/mission-ledger.mjs';
 
 async function tempRoot() {
@@ -92,6 +92,41 @@ test('scheduler tick appends an execution mission record and current-state index
   const index = JSON.parse(await readFile(join(root, 'state', 'mission-ledger-index.json'), 'utf8'));
   assert.equal(index.latest_mission_id, 'mission:test');
   assert.equal(index.latest_by_stage.A.outcome, 'executed_awaiting_green');
+});
+
+test('scheduled CLI metadata preserves stage and predecessor correlation into the mission record', async () => {
+  const root = await tempRoot();
+  const args = parseSchedulerArgs([
+    '--root', root,
+    '--stage', 'B',
+    '--schedule-id', 'AgentOS Control Loop B',
+    '--predecessor-checkpoint-id', 'checkpoint:A:live-001',
+    '--next-checkpoint-id', 'checkpoint:B:live-001',
+    'verify live scheduled control-loop stage',
+  ]);
+
+  assert.equal(args.stage, 'B');
+  assert.equal(args.scheduleId, 'AgentOS Control Loop B');
+  assert.equal(args.predecessorCheckpointId, 'checkpoint:A:live-001');
+  assert.equal(args.nextCheckpointId, 'checkpoint:B:live-001');
+
+  const result = await schedulerTick({
+    ...args,
+    now: new Date('2026-09-08T03:00:00.000Z'),
+    wake: completedWake('mission:live-cli-b'),
+  });
+
+  assert.equal(result.status, 'COMPLETED');
+  assert.equal(result.mission_record.stage, 'B');
+  assert.equal(result.mission_record.schedule_id, 'AgentOS Control Loop B');
+  assert.equal(result.mission_record.predecessor_checkpoint_id, 'checkpoint:A:live-001');
+  assert.equal(result.mission_record.next_checkpoint_id, 'checkpoint:B:live-001');
+
+  const ledger = await readMissionLedger({ ledgerPath: join(root, 'state', 'mission-ledger.ndjson') });
+  assert.equal(ledger.at(-1).mission_id, 'mission:live-cli-b');
+  assert.equal(ledger.at(-1).predecessor_checkpoint_id, 'checkpoint:A:live-001');
+  const index = JSON.parse(await readFile(join(root, 'state', 'mission-ledger-index.json'), 'utf8'));
+  assert.equal(index.latest_by_stage.B.mission_id, 'mission:live-cli-b');
 });
 
 test('scheduler failure is durably recorded as failed mission evidence', async () => {
