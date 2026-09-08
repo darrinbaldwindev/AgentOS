@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFile, mkdir, mkdtemp, readFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { appendFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { installLocal } from '../scripts/install-local.mjs';
 import { appendMission, parseSchedulerArgs, schedulerTick } from '../scripts/scheduler-tick.mjs';
 import { readMissionLedger, writeMissionLedgerIndex } from '../runtime/mission-ledger.mjs';
 
@@ -127,6 +130,63 @@ test('scheduled CLI metadata preserves stage and predecessor correlation into th
   assert.equal(ledger.at(-1).predecessor_checkpoint_id, 'checkpoint:A:live-001');
   const index = JSON.parse(await readFile(join(root, 'state', 'mission-ledger-index.json'), 'utf8'));
   assert.equal(index.latest_by_stage.B.mission_id, 'mission:live-cli-b');
+});
+
+test('fresh scheduler process writes and verifies correlated mission-ledger evidence', async () => {
+  const root = await tempRoot();
+  await installLocal({ root });
+  const entrypoint = fileURLToPath(new URL('../scripts/scheduler-tick.mjs', import.meta.url));
+  try {
+    const args = [
+      entrypoint,
+      '--root', root,
+      '--stage', 'A',
+      '--schedule-id', 'AgentOS Control Loop A process test',
+      '--predecessor-checkpoint-id', 'checkpoint:C:process-001',
+      '--next-checkpoint-id', 'checkpoint:A:process-001',
+      'execute fresh-process scheduled mission-ledger proof',
+    ];
+    const child = spawn(process.execPath, args, {
+      env: { ...process.env, AGENTOS_REPO_HEAD: 'repo:process-test-head' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    const exitCode = await new Promise((resolve, reject) => {
+      child.once('error', reject);
+      child.once('close', resolve);
+    });
+
+    assert.equal(exitCode, 0, stderr || stdout);
+    const result = JSON.parse(stdout);
+    assert.equal(result.status, 'COMPLETED');
+    assert.equal(result.mission_record.stage, 'A');
+    assert.equal(result.mission_record.schedule_id, 'AgentOS Control Loop A process test');
+    assert.equal(result.mission_record.predecessor_checkpoint_id, 'checkpoint:C:process-001');
+    assert.equal(result.mission_record.next_checkpoint_id, 'checkpoint:A:process-001');
+    assert.equal(result.mission_record.outcome, 'executed_awaiting_green');
+
+    const ledger = await readMissionLedger({ ledgerPath: join(root, 'state', 'mission-ledger.ndjson') });
+    const persisted = ledger.find((record) => record.mission_id === result.mission_record.mission_id);
+    assert.ok(persisted);
+    assert.equal(persisted.stage, 'A');
+    assert.equal(persisted.schedule_id, 'AgentOS Control Loop A process test');
+    assert.equal(persisted.predecessor_checkpoint_id, 'checkpoint:C:process-001');
+    assert.equal(persisted.next_checkpoint_id, 'checkpoint:A:process-001');
+    assert.equal(persisted.outcome, 'executed_awaiting_green');
+
+    const index = JSON.parse(await readFile(join(root, 'state', 'mission-ledger-index.json'), 'utf8'));
+    assert.equal(index.latest_mission_id, persisted.mission_id);
+    assert.equal(index.latest_by_stage.A.mission_id, persisted.mission_id);
+    assert.equal(index.latest_by_stage.A.predecessor_checkpoint_id, 'checkpoint:C:process-001');
+    assert.equal(index.latest_by_stage.A.next_checkpoint_id, 'checkpoint:A:process-001');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test('scheduler failure is durably recorded as failed mission evidence', async () => {
