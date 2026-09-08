@@ -69,7 +69,7 @@ async function appendMission(root, { missionId, stage, scheduleId, predecessorCh
   return record;
 }
 
-export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = null, nextCheckpointId = null, now = new Date(), wake = wakeLocal } = {}) {
+export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = null, nextCheckpointId = null, now = new Date(), wake = wakeLocal, missionAppender = appendMission } = {}) {
   const startedAt = now instanceof Date ? now.toISOString() : new Date(now).toISOString();
   const intendedNextAction = objective || 'perform one bounded local AgentOS control-cycle action';
   try {
@@ -86,7 +86,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
       evidence: result.response.evidence,
     };
     const evidencePath = await appendRecord(root, record);
-    const mission = await appendMission(root, {
+    const mission = await missionAppender(root, {
       missionId: result.response.mission_id,
       stage,
       scheduleId,
@@ -114,23 +114,54 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
       error: { code: error?.code ?? 'SCHEDULER_TICK_FAILED', message: error?.message ?? String(error) },
     };
     const evidencePath = await appendRecord(root, record);
-    const mission = await appendMission(root, {
-      missionId: `scheduler:${scheduleId}:${startedAt}`,
-      stage,
-      scheduleId,
-      predecessorCheckpointId,
-      repoHead: process.env.AGENTOS_REPO_HEAD || 'unknown:local-runtime',
-      intendedNextAction,
-      actions: ['scheduler wake attempted'],
-      touched: { evidence_path: evidencePath },
-      evidence: [`scheduler-run:${evidencePath}`],
-      safety: ['scheduler firing is not completion'],
-      blockers: [record.error.message],
-      outcome: 'failed',
-      nextCheckpointId,
-      now,
-    });
-    return Object.freeze({ ...record, evidence_path: evidencePath, mission_record: mission });
+    try {
+      const mission = await missionAppender(root, {
+        missionId: `scheduler:${scheduleId}:${startedAt}`,
+        stage,
+        scheduleId,
+        predecessorCheckpointId,
+        repoHead: process.env.AGENTOS_REPO_HEAD || 'unknown:local-runtime',
+        intendedNextAction,
+        actions: ['scheduler wake attempted'],
+        touched: { evidence_path: evidencePath },
+        evidence: [`scheduler-run:${evidencePath}`],
+        safety: ['scheduler firing is not completion'],
+        blockers: [record.error.message],
+        outcome: 'failed',
+        nextCheckpointId,
+        now,
+      });
+      return Object.freeze({ ...record, evidence_path: evidencePath, mission_record: mission });
+    } catch (persistenceError) {
+      // The mission ledger is itself the failing component. Do not recurse through
+      // the same persistence path again; leave a durable fail-closed scheduler-run
+      // fallback record so the failure cannot disappear as an uncaught exception.
+      const persistenceFailure = {
+        status: 'FAILED',
+        started_at: startedAt,
+        completed_at: new Date().toISOString(),
+        error: record.error,
+        mission_persistence_error: {
+          code: persistenceError?.code ?? 'MISSION_LEDGER_FAILURE_RECORDING_FAILED',
+          message: persistenceError?.message ?? String(persistenceError),
+        },
+        stage,
+        schedule_id: scheduleId,
+        predecessor_checkpoint_id: predecessorCheckpointId,
+        outcome: 'failed',
+        fail_closed: true,
+      };
+      const fallbackEvidencePath = await appendRecord(root, persistenceFailure);
+      return Object.freeze({
+        ...record,
+        evidence_path: evidencePath,
+        mission_record: null,
+        mission_persistence_failed: true,
+        mission_persistence_error: persistenceFailure.mission_persistence_error,
+        fallback_evidence_path: fallbackEvidencePath,
+        fail_closed: true,
+      });
+    }
   }
 }
 
