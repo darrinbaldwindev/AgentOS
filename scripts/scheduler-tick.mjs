@@ -31,7 +31,7 @@ function resolveRepoHead(result) {
   return result?.response?.repository_commit || process.env.AGENTOS_REPO_HEAD || 'unknown:local-runtime';
 }
 
-async function appendMission(root, { missionId, stage, scheduleId, predecessorCheckpointId, repoHead, intendedNextAction, actions, worker, touched, tests, evidence, safety, blockers, outcome, nextCheckpointId, now }) {
+export async function appendMission(root, { missionId, stage, scheduleId, predecessorCheckpointId, repoHead, intendedNextAction, actions, worker, touched, tests, evidence, safety, blockers, outcome, nextCheckpointId, now, missionWriter = appendMissionRecord, ledgerReader = readMissionLedger, indexWriter = writeMissionLedgerIndex }) {
   const paths = missionLedgerPaths(resolve(root));
   const record = createMissionRecord({
     missionId,
@@ -51,25 +51,25 @@ async function appendMission(root, { missionId, stage, scheduleId, predecessorCh
     nextCheckpointId,
     now,
   });
-  await appendMissionRecord({ ledgerPath: paths.ledger, record });
+  await missionWriter({ ledgerPath: paths.ledger, record });
 
   // A scheduler write is not accepted as durable evidence until it can be
   // immediately recovered and correlated from the append-only ledger.
-  const records = await readMissionLedger({ ledgerPath: paths.ledger });
+  const records = await ledgerReader({ ledgerPath: paths.ledger });
   const persisted = records.find((candidate) => candidate.mission_id === record.mission_id);
   if (!persisted) throw new Error('MISSION_LEDGER_PERSISTENCE_VERIFICATION_FAILED');
   if (persisted.stage !== record.stage || persisted.schedule_id !== record.schedule_id || persisted.predecessor_checkpoint_id !== record.predecessor_checkpoint_id || persisted.outcome !== record.outcome) {
     throw new Error('MISSION_LEDGER_CORRELATION_VERIFICATION_FAILED');
   }
 
-  const index = await writeMissionLedgerIndex({ indexPath: paths.index, records });
+  const index = await indexWriter({ indexPath: paths.index, records });
   if (index.latest_by_stage?.[record.stage]?.mission_id !== record.mission_id) {
     throw new Error('MISSION_LEDGER_INDEX_VERIFICATION_FAILED');
   }
   return record;
 }
 
-export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = null, nextCheckpointId = null, now = new Date(), wake = wakeLocal, missionAppender = appendMission } = {}) {
+export async function schedulerTick({ root = resolveInstallRoot(), objective, stage = resolveStage(), scheduleId = resolveScheduleId(), predecessorCheckpointId = null, nextCheckpointId = null, now = new Date(), wake = wakeLocal, missionAppender = appendMission, evidenceAppender = appendRecord } = {}) {
   const startedAt = now instanceof Date ? now.toISOString() : new Date(now).toISOString();
   const intendedNextAction = objective || 'perform one bounded local AgentOS control-cycle action';
   try {
@@ -85,7 +85,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
       completed_at: result.response.completed_at,
       evidence: result.response.evidence,
     };
-    const evidencePath = await appendRecord(root, record);
+    const evidencePath = await evidenceAppender(root, record);
     const mission = await missionAppender(root, {
       missionId: result.response.mission_id,
       stage,
@@ -113,7 +113,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
       completed_at: completedAt,
       error: { code: error?.code ?? 'SCHEDULER_TICK_FAILED', message: error?.message ?? String(error) },
     };
-    const evidencePath = await appendRecord(root, record);
+    const evidencePath = await evidenceAppender(root, record);
     try {
       const mission = await missionAppender(root, {
         missionId: `scheduler:${scheduleId}:${startedAt}`,
@@ -151,7 +151,7 @@ export async function schedulerTick({ root = resolveInstallRoot(), objective, st
         outcome: 'failed',
         fail_closed: true,
       };
-      const fallbackEvidencePath = await appendRecord(root, persistenceFailure);
+      const fallbackEvidencePath = await evidenceAppender(root, persistenceFailure);
       return Object.freeze({
         ...record,
         evidence_path: evidencePath,
