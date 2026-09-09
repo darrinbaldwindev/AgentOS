@@ -97,3 +97,23 @@ test('response wake or worker mismatch is rejected even with a completed receipt
   assert.ok(result.failures.includes('RESPONSE_WAKE_TRACE_ID_MISMATCH'));
   assert.ok(result.failures.includes('RESPONSE_WORKER_ID_MISMATCH'));
 });
+
+for (const green of [{ disposition: 'pass' }, { disposition: 'pass', task_id: '' }]) {
+  test(`Green without task correlation fails: ${JSON.stringify(green)}`, () => {
+    const data = fixture(); data.green = green;
+    assert.equal(reconcileRemoteExecution(data).reportable_completed, false);
+  });
+}
+for (const field of ['host_id', 'worker_id', 'code_identity', 'config_identity', 'wake_trace_id']) {
+  test(`independent assignment ${field} cannot be overridden by receipt`, () => {
+    const data = fixture(); data.assignment[field] = 'different-expected-value';
+    assert.equal(reconcileRemoteExecution(data).reportable_completed, false);
+  });
+}
+test('another wake completing the same task is ambiguity, not evidence to discard', () => {
+  const data = fixture();
+  data.executionEvents.push({ ...data.executionEvents[0], wakeTraceId: 'wake-B' });
+  const result = reconcileRemoteExecution(data);
+  assert.equal(result.reportable_completed, false);
+  assert.equal(result.rerun_allowed, false);
+});
