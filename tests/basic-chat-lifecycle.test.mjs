@@ -101,20 +101,14 @@ describe('Mission D: Basic Chat host lifecycle + lock', () => {
     }
   });
 
-  it('I: stale lock without live owner allows restart', async () => {
+  it('I: stale lock requires explicit recovery and is never stolen', async () => {
     const root = await mkdtemp(join(tmpdir(), 'agentos-life-i-'));
     try {
       await installLocal({ root });
-      await writeFile(
-        join(root, 'basic-chat.lock'),
-        `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`,
-      );
-      const app = await startBasicChat({ root, port: 0 });
-      assert.equal(await portOpen(app.port), true);
-      const lock = JSON.parse(await readFile(join(root, 'basic-chat.lock'), 'utf8'));
-      assert.equal(lock.pid, process.pid);
-      await app.close();
-      assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
+      const payload = JSON.stringify({ pid: 999999, startedAt: '2020-01-01T00:00:00Z' });
+      await writeFile(join(root, 'basic-chat.lock'), payload);
+      await assert.rejects(startBasicChat({ root, port: 0 }), /RECOVERY_REQUIRED/);
+      assert.equal(await readFile(join(root, 'basic-chat.lock'), 'utf8'), payload);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -132,4 +126,17 @@ describe('Mission D: Basic Chat host lifecycle + lock', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+});
+
+it('an empty lock during another owner publication must not be stolen', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-life-publication-'));
+  try {
+    await installLocal({ root });
+    await writeFile(join(root, 'basic-chat.lock'), '');
+    let contender;
+    try {
+      await assert.rejects(async () => { contender = await createLocalChat({ root }); }, /BASIC_CHAT_/);
+    } finally { await contender?.close(); }
+    assert.equal(await readFile(join(root, 'basic-chat.lock'), 'utf8'), '');
+  } finally { await rm(root, {recursive: true, force: true}); }
 });

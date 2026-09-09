@@ -7,44 +7,24 @@ import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
 
-function processAlive(pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function acquireHostLock(lockPath) {
-  const payload = `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const handle = await open(lockPath, 'wx');
-      await handle.writeFile(payload, 'utf8');
-      return handle;
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      let owner = null;
-      try {
-        owner = JSON.parse(await readFile(lockPath, 'utf8'));
-      } catch {
-        owner = null;
-      }
-      const ownerPid = Number(owner?.pid);
-      if (processAlive(ownerPid)) {
-        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-      }
-      // Stale lock: no live owner process. Safe to remove once and retry.
-      try {
-        await unlink(lockPath);
-      } catch {
-        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-      }
-    }
+  // Existence is authoritative. An empty/malformed file may be a live owner's
+  // publication window; PID absence alone is not an atomic takeover protocol.
+  let handle;
+  try {
+    handle = await open(lockPath, 'wx');
+  } catch (error) {
+    if (error?.code === 'EEXIST') throw new Error('BASIC_CHAT_ALREADY_RUNNING_OR_RECOVERY_REQUIRED');
+    throw error;
   }
-  throw new Error('BASIC_CHAT_ALREADY_RUNNING');
+  try {
+    await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8');
+    return handle;
+  } catch (error) {
+    await handle.close();
+    // Retain uncertain ownership; never delete a potentially replaced lock.
+    throw error;
+  }
 }
 
 const THREAD = 'basic:default';
