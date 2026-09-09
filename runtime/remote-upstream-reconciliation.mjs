@@ -32,6 +32,7 @@ export function reconcileRemoteExecution({
 
   const failures = [];
   const fail = (code) => failures.push(code);
+  const completionRecordPresent = Boolean(receipt && typeof receipt === 'object' && receipt.status === 'COMPLETED');
 
   if (!receipt || typeof receipt !== 'object') fail('RECEIPT_MISSING');
   if (!response || typeof response !== 'object') fail('FINAL_RESPONSE_MISSING');
@@ -80,6 +81,12 @@ export function reconcileRemoteExecution({
     status: uniqueFailures.length ? 'RECONCILIATION_REQUIRED' : 'CORRELATED_COMPLETION',
     reportable_completed: uniqueFailures.length === 0,
     assurance_certified: false,
+    completion_record_present: completionRecordPresent,
+    // Reconciliation uncertainty must never itself authorize another execution.
+    // A missing ancillary event can follow a durable completed receipt, while a
+    // missing receipt can follow a worker run whose final persistence failed.
+    rerun_allowed: false,
+    automatic_recovery_allowed: false,
     failures: Object.freeze(uniqueFailures),
     correlation: Object.freeze({
       ...expected,
