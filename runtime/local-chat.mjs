@@ -2,10 +2,50 @@
 // No second completion path. Chat requires scheduler disabled.
 
 import { randomUUID } from 'node:crypto';
-import { readFile, open } from 'node:fs/promises';
+import { readFile, open, writeFile, unlink, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
+
+function processAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function acquireHostLock(lockPath) {
+  const payload = `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const handle = await open(lockPath, 'wx');
+      await handle.writeFile(payload, 'utf8');
+      return handle;
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      let owner = null;
+      try {
+        owner = JSON.parse(await readFile(lockPath, 'utf8'));
+      } catch {
+        owner = null;
+      }
+      const ownerPid = Number(owner?.pid);
+      if (processAlive(ownerPid)) {
+        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
+      }
+      // Stale lock: no live owner process. Safe to remove once and retry.
+      try {
+        await unlink(lockPath);
+      } catch {
+        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
+      }
+    }
+  }
+  throw new Error('BASIC_CHAT_ALREADY_RUNNING');
+}
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
@@ -47,13 +87,7 @@ export async function createLocalChat({ root }) {
   if (!root) throw new TypeError('root is required');
   const config = await readSafeChatConfig(root);
   const lockPath = join(root, 'basic-chat.lock');
-  let lock;
-  try {
-    lock = await open(lockPath, 'wx');
-  } catch (error) {
-    if (error?.code === 'EEXIST') throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-    throw error;
-  }
+  const lock = await acquireHostLock(lockPath);
 
   const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
   if (!(await persistence.get('artifact', CONTROL))) {
@@ -222,7 +256,6 @@ export async function createLocalChat({ root }) {
       await lock.close();
     } catch {}
     try {
-      const { unlink } = await import('node:fs/promises');
       await unlink(lockPath);
     } catch {}
   }

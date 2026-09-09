@@ -86,25 +86,69 @@ export async function startBasicChat({ root, port = 0 } = {}) {
     server.listen(port, originHost, done);
   });
   const address = server.address();
+  let closed = false;
+  let resolveClosed;
+  const closedPromise = new Promise((resolve) => {
+    resolveClosed = resolve;
+  });
+
+  async function close() {
+    if (closed) return;
+    closed = true;
+    await new Promise((done, reject) => server.close((e) => (e ? reject(e) : done())));
+    await chat.close();
+    resolveClosed();
+  }
+
+  // Ensure the HTTP server handle keeps the process alive until close().
+  server.ref();
+
   return {
     url: `http://127.0.0.1:${address.port}`,
     port: address.port,
-    close: async () => {
-      await new Promise((done, reject) => server.close((e) => (e ? reject(e) : done())));
-      await chat.close();
-    },
+    close,
+    waitUntilClosed: () => closedPromise,
   };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const root = resolve('.basic-chat');
+async function mainCli() {
+  const root = resolve(process.env.AGENTOS_HOME || '.basic-chat');
   await installLocal({ root });
-  const app = await startBasicChat({ root, port: 4317 });
-  console.log(`Basic Chat: ${app.url}\nDRY_RUN; autonomy disabled. State: ${root}`);
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.once(signal, async () => {
+  const app = await startBasicChat({ root, port: Number(process.env.AGENTOS_CHAT_PORT || 4317) });
+  console.log(`Basic Chat: ${app.url}`);
+  console.log('DRY_RUN; autonomy disabled. State:', root);
+  console.log('Listening. Press Ctrl+C to stop.');
+
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    try {
       await app.close();
-      process.exit(0);
-    });
+    } catch (error) {
+      console.error('shutdown error:', error?.message ?? error);
+      process.exitCode = 1;
+    }
+  };
+
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    try {
+      process.on(signal, () => {
+        void shutdown().then(() => process.exit(process.exitCode ?? 0));
+      });
+    } catch {
+      // signal may be unsupported on some platforms
+    }
   }
+
+  // Host lifecycle: stay alive until the listener is closed (Windows + POSIX).
+  await app.waitUntilClosed();
+}
+
+const isDirectCli =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+
+if (isDirectCli) {
+  await mainCli();
 }
