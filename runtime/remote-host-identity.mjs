@@ -36,17 +36,23 @@ export async function loadOrCreateRemoteHostIdentity({ filePath, now = () => new
     created_at: now().toISOString(),
   });
 
+  const temporary = `${target}.${randomUUID()}.tmp`;
   let handle;
   try {
     // Exclusive create prevents two simultaneous first-start processes from
     // assigning different identities to the same AgentOS state root.
-    handle = await fs.open(target, 'wx', 0o600);
+    handle = await fs.open(temporary, 'wx', 0o600);
     await handle.writeFile(`${JSON.stringify(record, null, 2)}\n`, 'utf8');
+    await handle.sync();
+    await handle.close();
+    handle = null;
+    await fs.link(temporary, target);
     return record;
   } catch (error) {
     if (error?.code !== 'EEXIST') throw error;
     return validateIdentity(JSON.parse(await fs.readFile(target, 'utf8')));
   } finally {
     await handle?.close();
+    await fs.rm(temporary, { force: true });
   }
 }

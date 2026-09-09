@@ -4,10 +4,17 @@
 // Mission B: requireSchedulerDisabled + mission ledger hot path.
 // Mission C: greenEvaluate is NOT a public named parameter.
 
-import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { createRemoteDeliveryClaimStore } from './remote-delivery-claim-store.mjs';
+import { loadOrCreateRemoteHostIdentity } from './remote-host-identity.mjs';
+import { evaluateRemotePickupEligibility } from './remote-pickup-eligibility.mjs';
+import { assessRemoteDeliveryClaimRecovery } from './remote-delivery-recovery.mjs';
+import { createRemoteExecutionReceipt } from './remote-local-bridge-contract.mjs';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { createLocalDispatchStore } from './local-dispatch-store.mjs';
 import { createMissionBudget } from './mission-budget.mjs';
@@ -145,7 +152,84 @@ export function __testOnlyWakeLocal(options = {}) {
   return wakeLocal({ ...rest, [INTERNAL_GREEN_EVALUATE]: greenEvaluate });
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', requireSchedulerDisabled = false, ...rest } = {}) {
+// Only delivery identity enters here. Authority-bearing task data is loaded from
+// the existing local dispatch store, never copied from scheduler arguments.
+export async function wakeLocal(options = {}) {
+  const { remote: ignoredRemote, ...publicOptions } = options;
+  options = publicOptions;
+  if (!options.deliveryId) return executeLocalWake(options);
+  const { root, deliveryId } = options;
+  const configText = await fs.readFile(join(root, 'config.json'), 'utf8');
+  const config = safeRuntimeConfig(JSON.parse(configText));
+  if (config.remoteBridge?.enabled !== true) throw new Error('REMOTE_PICKUP_DISABLED');
+  const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
+  const matches = (await persistence.list('artifact')).filter((a) =>
+    a.artifactType === 'dispatch.task' && a.payload?.delivery_id === deliveryId);
+  if (matches.length !== 1) throw new Error('REMOTE_DELIVERY_ASSIGNMENT_AMBIGUOUS_OR_MISSING');
+  const task = matches[0].payload;
+  const host = await loadOrCreateRemoteHostIdentity({ filePath: join(root, 'state', 'remote-host.json') });
+  const disposition = async (status, reason, extra = {}) => {
+    const response = { status, mission_id: task.mission_id, wake_trace_id: task.wake_trace_id ?? null,
+      source_agent: WORKER_ID, evidence: [], completed_at: null, next_action: 'independent_reconciliation' };
+    const record = { delivery_id: deliveryId, request_id: task.request_id, task_id: task.task_id,
+      host_id: host.host_id, status, reason, executed: false, ...extra };
+    await persistence.create('event', { eventType: 'remote.pickup.disposition', ...record });
+    if (status === 'BLOCKED' || status === 'RECOVERY_REQUIRED') {
+      const current = await persistence.get('artifact', task.task_id);
+      await persistence.update('artifact', task.task_id, { payload: { ...current.payload,
+        pickup_state: status, pickup_blocker: reason } }, current.revision ?? current.updatedAt);
+    }
+    return { ...record, response };
+  };
+  const claims = await createRemoteDeliveryClaimStore({ root: join(root, 'state', 'remote-claims') });
+  const existing = await claims.get(deliveryId);
+  if (existing) {
+    if (existing.request_id !== task.request_id || existing.host_id !== host.host_id) {
+      return disposition('BLOCKED', 'CLAIM_CORRELATION_MISMATCH');
+    }
+    const recovery = assessRemoteDeliveryClaimRecovery({ claim: existing });
+    return disposition(recovery.recovery_required ? 'RECOVERY_REQUIRED' : 'DUPLICATE_DELIVERY', recovery.disposition);
+  }
+  const gate = evaluateRemotePickupEligibility({ admittedTask: task, hostIdentity: host, hostCapabilities: [CAPABILITY] });
+  if (!gate.eligible) return disposition('BLOCKED', gate.disposition);
+  validateExecutionEnvelope(task);
+  if (!task.actor_id || !Array.isArray(task.acceptance_criteria) || !task.acceptance_criteria.length ||
+      !Array.isArray(task.scope) || task.scope.some((s) => s !== 'local-runtime') ||
+      /\bproduction\b|live\s+(?:write|deploy)/i.test(task.objective) || task.admitted_by !== ISSUER || task.status !== 'queued' || task.target !== RECEIVER) {
+    return disposition('BLOCKED', 'REMOTE_ADMISSION_INVALID');
+  }
+  authoriseDispatch(task, createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] }));
+  const claim = await claims.claim({ deliveryId, requestId: task.request_id, hostId: host.host_id });
+  if (!claim.claimed) return disposition('DUPLICATE_DELIVERY', claim.disposition);
+  const repo = fileURLToPath(new URL('..', import.meta.url));
+  const codeIdentity = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+  const codeDirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: repo, encoding: 'utf8' }).trim().length > 0;
+  const remote = { task, host, claim, codeIdentity, codeDirty,
+    configIdentity: createHash('sha256').update(configText).digest('hex') };
+  try {
+    const result = await executeLocalWake({ ...options, remote });
+    if (result.status !== 'COMPLETED') {
+      await persistence.create('artifact', { id: `remote-blocked:${deliveryId}`, artifactType: 'remote.execution.receipt',
+        payload: makeRemoteReceipt(remote, result.task, result.response, result.budget, result.green, 'GREEN_BLOCKED') });
+    }
+    return result;
+  } catch (error) {
+    return disposition('RECOVERY_REQUIRED', error.message, { executed: 'unknown', claim_retained: true, budget: error.remoteBudget ?? { status: 'UNKNOWN_REQUIRES_RECONCILIATION' } });
+  }
+}
+
+function makeRemoteReceipt(remote, task, response, budget, green, status = 'COMPLETED') {
+  return { ...createRemoteExecutionReceipt({ candidate: remote.task, missionId: task.mission_id,
+    taskId: task.task_id, wakeTraceId: task.wake_trace_id, hostId: remote.host.host_id, workerId: WORKER_ID,
+    status, evidence: response.evidence, budgetStatus: budget.status, codeIdentity: remote.codeIdentity }),
+    actor_id: remote.task.actor_id, issuer: remote.task.issuer, config_identity: remote.configIdentity,
+    code_dirty: remote.codeDirty, claimed_at: remote.claim.record.claimed_at,
+    started_at: response.started_at, completed_at: status === 'COMPLETED' ? response.completed_at : null,
+    budget_reservation_id: budget.reservation_id, green_disposition: green.disposition,
+    next_action: 'independent_upstream_reconciliation' };
+}
+
+async function executeLocalWake({ root, remote = null, objective = 'perform one bounded local AgentOS control-cycle action', requireSchedulerDisabled = false, ...rest } = {}) {
   const greenEvaluate = typeof rest[INTERNAL_GREEN_EVALUATE] === 'function' ? rest[INTERNAL_GREEN_EVALUATE] : evaluateTaskCompletion;
   if (!root) throw new TypeError('root is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')), { requireSchedulerDisabled });
@@ -159,7 +243,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     continuityCheck: async () => ({ ok: true }),
   });
 
-  const taskId = `local-wake-${randomUUID()}`;
+  const taskId = remote?.task.task_id ?? `local-wake-${randomUUID()}`;
   const wakeTraceId = randomUUID();
   const createdAt = new Date().toISOString();
   const task = {
@@ -180,12 +264,14 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     created_at: createdAt,
     wake_trace_id: wakeTraceId,
     scheduler_wake_at: createdAt,
+    ...(remote ? { ...remote.task, wake_trace_id: wakeTraceId, scheduler_wake_at: createdAt } : {}),
   };
 
   validateExecutionEnvelope(task);
   authoriseDispatch(task, createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] }));
 
-  await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
+  if (remote) await persistence.update('artifact', taskId, { payload: task });
+  else await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
 
   await appendLedgerEvent({
     root,
@@ -201,6 +287,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
 
   const reservation = budget.reserve({ project_id: PROJECT_ID, mission_id: task.mission_id, limit_units: 1 });
   let budgetOutcome;
+  let workerStarted = false;
   try {
     const dispatchStore = createLocalDispatchStore(persistence);
     const policy = createAuthorityPolicy({ issuers: [ISSUER], capabilities: [CAPABILITY] });
@@ -223,6 +310,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
         validateExecutionEnvelope(started);
         const worker = registry.findMatching({ requiredCapabilities: started.required_capabilities });
         if (!worker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
+        workerStarted = true;
         const workerResult = await worker.execute(started);
         if (!workerResult.success) throw new Error(`WORKER_EXECUTION_FAILED: ${workerResult.error}`);
         capturedWorkerResult = {
@@ -474,11 +562,12 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
       safety: ['green_pass_required'],
     });
 
-    await persistence.create('artifact', {
-      id: `response:${taskId}`,
-      artifactType: 'project-overseer.response',
-      payload: response,
-    });
+    await persistence.createMany([
+      { type: 'artifact', input: { id: `response:${taskId}`, artifactType: 'project-overseer.response', payload: response } },
+      ...(remote ? [{ type: 'artifact', input: { id: `remote-receipt:${remote.task.delivery_id}`,
+        artifactType: 'remote.execution.receipt',
+        payload: makeRemoteReceipt(remote, task, response, budgetOutcome, greenResult) } }] : []),
+    ]);
     await persistence.create('event', {
       agentId: boot.overseer.id,
       eventType: 'agentos.manual-wake.completed',
@@ -503,8 +592,9 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     });
   } catch (error) {
     if (!budgetOutcome) {
-      try { budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 0 }); } catch {}
+      try { budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: workerStarted ? 1 : 0 }); } catch {}
     }
+    error.remoteBudget = budgetOutcome ?? { status: 'UNKNOWN_REQUIRES_RECONCILIATION' };
     throw error;
   } finally {
     budget.close();

@@ -70,3 +70,58 @@ are rejected rather than classified fresh.
 
 No new scheduler, queue or authority layer was created. No ready transition,
 deployment, credential change, purchase or production autonomy was performed.
+
+## Next cycle — existing scheduler fixture wiring
+
+Remote baseline rechecked: `54db1e76f9d7a3c62ad26a137618ca28975f987d`, base
+`90ebe42289990b3c6d054aac37b278eaf6554144`. CI #544 / run 34341864965 passed.
+The only returned review was the earlier COMMENTED Amazon Q review; it does not
+constitute independent review of this new slice.
+
+The existing OS tick can now discover a locally persisted, already-authorised
+`dispatch.task` when a fixture config explicitly sets `remoteBridge.enabled`.
+This setting is absent by default. DRY_RUN and autonomy-disabled gates remain.
+Only delivery identity crosses into wake; remote task/authority arguments cannot
+replace persisted task content. Exact project, host, capabilities, issuer,
+consent and admission are checked before the existing durable delivery claim.
+The canonical registry and runner execute the same bounded deterministic worker.
+
+The existing JSON store now serializes writers using a filesystem lock, reloads
+state inside each mutation, supports revision-based compare-and-set, and publishes
+result and receipt together in one atomic file replacement. Failed writes cannot
+leak their in-memory changes into later writes. Abandoned locks require explicit
+reconciliation; there is no expiry-based stealing. Host identity publication also
+uses a complete-file exclusive link, avoiding first-start partial reads.
+
+The mandatory mission ledger authorizes finalization; it does not claim completed
+receipt publication. Failure after worker start charges the reserved unit. A failed
+receipt leaves no completed response/receipt/event, retains the delivery claim and
+records RECOVERY_REQUIRED. Blocked pickup is recorded on the existing task so a
+subsequent tick can consider the next delivery without adding a blocker database.
+
+Validation: `node --test tests/*.test.mjs tests/**/*.test.mjs`: 348 passed.
+New focused cases: existing scheduler A vs unrelated B; eight actual Node scheduler
+processes, one completion; atomic receipt-write failure with charged budget;
+stale persisted crash-shaped claim never stolen; Green fail; capability mismatch;
+superseded/stale/unadmitted task; blocked task does not starve next delivery;
+12 independent persistence handles preserve writes and yield one CAS winner;
+failed batch does not leak; abandoned writer lock is retained.
+
+Remaining limitations:
+- This starts with a trusted local admitted fixture. Authenticated inbound transport
+  and a production admission writer are absent. No physical mobile/Windows proof.
+- The worker performs the existing deterministic bounded action; this is not an
+  arbitrary remote objective executor. Green's existing evidence assertions are
+  not independent proof of arbitrary acceptance criteria.
+- Receipt includes git HEAD and a dirty flag plus config hash. Dirty worktree
+  fixtures are not exact-head production evidence; an installed non-git build needs
+  an independently verified build identity before this path can operate there.
+- Receipt evidence references and Green fields still need independent resolution
+  for upstream reconciliation; PRS must not auto-certify this slice.
+- Atomic rename is not a multi-file/power-loss transaction. Directory fsync,
+  Windows filesystem behavior, hostile local writers, crash recovery authorization
+  and remote transmission remain unproven. Lock recovery is deliberately manual.
+- A crash after a durable completed receipt but before ancillary scheduler logging
+  is ambiguous to the caller; reconciliation must read the receipt, never rerun.
+
+REMOTE PHYSICAL EXECUTION = NOT PROVEN. No overall GREEN.
