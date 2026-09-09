@@ -23,6 +23,7 @@ export function classifyIntegrationCapability(input = {}) {
     planOk = true,
     quotaRemaining = null,
     rateLimited = false,
+    degraded = false,
     stale = false,
     evidence = [],
   } = input;
@@ -56,6 +57,8 @@ export function classifyIntegrationCapability(input = {}) {
   } else if (rateLimited) {
     state = 'rate_limited';
     usable = false;
+  } else if (degraded) {
+    state = 'degraded';
   }
 
   return Object.freeze({
@@ -76,14 +79,16 @@ export function summarizeIntegrationHealth(capabilities = []) {
 
   const usable = capabilities.filter((item) => item.usable);
   const blocked = capabilities.filter((item) => !item.usable);
+  const degraded = capabilities.filter((item) => item.state === 'degraded');
   const ownerActions = blocked.filter((item) => item.ownerActionRequired);
 
   return Object.freeze({
     total: capabilities.length,
     usable: usable.length,
     blocked: blocked.length,
+    degraded: degraded.length,
     ownerActionRequired: ownerActions.length,
-    allHealthy: capabilities.length > 0 && blocked.length === 0,
+    allHealthy: capabilities.length > 0 && capabilities.every((item) => item.state === 'healthy'),
     capabilities: Object.freeze([...capabilities]),
   });
 }
