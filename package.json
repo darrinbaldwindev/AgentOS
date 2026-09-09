@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:integrations": "node --test tests/integration-certification.test.mjs tests/integration-mock-adapters.test.mjs tests/provider-health-policy.test.mjs tests/unified-worker-routing.test.mjs tests/overseer-routing-adapter.test.mjs",
     "test": "node --test tests/**/*.test.mjs",
     "install:local": "node scripts/install-local.mjs",
     "doctor:local": "node scripts/doctor-local.mjs",

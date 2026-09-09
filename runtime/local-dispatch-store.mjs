@@ -12,7 +12,7 @@ export function createLocalDispatchStore(persistence) {
       .filter((artifact) => artifact.artifactType === 'dispatch.task')
       .map((artifact) => ({
         ...structuredClone(artifact.payload),
-        dispatch_sha: artifact.updatedAt ?? artifact.createdAt ?? null,
+        dispatch_sha: artifact.revision ?? artifact.updatedAt ?? artifact.createdAt ?? null,
       })));
   }
 
@@ -22,7 +22,7 @@ export function createLocalDispatchStore(persistence) {
       return { written: false, error: `dispatch task not found: ${task.task_id}` };
     }
 
-    const currentSha = current.updatedAt ?? current.createdAt ?? null;
+    const currentSha = current.revision ?? current.updatedAt ?? current.createdAt ?? null;
     if (expectedSha !== null && currentSha !== expectedSha) {
       return {
         written: false,
@@ -31,12 +31,17 @@ export function createLocalDispatchStore(persistence) {
       };
     }
 
-    const updated = await persistence.update('artifact', task.task_id, {
-      payload: structuredClone(task),
-    });
+    let updated;
+    try {
+      updated = await persistence.update('artifact', task.task_id, { payload: structuredClone(task) }, currentSha);
+    } catch (error) {
+      if (error.message !== 'LOCAL_STATE_VERSION_CONFLICT') throw error;
+      const latest = await persistence.get('artifact', task.task_id);
+      return { written: false, reason: 'version_conflict', current: { task: latest.payload, sha: latest.revision ?? latest.updatedAt } };
+    }
     return {
       written: true,
-      sha: updated.updatedAt ?? updated.createdAt ?? null,
+      sha: updated.revision ?? updated.updatedAt ?? updated.createdAt ?? null,
     };
   }
 

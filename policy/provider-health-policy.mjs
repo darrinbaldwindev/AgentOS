@@ -89,6 +89,7 @@ function resolveFreshness(observedAt, now) {
     });
   }
   requireNonNegativeTimestamp(observedAt, "observedAt");
+  if (observedAt > now) throw new TypeError("observedAt must not be in the future.");
   const ageMs = Math.max(0, now - observedAt);
   if (ageMs <= FRESHNESS_WINDOWS_MS.fresh) {
     return Object.freeze({ label: "fresh", ageMs, message: "Reported state is recent local metadata." });

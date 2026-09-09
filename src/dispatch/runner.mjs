@@ -22,8 +22,8 @@ export async function runNextTask({ tasks, receiver, authorityPolicy, store, exe
   if (!claimed) return null;
 
   let current = claimed;
-  let expectedSha = claimed.sha ?? null;
-  await persist(store, current, expectedSha);
+  let expectedSha = claimed.dispatch_sha ?? claimed.sha ?? null;
+  expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
   try {
     current = advanceTask(current, 'start');

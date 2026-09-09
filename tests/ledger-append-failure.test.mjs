@@ -21,7 +21,7 @@ describe('Mission C true post-Green ledger append failure', () => {
       if (args.record?.outcome === 'green_verified' && actions.includes('GREEN_DISPOSITION')) {
         greenDispositionSeen = true;
       }
-      if (actions.includes('COMPLETED')) {
+      if (actions.includes('COMPLETION_AUTHORIZED')) {
         throw new Error('FORCED_LEDGER_APPEND_FAILURE');
       }
       __testOnlySetAppendMissionRecord(null);

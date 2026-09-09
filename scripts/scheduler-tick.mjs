@@ -5,6 +5,7 @@
 
 import { promises as fs } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { createLocalPersistence } from '../runtime/local-persistence.mjs';
 import { wakeLocal } from '../runtime/local-wake.mjs';
 import { resolveInstallRoot } from './install-local.mjs';
 
@@ -19,9 +20,20 @@ async function appendRecord(root, record) {
 export async function schedulerTick({ root = resolveInstallRoot(), objective } = {}) {
   const startedAt = new Date().toISOString();
   try {
-    const result = await wakeLocal({ root, objective });
+    const config = JSON.parse(await fs.readFile(join(root, 'config.json'), 'utf8'));
+    let deliveryId;
+    if (config.remoteBridge?.enabled === true) {
+      const store = await createLocalPersistence({ filePath: join(root, config.stateFile) });
+      const tasks = (await store.list('artifact')).filter((a) => a.artifactType === 'dispatch.task' && a.payload?.delivery_id);
+      // One delivery per existing OS tick. Never substitute an unrelated task.
+      deliveryId = tasks.find((a) => a.payload.status === 'queued' && !['BLOCKED', 'RECOVERY_REQUIRED'].includes(a.payload.pickup_state))?.payload.delivery_id;
+      if (!deliveryId) return { status: 'NO_REMOTE_TASK', evidence_path: await appendRecord(root, { status: 'NO_REMOTE_TASK', started_at: startedAt }) };
+    }
+    const result = await wakeLocal({ root, objective, deliveryId });
     const record = {
       status: result.status,
+      delivery_id: deliveryId ?? null,
+      reason: result.reason ?? null,
       task_id: result.task_id,
       mission_id: result.response.mission_id,
       wake_trace_id: result.response.wake_trace_id,
