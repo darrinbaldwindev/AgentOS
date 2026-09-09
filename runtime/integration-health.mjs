@@ -34,10 +34,14 @@ export function classifyIntegrationCapability(input = {}) {
   let usable = true;
   let ownerActionRequired = false;
 
+  // Prefer the most specific evidenced blocker over a generic failed probe.
+  // A provider may reject a probe precisely because authentication, permission,
+  // entitlement or quota is missing; collapsing those to "unavailable" loses
+  // the recovery action AgentOS should route.
   if (stale) {
     state = 'stale';
     usable = false;
-  } else if (!installed || !probeOk) {
+  } else if (!installed) {
     state = 'unavailable';
     usable = false;
   } else if (!authenticated) {
@@ -56,6 +60,9 @@ export function classifyIntegrationCapability(input = {}) {
     usable = false;
   } else if (rateLimited) {
     state = 'rate_limited';
+    usable = false;
+  } else if (!probeOk) {
+    state = 'unavailable';
     usable = false;
   } else if (degraded) {
     state = 'degraded';
