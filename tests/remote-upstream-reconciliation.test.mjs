@@ -26,15 +26,21 @@ test('exact persisted correlation is reportable but not self-certified assurance
   assert.equal(result.status, 'CORRELATED_COMPLETION');
   assert.equal(result.reportable_completed, true);
   assert.equal(result.assurance_certified, false);
+  assert.equal(result.completion_record_present, true);
+  assert.equal(result.rerun_allowed, false);
+  assert.equal(result.automatic_recovery_allowed, false);
   assert.deepEqual(result.failures, []);
 });
 
-test('completion authorization or missing final receipt cannot be reported complete', () => {
+test('completion authorization or missing final receipt cannot be reported complete or authorize rerun', () => {
   const data = fixture();
   data.receipt = null;
   const result = reconcileRemoteExecution(data);
   assert.equal(result.status, 'RECONCILIATION_REQUIRED');
   assert.equal(result.reportable_completed, false);
+  assert.equal(result.completion_record_present, false);
+  assert.equal(result.rerun_allowed, false);
+  assert.equal(result.automatic_recovery_allowed, false);
   assert.ok(result.failures.includes('RECEIPT_MISSING'));
 });
 
@@ -44,6 +50,7 @@ test('borrowed task or mission identity fails closed', () => {
     data.receipt = { ...data.receipt, [field]: value };
     const result = reconcileRemoteExecution(data);
     assert.equal(result.reportable_completed, false, field);
+    assert.equal(result.rerun_allowed, false, field);
     assert.ok(result.failures.some((item) => item.includes(field.toUpperCase())), JSON.stringify(result));
   }
 });
@@ -53,7 +60,21 @@ test('duplicate correlated completion events are ambiguous and cannot be reporte
   data.executionEvents.push({ ...data.executionEvents[0] });
   const result = reconcileRemoteExecution(data);
   assert.equal(result.reportable_completed, false);
+  assert.equal(result.rerun_allowed, false);
   assert.ok(result.failures.includes('DUPLICATE_CORRELATED_EXECUTION_EVENTS'));
+});
+
+test('missing ancillary completion event after durable receipt requires reconciliation, never rerun', () => {
+  const data = fixture();
+  data.executionEvents = [];
+  const result = reconcileRemoteExecution(data);
+  assert.equal(result.status, 'RECONCILIATION_REQUIRED');
+  assert.equal(result.reportable_completed, false);
+  assert.equal(result.completion_record_present, true);
+  assert.equal(result.rerun_allowed, false);
+  assert.equal(result.automatic_recovery_allowed, false);
+  assert.ok(result.failures.includes('CORRELATED_EXECUTION_EVENT_MISSING'));
+  assert.match(result.next_action, /do not rerun automatically/);
 });
 
 test('worker success without Green pass or reconciled budget cannot become reportable completion', () => {
@@ -62,6 +83,7 @@ test('worker success without Green pass or reconciled budget cannot become repor
   data.receipt = { ...data.receipt, green_disposition: 'fail', budget_status: 'UNKNOWN_REQUIRES_RECONCILIATION' };
   const result = reconcileRemoteExecution(data);
   assert.equal(result.reportable_completed, false);
+  assert.equal(result.rerun_allowed, false);
   assert.ok(result.failures.includes('GREEN_NOT_PASS'));
   assert.ok(result.failures.includes('BUDGET_NOT_RECONCILED'));
 });
@@ -71,6 +93,7 @@ test('response wake or worker mismatch is rejected even with a completed receipt
   data.response = { ...data.response, wake_trace_id: 'wake-B', source_agent: 'worker-B' };
   const result = reconcileRemoteExecution(data);
   assert.equal(result.reportable_completed, false);
+  assert.equal(result.rerun_allowed, false);
   assert.ok(result.failures.includes('RESPONSE_WAKE_TRACE_ID_MISMATCH'));
   assert.ok(result.failures.includes('RESPONSE_WORKER_ID_MISMATCH'));
 });
