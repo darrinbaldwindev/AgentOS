@@ -12,6 +12,19 @@ test('healthy capability is usable', () => {
   assert.equal(result.ownerActionRequired, false);
 });
 
+test('degraded capability remains usable but does not report all healthy', () => {
+  const degraded = classifyIntegrationCapability({
+    provider: 'search', capability: 'web.search', installed: true,
+    authenticated: true, probeOk: true, degraded: true, evidence: ['slow-but-usable'],
+  });
+  const summary = summarizeIntegrationHealth([degraded]);
+  assert.equal(degraded.state, 'degraded');
+  assert.equal(degraded.usable, true);
+  assert.equal(summary.degraded, 1);
+  assert.equal(summary.blocked, 0);
+  assert.equal(summary.allHealthy, false);
+});
+
 test('plan-limited capability does not make provider globally unavailable', () => {
   const appList = classifyIntegrationCapability({
     provider: 'base44', capability: 'app.list', installed: true,
