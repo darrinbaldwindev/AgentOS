@@ -32,6 +32,13 @@ export function reconcileRemoteExecution({
 
   const failures = [];
   const fail = (code) => failures.push(code);
+  // A supplied independent expectation must never be replaced by the claim.
+  for (const field of ['wake_trace_id', 'host_id', 'worker_id', 'code_identity', 'config_identity']) {
+    if (Object.hasOwn(assignment, field)) {
+      if (typeof assignment[field] !== 'string' || !assignment[field].trim()) fail(`ASSIGNMENT_${field.toUpperCase()}_INVALID`);
+      else expected[field] = assignment[field];
+    }
+  }
   const completionRecordPresent = Boolean(receipt && typeof receipt === 'object' && receipt.status === 'COMPLETED');
 
   if (!receipt || typeof receipt !== 'object') fail('RECEIPT_MISSING');
@@ -64,11 +71,16 @@ export function reconcileRemoteExecution({
 
   if (green && typeof green === 'object' && receipt && typeof receipt === 'object') {
     if (green.disposition !== 'pass') fail('GREEN_NOT_PASS');
-    if (green.task_id && !same(green.task_id, expected.task_id)) fail('GREEN_TASK_ID_MISMATCH');
+    if (!same(green.task_id, expected.task_id)) fail('GREEN_TASK_ID_MISMATCH');
     if (green.wake_trace_id && !same(green.wake_trace_id, receipt.wake_trace_id)) fail('GREEN_WAKE_TRACE_ID_MISMATCH');
   }
 
   if (Array.isArray(executionEvents) && receipt && typeof receipt === 'object') {
+    const taskCompletions = executionEvents.filter((event) => event?.eventType === 'agentos.manual-wake.completed'
+      && event.taskId === expected.task_id);
+    if (taskCompletions.some((event) => event.missionId !== expected.mission_id || event.wakeTraceId !== receipt.wake_trace_id)) {
+      fail('CONFLICTING_TASK_COMPLETION_EVENT');
+    }
     const correlated = executionEvents.filter((event) => event?.eventType === 'agentos.manual-wake.completed'
       && event.taskId === expected.task_id
       && event.missionId === expected.mission_id
