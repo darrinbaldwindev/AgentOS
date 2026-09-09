@@ -51,10 +51,10 @@ export function evaluateAutonomy({ policy, requiredLevel, now = new Date() } = {
 
 export function effectiveAuthority({ autonomy, authorised = false, capabilityGranted = false, inScope = false, withinBudget = false, production = false } = {}) {
   if (!isAutonomyActive(autonomy)) return { allowed: false, reason: 'autonomy_policy_inactive' };
-  if (!authorised) return { allowed: false, reason: 'authority_not_granted' };
-  if (!capabilityGranted) return { allowed: false, reason: 'capability_not_granted' };
-  if (!inScope) return { allowed: false, reason: 'scope_denied' };
-  if (!withinBudget) return { allowed: false, reason: 'budget_denied' };
-  if (production) return { allowed: false, reason: 'production_denied' };
+  if (authorised !== true) return { allowed: false, reason: 'authority_not_granted' };
+  if (capabilityGranted !== true) return { allowed: false, reason: 'capability_not_granted' };
+  if (inScope !== true) return { allowed: false, reason: 'scope_denied' };
+  if (withinBudget !== true) return { allowed: false, reason: 'budget_denied' };
+  if (production !== false) return { allowed: false, reason: 'production_denied' };
   return { allowed: true, reason: 'effective_authority_granted' };
 }
