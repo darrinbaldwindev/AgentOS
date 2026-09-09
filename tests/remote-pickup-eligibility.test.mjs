@@ -4,6 +4,13 @@ import { evaluateRemotePickupEligibility } from '../runtime/remote-pickup-eligib
 
 const NOW = new Date('2026-09-09T10:00:00.000Z');
 
+test('invalid clock and expiry configuration cannot disable queue freshness checks', () => {
+  for (const maxQueueAgeMs of [NaN, Infinity, 0, -1]) {
+    assert.throws(() => evaluate(task(), { maxQueueAgeMs }), /maxQueueAgeMs/);
+  }
+  assert.throws(() => evaluate(task(), { now: () => new Date(NaN) }), /valid Date/);
+});
+
 function task(overrides = {}) {
   return {
     task_id: 'task-001',

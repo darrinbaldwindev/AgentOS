@@ -210,11 +210,16 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
 
     let capturedWorkerResult = null;
     const completedTask = await runNextTask({
-      tasks: await dispatchStore.list(),
+      // This wake owns one task. Recovery work must not be selected under this
+      // wake's mission, budget reservation or Green evidence packet.
+      tasks: (await dispatchStore.list()).filter((queued) => queued.task_id === taskId),
       receiver: RECEIVER,
       authorityPolicy: policy,
       store: dispatchStore,
       execute: async (started) => {
+        if (started.task_id !== taskId || started.mission_id !== task.mission_id || started.wake_trace_id !== wakeTraceId) {
+          throw new Error('LOCAL_WAKE_CORRELATION_MISMATCH');
+        }
         validateExecutionEnvelope(started);
         const worker = registry.findMatching({ requiredCapabilities: started.required_capabilities });
         if (!worker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
@@ -251,6 +256,9 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     });
 
     if (!completedTask) throw new Error('LOCAL_WAKE_TASK_NOT_EXECUTED');
+    if (completedTask.task_id !== taskId || completedTask.mission_id !== task.mission_id || completedTask.wake_trace_id !== wakeTraceId) {
+      throw new Error('LOCAL_WAKE_CORRELATION_MISMATCH');
+    }
     budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 1 });
 
     const executionEvidence = completedTask.evidence ?? {};
@@ -420,19 +428,6 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
       });
     }
 
-    await appendLedgerEvent({
-      root,
-      stage: 'C',
-      scheduleId: wakeTraceId,
-      missionId: task.mission_id,
-      outcome: 'green_verified',
-      intendedNextAction: 'none',
-      actions: ['COMPLETED'],
-      worker: { id: executionEvidence.source_agent ?? WORKER_ID },
-      evidence: [`green-disposition:${taskId}`, `task:${taskId}`],
-      safety: ['green_pass_required'],
-    });
-
     const completedAt = new Date().toISOString();
     const response = {
       mission_id: task.mission_id,
@@ -464,6 +459,20 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
 
     const validation = validateProjectOverseerResponse(response);
     if (!validation.valid) throw new Error(`invalid generated response: ${validation.errors.join('; ')}`);
+
+    // This is permission to finalize, not proof that the response was saved.
+    await appendLedgerEvent({
+      root,
+      stage: 'C',
+      scheduleId: wakeTraceId,
+      missionId: task.mission_id,
+      outcome: 'green_verified',
+      intendedNextAction: 'persist_final_response',
+      actions: ['COMPLETION_AUTHORIZED'],
+      worker: { id: executionEvidence.source_agent ?? WORKER_ID },
+      evidence: [`green-disposition:${taskId}`, `task:${taskId}`],
+      safety: ['green_pass_required'],
+    });
 
     await persistence.create('artifact', {
       id: `response:${taskId}`,

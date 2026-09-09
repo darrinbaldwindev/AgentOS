@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promises as fs } from 'node:fs';
+import { missionLedgerPaths } from '../runtime/mission-ledger.mjs';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
 import { main, wakeLocal } from '../runtime/local-wake.mjs';
 
@@ -11,6 +13,59 @@ async function makeInstall() {
   await installLocal({ root });
   return root;
 }
+
+test('final response write failure cannot publish ledger completion', async (t) => {
+  const root = await makeInstall();
+  const statePath = join(root, DEFAULT_CONFIG.stateFile);
+  const rename = fs.rename;
+  let rejected = false;
+  t.mock.method(fs, 'rename', async (source, target) => {
+    if (target === statePath) {
+      const candidate = JSON.parse(await readFile(source, 'utf8'));
+      if (Object.values(candidate.records.artifact).some((a) =>
+        a.artifactType === 'project-overseer.response' && a.payload?.status === 'COMPLETED')) {
+        rejected = true;
+        throw new Error('INJECTED_RESPONSE_WRITE_FAILURE');
+      }
+    }
+    return rename(source, target);
+  });
+  try {
+    await assert.rejects(wakeLocal({ root }), /INJECTED_RESPONSE_WRITE_FAILURE/);
+    assert.equal(rejected, true);
+    const state = JSON.parse(await readFile(statePath, 'utf8'));
+    assert.equal(Object.values(state.records.artifact).some((a) => a.payload?.status === 'COMPLETED'), false);
+    const ledger = (await readFile(missionLedgerPaths(root).ledger, 'utf8')).trim().split('\n').map(JSON.parse);
+    assert.equal(ledger.some((r) => r.actions.includes('COMPLETED')), false);
+    assert.equal(Object.values(state.records.event).some((e) => e.eventType === 'agentos.manual-wake.completed'), false);
+  } finally {
+    t.mock.restoreAll();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('wake executes its exact task when an older queued task survives recovery', async () => {
+  const root = await makeInstall();
+  try {
+    const first = await wakeLocal({ root, objective: 'older task' });
+    const path = join(root, DEFAULT_CONFIG.stateFile);
+    const state = JSON.parse(await readFile(path, 'utf8'));
+    const old = state.records.artifact[first.task_id].payload;
+    old.status = 'queued';
+    old.created_at = '2020-01-01T00:00:00.000Z';
+    delete old.evidence;
+    await writeFile(path, JSON.stringify(state));
+    const second = await wakeLocal({ root, objective: 'new exact task' });
+    assert.equal(second.task.task_id, second.task_id);
+    assert.equal(second.task.mission_id, second.response.mission_id);
+    assert.equal(second.task.wake_trace_id, second.response.wake_trace_id);
+    assert.equal(second.task.objective, 'new exact task');
+    const after = JSON.parse(await readFile(path, 'utf8'));
+    assert.equal(after.records.artifact[first.task_id].payload.status, 'queued');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 test('installed runtime wake persists task, response, event and Overseer reuse', async () => {
   const root = await makeInstall();

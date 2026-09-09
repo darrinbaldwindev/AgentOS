@@ -26,6 +26,9 @@ export function evaluateRemotePickupEligibility({
   now = () => new Date(),
   maxQueueAgeMs = 30 * 60 * 1000,
 } = {}) {
+  if (!Number.isFinite(maxQueueAgeMs) || maxQueueAgeMs <= 0) throw new TypeError('maxQueueAgeMs must be > 0');
+  const nowMs = now().getTime();
+  if (!Number.isFinite(nowMs)) throw new TypeError('now must return a valid Date');
   if (!admittedTask || typeof admittedTask !== 'object' || Array.isArray(admittedTask)) {
     throw new TypeError('admittedTask is required');
   }
@@ -86,7 +89,7 @@ export function evaluateRemotePickupEligibility({
   if (!Number.isFinite(createdMs)) {
     return Object.freeze({ ...base, eligible: false, disposition: 'CREATED_AT_INVALID' });
   }
-  const ageMs = now().getTime() - createdMs;
+  const ageMs = nowMs - createdMs;
   if (ageMs < -60_000) {
     return Object.freeze({ ...base, eligible: false, disposition: 'CREATED_AT_IN_FUTURE' });
   }

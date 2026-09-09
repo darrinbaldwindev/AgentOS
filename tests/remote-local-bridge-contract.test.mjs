@@ -8,6 +8,22 @@ import {
 
 const NOW = new Date('2026-09-09T03:30:00.000Z');
 
+test('invalid admission clock and expiry cannot admit stale requests', () => {
+  const options = { request: baseRequest(), actorContext: actor(), allowedProjects: ['agentos-local'], allowedCapabilities: ['repository:read'], now: () => NOW };
+  for (const maxAgeMs of [NaN, Infinity, 0, -1]) {
+    assert.throws(() => normalizeRemoteBridgeRequest({ ...options, maxAgeMs }), /maxAgeMs/);
+  }
+  assert.throws(() => normalizeRemoteBridgeRequest({ ...options, now: () => new Date(NaN) }), /valid Date/);
+});
+
+test('whitespace-only receipt evidence cannot support completion', () => {
+  assert.throws(() => createRemoteExecutionReceipt({
+    candidate: normalize(), missionId: 'm', taskId: 't', wakeTraceId: 'w',
+    hostId: 'h', workerId: 'worker', status: 'COMPLETED', evidence: ['   '],
+    budgetStatus: 'reconciled', codeIdentity: 'sha:fixture',
+  }), /evidence/);
+});
+
 function baseRequest(overrides = {}) {
   return {
     delivery_id: 'delivery-001',

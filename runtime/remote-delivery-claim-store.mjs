@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 function requiredString(value, name) {
   if (typeof value !== 'string' || !value.trim()) throw new TypeError(`${name} is required`);
@@ -31,17 +31,32 @@ export async function createRemoteDeliveryClaimStore({ root, now = () => new Dat
       state: 'CLAIMED',
     });
     const path = join(storeRoot, `${deliveryKey(normalizedDeliveryId)}.json`);
+    const temporary = `${path}.${randomUUID()}.tmp`;
     let handle;
     try {
-      handle = await fs.open(path, 'wx', 0o600);
+      // Publish only a complete, flushed record. A duplicate reader must never
+      // observe the empty file between exclusive creation and the first write.
+      handle = await fs.open(temporary, 'wx', 0o600);
       await handle.writeFile(`${JSON.stringify(record, null, 2)}\n`, 'utf8');
+      await handle.sync();
+      await handle.close();
+      handle = null;
+      await fs.link(temporary, path);
       return Object.freeze({ claimed: true, disposition: 'CLAIMED', record, path });
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error;
       const existing = JSON.parse(await fs.readFile(path, 'utf8'));
+      if (existing?.schema_version !== 1 || existing.state !== 'CLAIMED' ||
+          existing.delivery_id !== normalizedDeliveryId || !Number.isFinite(Date.parse(existing.claimed_at))) {
+        throw new Error('REMOTE_CLAIM_INVALID_REQUIRES_RECOVERY');
+      }
+      if (existing.request_id !== record.request_id || existing.host_id !== record.host_id) {
+        return Object.freeze({ claimed: false, disposition: 'CLAIM_CORRELATION_MISMATCH', record: existing, path });
+      }
       return Object.freeze({ claimed: false, disposition: 'DUPLICATE_DELIVERY', record: existing, path });
     } finally {
       await handle?.close();
+      await fs.unlink(temporary).catch((error) => { if (error.code !== 'ENOENT') throw error; });
     }
   }
 

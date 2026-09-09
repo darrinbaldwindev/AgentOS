@@ -30,6 +30,9 @@ export function normalizeRemoteBridgeRequest({
   now = () => new Date(),
   maxAgeMs = 15 * 60 * 1000,
 } = {}) {
+  if (!Number.isFinite(maxAgeMs) || maxAgeMs <= 0) throw new TypeError('maxAgeMs must be > 0');
+  const nowMs = now().getTime();
+  if (!Number.isFinite(nowMs)) throw new TypeError('now must return a valid Date');
   if (!request || typeof request !== 'object' || Array.isArray(request)) throw new TypeError('request is required');
   if (!actorContext || typeof actorContext !== 'object') throw new TypeError('actorContext is required');
 
@@ -61,7 +64,7 @@ export function normalizeRemoteBridgeRequest({
 
   const createdMs = Date.parse(createdAt);
   if (!Number.isFinite(createdMs)) throw new Error('REMOTE_CREATED_AT_INVALID');
-  const ageMs = now().getTime() - createdMs;
+  const ageMs = nowMs - createdMs;
   if (ageMs < -60_000) throw new Error('REMOTE_CREATED_AT_IN_FUTURE');
   if (ageMs > maxAgeMs) throw new Error('REMOTE_REQUEST_STALE');
 
@@ -119,7 +122,7 @@ export function createRemoteExecutionReceipt({
   if (!['AWAITING_GREEN', 'GREEN_BLOCKED', 'COMPLETED', 'FAILED', 'BLOCKED'].includes(status)) {
     throw new Error('REMOTE_RECEIPT_STATUS_INVALID');
   }
-  if (!Array.isArray(evidence) || evidence.some((item) => typeof item !== 'string' || !item)) {
+  if (!Array.isArray(evidence) || evidence.some((item) => typeof item !== 'string' || !item.trim())) {
     throw new TypeError('evidence must be an array of non-empty strings');
   }
   if (status === 'COMPLETED' && !evidence.length) throw new Error('REMOTE_COMPLETED_REQUIRES_EVIDENCE');

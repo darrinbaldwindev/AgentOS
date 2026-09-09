@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRemoteDeliveryClaimStore } from '../runtime/remote-delivery-claim-store.mjs';
@@ -17,6 +17,29 @@ async function withStore(fn) {
     await rm(root, { recursive: true, force: true });
   }
 }
+
+test('a reused delivery with different request or host cannot borrow the original claim', async () => {
+  await withStore(async (store) => {
+    const won = await store.claim({ deliveryId: 'd', requestId: 'r', hostId: 'h' });
+    for (const attempt of [{ requestId: 'other', hostId: 'h' }, { requestId: 'r', hostId: 'other' }]) {
+      const result = await store.claim({ deliveryId: 'd', ...attempt });
+      assert.equal(result.claimed, false);
+      assert.equal(result.disposition, 'CLAIM_CORRELATION_MISMATCH');
+    }
+    assert.deepEqual(await store.get('d'), won.record);
+  });
+});
+
+test('partial or malformed claim blocks replay and is never silently reclaimed', async () => {
+  await withStore(async (store) => {
+    const won = await store.claim({ deliveryId: 'd', requestId: 'r', hostId: 'h' });
+    for (const corrupted of ['', '{}', JSON.stringify({ ...won.record, delivery_id: 'other' })]) {
+      await writeFile(won.path, corrupted);
+      await assert.rejects(() => store.claim({ deliveryId: 'd', requestId: 'r', hostId: 'h' }));
+      assert.equal(await readFile(won.path, 'utf8'), corrupted);
+    }
+  });
+});
 
 test('first claim persists exact delivery correlation', async () => {
   await withStore(async (store) => {
