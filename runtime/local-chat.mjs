@@ -154,7 +154,10 @@ export async function createLocalChat({ root }) {
           requireSchedulerDisabled: true,
         });
       } catch (error) {
-        const errText = error?.message ?? String(error);
+        let errText = error?.message ?? String(error);
+        if (/LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED/.test(errText)) {
+          errText = 'Basic Chat needs scheduled checks turned off before starting.';
+        }
         await persistence.create('artifact', {
           id: `chat:${randomUUID()}`,
           artifactType: 'chat.message',
