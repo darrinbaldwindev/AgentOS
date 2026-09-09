@@ -57,6 +57,34 @@ test('authentication and permission failures require owner action', () => {
   assert.equal(permission.ownerActionRequired, true);
 });
 
+test('specific evidenced blockers outrank generic failed probe state', () => {
+  const auth = classifyIntegrationCapability({
+    provider: 'mail', capability: 'message.read', installed: true,
+    authenticated: false, probeOk: false,
+  });
+  const permission = classifyIntegrationCapability({
+    provider: 'github', capability: 'repo.write', installed: true,
+    authenticated: true, permissionOk: false, probeOk: false,
+  });
+  const plan = classifyIntegrationCapability({
+    provider: 'base44', capability: 'sandbox.shell', installed: true,
+    authenticated: true, planOk: false, probeOk: false, evidence: ['PREMIUM_REQUIRED'],
+  });
+  const quota = classifyIntegrationCapability({
+    provider: 'manus', capability: 'research', installed: true,
+    authenticated: true, quotaRemaining: 0, probeOk: false,
+  });
+
+  assert.equal(auth.state, 'auth_required');
+  assert.equal(permission.state, 'permission_denied');
+  assert.equal(plan.state, 'plan_limited');
+  assert.equal(quota.state, 'quota_limited');
+  assert.equal(auth.ownerActionRequired, true);
+  assert.equal(permission.ownerActionRequired, true);
+  assert.equal(plan.ownerActionRequired, false);
+  assert.equal(quota.ownerActionRequired, false);
+});
+
 test('quota exhaustion, rate limit, stale evidence and unavailable probe fail closed', () => {
   const quota = classifyIntegrationCapability({
     provider: 'manus', capability: 'research', installed: true,
