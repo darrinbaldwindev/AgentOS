@@ -45,3 +45,14 @@ test('effective authority preserves hard safety boundaries', () => {
   assert.deepEqual(effectiveAuthority({ ...base, production: true }), { allowed: false, reason: 'production_denied' });
   assert.deepEqual(effectiveAuthority({ ...base, authorised: false }), { allowed: false, reason: 'authority_not_granted' });
 });
+
+for (const field of ['authorised', 'capabilityGranted', 'inScope', 'withinBudget']) {
+  for (const value of ['false', 1, {}, []]) test(`non-boolean ${field} cannot grant authority: ${JSON.stringify(value)}`, () => {
+    const input = { autonomy: createAutonomyPolicy({ level: 4 }), authorised: true, capabilityGranted: true, inScope: true, withinBudget: true };
+    assert.equal(effectiveAuthority({ ...input, [field]: value }).allowed, false);
+  });
+}
+for (const production of [null, 0, '', 'false']) test(`ambiguous production context fails: ${JSON.stringify(production)}`, () => {
+  assert.equal(effectiveAuthority({ autonomy: createAutonomyPolicy({ level: 4 }), authorised: true,
+    capabilityGranted: true, inScope: true, withinBudget: true, production }).allowed, false);
+});
