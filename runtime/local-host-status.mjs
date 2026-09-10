@@ -46,8 +46,9 @@ function correlation(record) {
   };
 }
 
-function sameCorrelation(a, b) {
-  return a.task_id === b.task_id && a.mission_id === b.mission_id && a.wake_trace_id === b.wake_trace_id;
+function hasAnyState(record, states) {
+  const payload = payloadOf(record);
+  return states.has(normalizedState(payload.status)) || states.has(normalizedState(payload.pickup_state));
 }
 
 export function deriveLocalHostStatus({
@@ -125,7 +126,7 @@ export function deriveLocalHostStatus({
   }
 
   const taskArtifacts = hostArtifacts.filter((record) => record?.artifactType === 'dispatch.task');
-  const activeTasks = taskArtifacts.filter((record) => ACTIVE_TASK_STATES.has(normalizedState(payloadOf(record).status ?? payloadOf(record).pickup_state)));
+  const activeTasks = taskArtifacts.filter((record) => hasAnyState(record, ACTIVE_TASK_STATES));
   if (activeTasks.length > 1) {
     return Object.freeze({
       schema_version: 1, host_id: hostId, observed_at: observedAt, lifecycle_state: 'blocked',
@@ -134,7 +135,7 @@ export function deriveLocalHostStatus({
     });
   }
 
-  const blockedTask = taskArtifacts.find((record) => BLOCKED_TASK_STATES.has(normalizedState(payloadOf(record).status ?? payloadOf(record).pickup_state)));
+  const blockedTask = taskArtifacts.find((record) => hasAnyState(record, BLOCKED_TASK_STATES));
   if (blockedTask) {
     return Object.freeze({
       schema_version: 1,
