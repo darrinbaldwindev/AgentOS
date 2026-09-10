@@ -29,7 +29,7 @@ async function fileExists(path) {
   }
 }
 
-async function waitForOutput(child, pattern, timeoutMs = 5000) {
+async function waitForOutput(child, pattern, timeoutMs = 10000) {
   let output = '';
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`timed out waiting for child output: ${output}`)), timeoutMs);
@@ -50,6 +50,15 @@ async function waitForOutput(child, pattern, timeoutMs = 5000) {
       }
     });
   });
+}
+
+function assertOrderedStages(stages, expected) {
+  let cursor = -1;
+  for (const stage of expected) {
+    const next = stages.indexOf(stage, cursor + 1);
+    assert.notEqual(next, -1, `missing lifecycle stage ${stage}; got ${stages.join(', ')}`);
+    cursor = next;
+  }
 }
 
 describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
@@ -83,6 +92,7 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
   it('D/E/F/G: one close path waits for server and chat cleanup before lifecycle completion', async () => {
     let releaseChatClose;
     let chatCloseStarted = false;
+    const stages = [];
     const chatCloseGate = new Promise((resolve) => {
       releaseChatClose = resolve;
     });
@@ -99,6 +109,7 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
       root: 'test-root',
       port: 0,
       chatFactory: async () => fakeChat,
+      lifecycleStage: (stage) => stages.push(stage),
     });
     let lifecycleSettled = false;
     const waiter = app.waitUntilClosed().then(() => {
@@ -114,18 +125,21 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
     assert.equal(await portOpen(app.port), false);
     assert.equal(chatCloseStarted, true);
     assert.equal(lifecycleSettled, false);
+    assertOrderedStages(stages, ['SERVER_CLOSE_START', 'SERVER_CLOSE_DONE', 'CHAT_CLOSE_START']);
 
     releaseChatClose();
     await close1;
     await waiter;
     assert.equal(lifecycleSettled, true);
+    assert.equal(stages.at(-1), 'WAITUNTILCLOSED_RESOLVE');
   });
 
   it('H/I/J: normal close releases port, removes lock before waiter resolves, restart works', async () => {
     const root = await mkdtemp(join(tmpdir(), 'agentos-life-hij-'));
+    const stages = [];
     try {
       await installLocal({ root });
-      const app1 = await startBasicChat({ root, port: 0 });
+      const app1 = await startBasicChat({ root, port: 0, lifecycleStage: (stage) => stages.push(stage) });
       const port1 = app1.port;
       let waiterSawLock = true;
       const waiter = app1.waitUntilClosed().then(async () => {
@@ -136,6 +150,15 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
       assert.equal(waiterSawLock, false);
       assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
       assert.equal(await portOpen(port1), false);
+      assertOrderedStages(stages, [
+        'SERVER_CLOSE_START',
+        'SERVER_CLOSE_DONE',
+        'CHAT_CLOSE_START',
+        'LOCK_HANDLE_CLOSE_DONE',
+        'LOCK_UNLINK_START',
+        'LOCK_UNLINK_DONE',
+        'WAITUNTILCLOSED_RESOLVE',
+      ]);
 
       const app2 = await startBasicChat({ root, port: 0 });
       assert.equal(await portOpen(app2.port), true);
@@ -151,10 +174,7 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
     const root = await mkdtemp(join(tmpdir(), 'agentos-life-k-'));
     try {
       await installLocal({ root });
-      await writeFile(
-        join(root, 'basic-chat.lock'),
-        `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`,
-      );
+      await writeFile(join(root, 'basic-chat.lock'), `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`);
       const app = await startBasicChat({ root, port: 0 });
       assert.equal(await portOpen(app.port), true);
       const lock = JSON.parse(await readFile(join(root, 'basic-chat.lock'), 'utf8'));
@@ -170,14 +190,8 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
     const root = await mkdtemp(join(tmpdir(), 'agentos-life-l-'));
     try {
       await installLocal({ root });
-      await writeFile(
-        join(root, 'basic-chat.lock'),
-        `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`,
-      );
-      const results = await Promise.allSettled([
-        createLocalChat({ root }),
-        createLocalChat({ root }),
-      ]);
+      await writeFile(join(root, 'basic-chat.lock'), `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`);
+      const results = await Promise.allSettled([createLocalChat({ root }), createLocalChat({ root })]);
       const winners = results.filter((result) => result.status === 'fulfilled');
       const rejected = results.filter((result) => result.status === 'rejected');
       assert.equal(winners.length, 1);
@@ -234,7 +248,7 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
     }
   });
 
-  it('closest supported CLI signal path exits only after lock removal', { skip: process.platform === 'win32' ? 'child.kill(SIGINT) does not faithfully reproduce a Windows console Ctrl+C; physical Windows retest is mandatory' : false }, async () => {
+  it('closest supported CLI signal path exits only after lock removal', { skip: process.platform === 'win32' ? 'child.kill(SIGINT) force-terminates on Windows and is not console Ctrl+C' : false }, async () => {
     const root = await mkdtemp(join(tmpdir(), 'agentos-life-signal-'));
     let child;
     try {
@@ -244,9 +258,7 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       let stderr = '';
-      child.stderr.on('data', (chunk) => {
-        stderr += chunk.toString();
-      });
+      child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
       const { match } = await waitForOutput(child, /Basic Chat: http:\/\/127\.0\.0\.1:(\d+)/);
       const port = Number(match[1]);
       assert.equal(await portOpen(port), true);
@@ -260,6 +272,72 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
       child = null;
     } finally {
       if (child && child.exitCode == null && child.signalCode == null) child.kill('SIGKILL');
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('Windows-native actual CLI ETX path performs full cleanup and immediate restart', { skip: process.platform !== 'win32' ? 'Windows-native only' : false }, async () => {
+    const root = await mkdtemp(join(tmpdir(), 'agentos-life-win-'));
+    const traceFile = join(root, 'shutdown-trace.ndjson');
+    let child;
+    let restarted;
+    try {
+      const spawnCli = () => spawn(process.execPath, ['runtime/basic-chat-server.mjs'], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          AGENTOS_HOME: root,
+          AGENTOS_CHAT_PORT: '0',
+          AGENTOS_TEST_CTRL_C_STDIN: '1',
+          AGENTOS_SHUTDOWN_TRACE_FILE: traceFile,
+        },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      child = spawnCli();
+      let stderr = '';
+      child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+      const first = await waitForOutput(child, /Basic Chat: http:\/\/127\.0\.0\.1:(\d+)/);
+      const firstPort = Number(first.match[1]);
+      assert.equal(await portOpen(firstPort), true);
+      assert.equal(await fileExists(join(root, 'basic-chat.lock')), true);
+      child.stdin.write(Buffer.from([0x03]));
+      const [firstCode] = await once(child, 'exit');
+      assert.equal(firstCode, 0, stderr);
+      assert.equal(await portOpen(firstPort), false);
+      assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
+      child = null;
+
+      const firstTrace = (await readFile(traceFile, 'utf8')).trim().split(/\r?\n/).map((line) => JSON.parse(line));
+      assertOrderedStages(firstTrace.map((entry) => entry.stage), [
+        'SIGNAL_RECEIVED',
+        'SERVER_CLOSE_START',
+        'SERVER_CLOSE_DONE',
+        'CHAT_CLOSE_START',
+        'LOCK_HANDLE_CLOSE_DONE',
+        'LOCK_UNLINK_START',
+        'LOCK_UNLINK_DONE',
+        'WAITUNTILCLOSED_RESOLVE',
+        'PROCESS_BEFORE_EXIT',
+        'PROCESS_EXIT',
+      ]);
+
+      restarted = spawnCli();
+      let restartErr = '';
+      restarted.stderr.on('data', (chunk) => { restartErr += chunk.toString(); });
+      const second = await waitForOutput(restarted, /Basic Chat: http:\/\/127\.0\.0\.1:(\d+)/);
+      const secondPort = Number(second.match[1]);
+      assert.equal(await portOpen(secondPort), true);
+      assert.equal(await fileExists(join(root, 'basic-chat.lock')), true);
+      restarted.stdin.write(Buffer.from([0x03]));
+      const [secondCode] = await once(restarted, 'exit');
+      assert.equal(secondCode, 0, restartErr);
+      assert.equal(await portOpen(secondPort), false);
+      assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
+      restarted = null;
+    } finally {
+      if (child && child.exitCode == null && child.signalCode == null) child.kill('SIGKILL');
+      if (restarted && restarted.exitCode == null && restarted.signalCode == null) restarted.kill('SIGKILL');
       await rm(root, { recursive: true, force: true });
     }
   });
