@@ -21,8 +21,12 @@ async function acquireHostLock(lockPath) {
     await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8');
     return handle;
   } catch (error) {
-    await handle.close();
-    // Retain uncertain ownership; never delete a potentially replaced lock.
+    // Always attempt to release the descriptor while retaining the lock path.
+    // The file itself stays in place because a failed publication leaves
+    // ownership uncertain and must require explicit recovery.
+    try {
+      await handle.close();
+    } catch {}
     throw error;
   }
 }
