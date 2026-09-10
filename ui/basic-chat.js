@@ -30,7 +30,7 @@ function render() {
     }
     hist.scrollTop = hist.scrollHeight;
   }
-  $('status').textContent = `Status: ${state.status || 'READY'}${state.paused ? ' · PAUSED' : ''}${state.stopped ? ' · STOPPED' : ''}`;
+  $('status').textContent = `Status: ${sending ? 'WORKING' : (state.status || 'READY')}${state.paused ? ' · PAUSED' : ''}${state.stopped ? ' · STOPPED' : ''}`;
   const composer = document.querySelector('.composer-area');
   const form = $('chat');
   const message = $('message');
@@ -67,7 +67,6 @@ $('chat').addEventListener('submit', async (event) => {
   if (sending || state.paused || state.stopped) return;
   sending = true;
   $('error').textContent = '';
-  $('status').textContent = 'Status: WORKING';
   render();
   try {
     state = await api('/api/send', { text: $('message').value });
