@@ -1,5 +1,6 @@
 // BASIC-CHAT server: loopback-only HTTP surface over createLocalChat.
 import { createServer } from 'node:http';
+import { appendFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -16,10 +17,62 @@ const assets = new Map([
   ['/chat.css', ['basic-chat.css', 'text/css']],
 ]);
 
-export async function startBasicChat({ root, port = 0, chatFactory = createLocalChat } = {}) {
+function createLifecycleTracer(traceFile = process.env.AGENTOS_SHUTDOWN_TRACE_FILE) {
+  return (stage, detail = null) => {
+    if (!traceFile) return;
+    try {
+      appendFileSync(
+        traceFile,
+        `${JSON.stringify({ stage, pid: process.pid, at: new Date().toISOString(), detail })}\n`,
+        { encoding: 'utf8' },
+      );
+    } catch {
+      // Trace instrumentation must never change runtime behaviour.
+    }
+  };
+}
+
+export function installWindowsCtrlCInterceptor({
+  stdin = process.stdin,
+  platform = process.platform,
+  onCtrlC,
+  allowPipeForTest = process.env.AGENTOS_TEST_CTRL_C_STDIN === '1',
+} = {}) {
+  if (platform !== 'win32' || typeof onCtrlC !== 'function' || !stdin?.on) return null;
+
+  const canUseRawTty = stdin.isTTY === true && typeof stdin.setRawMode === 'function';
+  if (!canUseRawTty && !allowPipeForTest) return null;
+
+  if (canUseRawTty) stdin.setRawMode(true);
+  stdin.resume?.();
+
+  const onData = (chunk) => {
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    if (bytes.includes(0x03)) onCtrlC();
+  };
+  stdin.on('data', onData);
+
+  return () => {
+    stdin.off?.('data', onData);
+    if (canUseRawTty) {
+      try {
+        stdin.setRawMode(false);
+      } catch {}
+    }
+    stdin.pause?.();
+  };
+}
+
+export async function startBasicChat({
+  root,
+  port = 0,
+  chatFactory = createLocalChat,
+  lifecycleStage = () => {},
+} = {}) {
   if (!root) throw new TypeError('root is required');
   if (typeof chatFactory !== 'function') throw new TypeError('chatFactory must be a function');
-  const chat = await chatFactory({ root });
+  if (typeof lifecycleStage !== 'function') throw new TypeError('lifecycleStage must be a function');
+  const chat = await chatFactory({ root, lifecycleStage });
   const originHost = '127.0.0.1';
 
   const server = createServer(async (req, res) => {
@@ -94,20 +147,20 @@ export async function startBasicChat({ root, port = 0, chatFactory = createLocal
     resolveClosed = resolve;
     rejectClosed = reject;
   });
-  // Callers may use close() without waitUntilClosed(); keep a rejected lifecycle promise handled.
   void closedPromise.catch(() => {});
 
   let closePromise = null;
   function close() {
     if (closePromise) return closePromise;
     closePromise = (async () => {
-      // A pending Promise does not keep Node's event loop alive. Once server.close()
-      // drops the final HTTP handle, Windows may otherwise exit before async chat/lock
-      // cleanup completes. Keep one referenced timer alive for the full cleanup window.
       const cleanupKeepAlive = setInterval(() => {}, 1000);
       try {
+        lifecycleStage('SERVER_CLOSE_START');
         await new Promise((done, reject) => server.close((e) => (e ? reject(e) : done())));
+        lifecycleStage('SERVER_CLOSE_DONE');
+        lifecycleStage('CHAT_CLOSE_START');
         await chat.close();
+        lifecycleStage('WAITUNTILCLOSED_RESOLVE');
         resolveClosed();
       } catch (error) {
         rejectClosed(error);
@@ -119,7 +172,6 @@ export async function startBasicChat({ root, port = 0, chatFactory = createLocal
     return closePromise;
   }
 
-  // Ensure the HTTP server handle keeps the process alive until shutdown starts.
   server.ref();
 
   return {
@@ -132,26 +184,40 @@ export async function startBasicChat({ root, port = 0, chatFactory = createLocal
 
 async function mainCli() {
   const root = resolve(process.env.AGENTOS_HOME || '.basic-chat');
+  const trace = createLifecycleTracer();
   await installLocal({ root });
-  const app = await startBasicChat({ root, port: Number(process.env.AGENTOS_CHAT_PORT || 4317) });
+  const app = await startBasicChat({
+    root,
+    port: Number(process.env.AGENTOS_CHAT_PORT || 4317),
+    lifecycleStage: trace,
+  });
   console.log(`Basic Chat: ${app.url}`);
   console.log('DRY_RUN; autonomy disabled. State:', root);
   console.log('Listening. Press Ctrl+C to stop.');
 
   let shutdownPromise = null;
-  const shutdown = () => {
+  const shutdown = (source) => {
+    trace('SIGNAL_RECEIVED', source);
     if (!shutdownPromise) shutdownPromise = app.close();
     return shutdownPromise;
   };
+
+  // On a real Windows TTY, raw mode prevents the console CTRL_C_EVENT from
+  // becoming SIGINT. We consume the ETX byte ourselves, which keeps Windows
+  // from terminating the process independently while async cleanup runs.
+  // The test-only pipe seam exercises this exact CLI path on Windows CI but is
+  // not a substitute for final physical console verification.
+  const removeWindowsCtrlC = installWindowsCtrlCInterceptor({
+    onCtrlC: () => {
+      void shutdown('CTRL_C_ETX').catch(() => {});
+    },
+  });
 
   const handlers = new Map();
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     try {
       const handler = () => {
-        // app.close() owns one idempotent cleanup promise. Do not process.exit here;
-        // mainCli remains bound to waitUntilClosed(), and close() keeps the event loop
-        // alive until listener, chat and lock cleanup are all complete.
-        void shutdown().catch(() => {});
+        void shutdown(signal).catch(() => {});
       };
       process.on(signal, handler);
       handlers.set(signal, handler);
@@ -160,12 +226,18 @@ async function mainCli() {
     }
   }
 
+  const beforeExitHandler = (code) => trace('PROCESS_BEFORE_EXIT', { code });
+  const exitHandler = (code) => trace('PROCESS_EXIT', { code });
+  process.on('beforeExit', beforeExitHandler);
+  process.on('exit', exitHandler);
+
   try {
     await app.waitUntilClosed();
   } catch (error) {
     console.error('shutdown error:', error?.message ?? error);
     process.exitCode = 1;
   } finally {
+    removeWindowsCtrlC?.();
     for (const [signal, handler] of handlers) {
       process.removeListener(signal, handler);
     }
