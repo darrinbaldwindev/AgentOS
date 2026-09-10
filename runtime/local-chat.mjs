@@ -112,8 +112,6 @@ async function acquireHostLock(lockPath) {
     }
 
     try {
-      // Re-read while holding the recovery guard. Another contender may have
-      // completed takeover between our first observation and guard acquisition.
       const guardedOwner = await readLockOwner(lockPath);
       if (processAlive(Number(guardedOwner?.pid))) throw alreadyRunningError();
 
@@ -131,17 +129,16 @@ async function acquireHostLock(lockPath) {
     }
   }
 
-  // A recovery guard that remains held/abandoned fails closed rather than
-  // allowing competing stale-lock recovery to produce two active hosts.
   throw alreadyRunningError();
 }
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
 
-async function releaseHostLock({ lock, lockPath, unlinkLock }) {
+async function releaseHostLock({ lock, lockPath, unlinkLock, lifecycleStage }) {
   try {
     await lock.close();
+    lifecycleStage('LOCK_HANDLE_CLOSE_DONE');
   } catch (error) {
     if (error?.code !== 'EBADF') {
       const wrapped = new Error(`BASIC_CHAT_LOCK_CLOSE_FAILED: ${error?.message ?? error}`);
@@ -149,15 +146,21 @@ async function releaseHostLock({ lock, lockPath, unlinkLock }) {
       wrapped.cause = error;
       throw wrapped;
     }
+    lifecycleStage('LOCK_HANDLE_CLOSE_DONE', { alreadyClosed: true });
   }
 
+  lifecycleStage('LOCK_UNLINK_START');
   for (let attempt = 0; attempt < LOCK_RELEASE_DELAYS_MS.length; attempt++) {
     if (LOCK_RELEASE_DELAYS_MS[attempt] > 0) await sleep(LOCK_RELEASE_DELAYS_MS[attempt]);
     try {
       await unlinkLock(lockPath);
+      lifecycleStage('LOCK_UNLINK_DONE', { attempt });
       return;
     } catch (error) {
-      if (error?.code === 'ENOENT') return;
+      if (error?.code === 'ENOENT') {
+        lifecycleStage('LOCK_UNLINK_DONE', { attempt, alreadyAbsent: true });
+        return;
+      }
       const retryable = TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code);
       if (retryable && attempt < LOCK_RELEASE_DELAYS_MS.length - 1) continue;
       const wrapped = new Error(`BASIC_CHAT_LOCK_RELEASE_FAILED: ${error?.message ?? error}`);
@@ -201,9 +204,10 @@ async function readSafeChatConfig(root) {
   return config;
 }
 
-export async function createLocalChat({ root, unlinkLock = unlink } = {}) {
+export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStage = () => {} } = {}) {
   if (!root) throw new TypeError('root is required');
   if (typeof unlinkLock !== 'function') throw new TypeError('unlinkLock must be a function');
+  if (typeof lifecycleStage !== 'function') throw new TypeError('lifecycleStage must be a function');
   const config = await readSafeChatConfig(root);
   const lockPath = join(root, 'basic-chat.lock');
   const lock = await acquireHostLock(lockPath);
@@ -373,7 +377,7 @@ export async function createLocalChat({ root, unlinkLock = unlink } = {}) {
   let closePromise = null;
   function close() {
     if (!closePromise) {
-      closePromise = releaseHostLock({ lock, lockPath, unlinkLock });
+      closePromise = releaseHostLock({ lock, lockPath, unlinkLock, lifecycleStage });
     }
     return closePromise;
   }
