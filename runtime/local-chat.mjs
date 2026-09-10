@@ -7,129 +7,35 @@ import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
 
-function processAlive(pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 const TRANSIENT_LOCK_RELEASE_ERRORS = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const LOCK_RELEASE_DELAYS_MS = Object.freeze([0, 10, 25, 50, 100, 200, 400]);
-const RECOVERY_WAIT_DELAYS_MS = Object.freeze([0, 10, 10, 25, 25, 50, 100, 200]);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function alreadyRunningError() {
-  const error = new Error('BASIC_CHAT_ALREADY_RUNNING');
-  error.code = 'BASIC_CHAT_ALREADY_RUNNING';
-  return error;
-}
-
-async function readLockOwner(lockPath) {
+async function acquireHostLock(lockPath) {
+  // Existence is authoritative. An empty/malformed file may be a live owner's
+  // publication window; PID absence alone is not an atomic takeover protocol.
+  let handle;
   try {
-    return JSON.parse(await readFile(lockPath, 'utf8'));
+    handle = await open(lockPath, 'wx');
   } catch (error) {
-    if (error?.code === 'ENOENT') return null;
-    return null;
-  }
-}
-
-async function tryCreateHostLock(lockPath, payload) {
-  try {
-    const handle = await open(lockPath, 'wx');
-    try {
-      await handle.writeFile(payload, 'utf8');
-      return handle;
-    } catch (error) {
-      try {
-        await handle.close();
-      } catch {}
-      try {
-        await unlink(lockPath);
-      } catch {}
-      throw error;
-    }
-  } catch (error) {
-    if (error?.code === 'EEXIST') return null;
+    if (error?.code === 'EEXIST') throw new Error('BASIC_CHAT_ALREADY_RUNNING_OR_RECOVERY_REQUIRED');
     throw error;
   }
-}
-
-async function removePathWithRetry(path) {
-  let lastError = null;
-  for (let attempt = 0; attempt < LOCK_RELEASE_DELAYS_MS.length; attempt++) {
-    if (LOCK_RELEASE_DELAYS_MS[attempt] > 0) await sleep(LOCK_RELEASE_DELAYS_MS[attempt]);
-    try {
-      await unlink(path);
-      return;
-    } catch (error) {
-      if (error?.code === 'ENOENT') return;
-      lastError = error;
-      if (!TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code) || attempt === LOCK_RELEASE_DELAYS_MS.length - 1) {
-        throw error;
-      }
-    }
-  }
-  if (lastError) throw lastError;
-}
-
-async function releaseRecoveryGuard(guard, recoveryPath) {
   try {
-    await guard.close();
-  } finally {
-    await removePathWithRetry(recoveryPath);
-  }
-}
-
-async function acquireHostLock(lockPath) {
-  const payload = `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`;
-  const recoveryPath = `${lockPath}.recovery`;
-
-  const immediate = await tryCreateHostLock(lockPath, payload);
-  if (immediate) return immediate;
-
-  for (let attempt = 0; attempt < RECOVERY_WAIT_DELAYS_MS.length; attempt++) {
-    const owner = await readLockOwner(lockPath);
-    if (processAlive(Number(owner?.pid))) throw alreadyRunningError();
-
-    let recoveryGuard = null;
+    await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8');
+    return handle;
+  } catch (error) {
+    // Always attempt to release the descriptor while retaining the lock path.
+    // The file itself stays in place because a failed publication leaves
+    // ownership uncertain and must require explicit recovery.
     try {
-      recoveryGuard = await open(recoveryPath, 'wx');
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-    }
-
-    if (!recoveryGuard) {
-      const delay = RECOVERY_WAIT_DELAYS_MS[attempt];
-      if (delay > 0) await sleep(delay);
-      continue;
-    }
-
-    try {
-      const guardedOwner = await readLockOwner(lockPath);
-      if (processAlive(Number(guardedOwner?.pid))) throw alreadyRunningError();
-
-      try {
-        await unlink(lockPath);
-      } catch (error) {
-        if (error?.code !== 'ENOENT') throw alreadyRunningError();
-      }
-
-      const replacement = await tryCreateHostLock(lockPath, payload);
-      if (!replacement) throw alreadyRunningError();
-      return replacement;
-    } finally {
-      await releaseRecoveryGuard(recoveryGuard, recoveryPath);
-    }
+      await handle.close();
+    } catch {}
+    throw error;
   }
-
-  throw alreadyRunningError();
 }
 
 const THREAD = 'basic:default';
