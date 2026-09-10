@@ -16,9 +16,10 @@ const assets = new Map([
   ['/chat.css', ['basic-chat.css', 'text/css']],
 ]);
 
-export async function startBasicChat({ root, port = 0 } = {}) {
+export async function startBasicChat({ root, port = 0, chatFactory = createLocalChat } = {}) {
   if (!root) throw new TypeError('root is required');
-  const chat = await createLocalChat({ root });
+  if (typeof chatFactory !== 'function') throw new TypeError('chatFactory must be a function');
+  const chat = await chatFactory({ root });
   const originHost = '127.0.0.1';
 
   const server = createServer(async (req, res) => {
@@ -86,21 +87,39 @@ export async function startBasicChat({ root, port = 0 } = {}) {
     server.listen(port, originHost, done);
   });
   const address = server.address();
-  let closed = false;
-  let resolveClosed;
-  const closedPromise = new Promise((resolve) => {
-    resolveClosed = resolve;
-  });
 
-  async function close() {
-    if (closed) return;
-    closed = true;
-    await new Promise((done, reject) => server.close((e) => (e ? reject(e) : done())));
-    await chat.close();
-    resolveClosed();
+  let resolveClosed;
+  let rejectClosed;
+  const closedPromise = new Promise((resolve, reject) => {
+    resolveClosed = resolve;
+    rejectClosed = reject;
+  });
+  // Callers may use close() without waitUntilClosed(); keep a rejected lifecycle promise handled.
+  void closedPromise.catch(() => {});
+
+  let closePromise = null;
+  function close() {
+    if (closePromise) return closePromise;
+    closePromise = (async () => {
+      // A pending Promise does not keep Node's event loop alive. Once server.close()
+      // drops the final HTTP handle, Windows may otherwise exit before async chat/lock
+      // cleanup completes. Keep one referenced timer alive for the full cleanup window.
+      const cleanupKeepAlive = setInterval(() => {}, 1000);
+      try {
+        await new Promise((done, reject) => server.close((e) => (e ? reject(e) : done())));
+        await chat.close();
+        resolveClosed();
+      } catch (error) {
+        rejectClosed(error);
+        throw error;
+      } finally {
+        clearInterval(cleanupKeepAlive);
+      }
+    })();
+    return closePromise;
   }
 
-  // Ensure the HTTP server handle keeps the process alive until close().
+  // Ensure the HTTP server handle keeps the process alive until shutdown starts.
   server.ref();
 
   return {
@@ -119,30 +138,38 @@ async function mainCli() {
   console.log('DRY_RUN; autonomy disabled. State:', root);
   console.log('Listening. Press Ctrl+C to stop.');
 
-  let shuttingDown = false;
-  const shutdown = async () => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    try {
-      await app.close();
-    } catch (error) {
-      console.error('shutdown error:', error?.message ?? error);
-      process.exitCode = 1;
-    }
+  let shutdownPromise = null;
+  const shutdown = () => {
+    if (!shutdownPromise) shutdownPromise = app.close();
+    return shutdownPromise;
   };
 
+  const handlers = new Map();
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     try {
-      process.on(signal, () => {
-        void shutdown().then(() => process.exit(process.exitCode ?? 0));
-      });
+      const handler = () => {
+        // app.close() owns one idempotent cleanup promise. Do not process.exit here;
+        // mainCli remains bound to waitUntilClosed(), and close() keeps the event loop
+        // alive until listener, chat and lock cleanup are all complete.
+        void shutdown().catch(() => {});
+      };
+      process.on(signal, handler);
+      handlers.set(signal, handler);
     } catch {
       // signal may be unsupported on some platforms
     }
   }
 
-  // Host lifecycle: stay alive until the listener is closed (Windows + POSIX).
-  await app.waitUntilClosed();
+  try {
+    await app.waitUntilClosed();
+  } catch (error) {
+    console.error('shutdown error:', error?.message ?? error);
+    process.exitCode = 1;
+  } finally {
+    for (const [signal, handler] of handlers) {
+      process.removeListener(signal, handler);
+    }
+  }
 }
 
 const isDirectCli =

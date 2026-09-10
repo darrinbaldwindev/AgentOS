@@ -2,7 +2,7 @@
 // No second completion path. Chat requires scheduler disabled.
 
 import { randomUUID } from 'node:crypto';
-import { readFile, open, writeFile, unlink, access } from 'node:fs/promises';
+import { readFile, open, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
@@ -49,6 +49,41 @@ async function acquireHostLock(lockPath) {
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
+const TRANSIENT_LOCK_RELEASE_ERRORS = new Set(['EPERM', 'EACCES', 'EBUSY']);
+const LOCK_RELEASE_DELAYS_MS = Object.freeze([0, 10, 25, 50, 100, 200, 400]);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function releaseHostLock({ lock, lockPath, unlinkLock }) {
+  try {
+    await lock.close();
+  } catch (error) {
+    if (error?.code !== 'EBADF') {
+      const wrapped = new Error(`BASIC_CHAT_LOCK_CLOSE_FAILED: ${error?.message ?? error}`);
+      wrapped.code = 'BASIC_CHAT_LOCK_CLOSE_FAILED';
+      wrapped.cause = error;
+      throw wrapped;
+    }
+  }
+
+  for (let attempt = 0; attempt < LOCK_RELEASE_DELAYS_MS.length; attempt++) {
+    if (LOCK_RELEASE_DELAYS_MS[attempt] > 0) await sleep(LOCK_RELEASE_DELAYS_MS[attempt]);
+    try {
+      await unlinkLock(lockPath);
+      return;
+    } catch (error) {
+      if (error?.code === 'ENOENT') return;
+      const retryable = TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code);
+      if (retryable && attempt < LOCK_RELEASE_DELAYS_MS.length - 1) continue;
+      const wrapped = new Error(`BASIC_CHAT_LOCK_RELEASE_FAILED: ${error?.message ?? error}`);
+      wrapped.code = 'BASIC_CHAT_LOCK_RELEASE_FAILED';
+      wrapped.cause = error;
+      throw wrapped;
+    }
+  }
+}
 
 const USER_STATES = Object.freeze({
   READY: 'READY',
@@ -83,8 +118,9 @@ async function readSafeChatConfig(root) {
   return config;
 }
 
-export async function createLocalChat({ root }) {
+export async function createLocalChat({ root, unlinkLock = unlink } = {}) {
   if (!root) throw new TypeError('root is required');
+  if (typeof unlinkLock !== 'function') throw new TypeError('unlinkLock must be a function');
   const config = await readSafeChatConfig(root);
   const lockPath = join(root, 'basic-chat.lock');
   const lock = await acquireHostLock(lockPath);
@@ -251,13 +287,12 @@ export async function createLocalChat({ root }) {
     return snapshot();
   }
 
-  async function close() {
-    try {
-      await lock.close();
-    } catch {}
-    try {
-      await unlink(lockPath);
-    } catch {}
+  let closePromise = null;
+  function close() {
+    if (!closePromise) {
+      closePromise = releaseHostLock({ lock, lockPath, unlinkLock });
+    }
+    return closePromise;
   }
 
   return Object.freeze({ send, control, snapshot, history, close, THREAD });
