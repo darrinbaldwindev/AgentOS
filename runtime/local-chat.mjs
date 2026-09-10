@@ -17,44 +17,127 @@ function processAlive(pid) {
   }
 }
 
-async function acquireHostLock(lockPath) {
-  const payload = `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const handle = await open(lockPath, 'wx');
-      await handle.writeFile(payload, 'utf8');
-      return handle;
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      let owner = null;
-      try {
-        owner = JSON.parse(await readFile(lockPath, 'utf8'));
-      } catch {
-        owner = null;
-      }
-      const ownerPid = Number(owner?.pid);
-      if (processAlive(ownerPid)) {
-        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-      }
-      // Stale lock: no live owner process. Safe to remove once and retry.
-      try {
-        await unlink(lockPath);
-      } catch {
-        throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-      }
-    }
-  }
-  throw new Error('BASIC_CHAT_ALREADY_RUNNING');
-}
-
-const THREAD = 'basic:default';
-const CONTROL = 'basic-chat:control';
 const TRANSIENT_LOCK_RELEASE_ERRORS = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const LOCK_RELEASE_DELAYS_MS = Object.freeze([0, 10, 25, 50, 100, 200, 400]);
+const RECOVERY_WAIT_DELAYS_MS = Object.freeze([0, 10, 10, 25, 25, 50, 100, 200]);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+function alreadyRunningError() {
+  const error = new Error('BASIC_CHAT_ALREADY_RUNNING');
+  error.code = 'BASIC_CHAT_ALREADY_RUNNING';
+  return error;
+}
+
+async function readLockOwner(lockPath) {
+  try {
+    return JSON.parse(await readFile(lockPath, 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    return null;
+  }
+}
+
+async function tryCreateHostLock(lockPath, payload) {
+  try {
+    const handle = await open(lockPath, 'wx');
+    try {
+      await handle.writeFile(payload, 'utf8');
+      return handle;
+    } catch (error) {
+      try {
+        await handle.close();
+      } catch {}
+      try {
+        await unlink(lockPath);
+      } catch {}
+      throw error;
+    }
+  } catch (error) {
+    if (error?.code === 'EEXIST') return null;
+    throw error;
+  }
+}
+
+async function removePathWithRetry(path) {
+  let lastError = null;
+  for (let attempt = 0; attempt < LOCK_RELEASE_DELAYS_MS.length; attempt++) {
+    if (LOCK_RELEASE_DELAYS_MS[attempt] > 0) await sleep(LOCK_RELEASE_DELAYS_MS[attempt]);
+    try {
+      await unlink(path);
+      return;
+    } catch (error) {
+      if (error?.code === 'ENOENT') return;
+      lastError = error;
+      if (!TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code) || attempt === LOCK_RELEASE_DELAYS_MS.length - 1) {
+        throw error;
+      }
+    }
+  }
+  if (lastError) throw lastError;
+}
+
+async function releaseRecoveryGuard(guard, recoveryPath) {
+  try {
+    await guard.close();
+  } finally {
+    await removePathWithRetry(recoveryPath);
+  }
+}
+
+async function acquireHostLock(lockPath) {
+  const payload = `${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`;
+  const recoveryPath = `${lockPath}.recovery`;
+
+  const immediate = await tryCreateHostLock(lockPath, payload);
+  if (immediate) return immediate;
+
+  for (let attempt = 0; attempt < RECOVERY_WAIT_DELAYS_MS.length; attempt++) {
+    const owner = await readLockOwner(lockPath);
+    if (processAlive(Number(owner?.pid))) throw alreadyRunningError();
+
+    let recoveryGuard = null;
+    try {
+      recoveryGuard = await open(recoveryPath, 'wx');
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+    }
+
+    if (!recoveryGuard) {
+      const delay = RECOVERY_WAIT_DELAYS_MS[attempt];
+      if (delay > 0) await sleep(delay);
+      continue;
+    }
+
+    try {
+      // Re-read while holding the recovery guard. Another contender may have
+      // completed takeover between our first observation and guard acquisition.
+      const guardedOwner = await readLockOwner(lockPath);
+      if (processAlive(Number(guardedOwner?.pid))) throw alreadyRunningError();
+
+      try {
+        await unlink(lockPath);
+      } catch (error) {
+        if (error?.code !== 'ENOENT') throw alreadyRunningError();
+      }
+
+      const replacement = await tryCreateHostLock(lockPath, payload);
+      if (!replacement) throw alreadyRunningError();
+      return replacement;
+    } finally {
+      await releaseRecoveryGuard(recoveryGuard, recoveryPath);
+    }
+  }
+
+  // A recovery guard that remains held/abandoned fails closed rather than
+  // allowing competing stale-lock recovery to produce two active hosts.
+  throw alreadyRunningError();
+}
+
+const THREAD = 'basic:default';
+const CONTROL = 'basic-chat:control';
 
 async function releaseHostLock({ lock, lockPath, unlinkLock }) {
   try {
