@@ -170,35 +170,18 @@ describe('Mission D-REPAIR: Basic Chat host lifecycle + lock', () => {
     }
   });
 
-  it('K: stale lock without live owner allows restart', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'agentos-life-k-'));
+  it('K/L: stale lock requires explicit recovery for all contenders', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'agentos-life-stale-'));
     try {
       await installLocal({ root });
-      await writeFile(join(root, 'basic-chat.lock'), `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`);
-      const app = await startBasicChat({ root, port: 0 });
-      assert.equal(await portOpen(app.port), true);
-      const lock = JSON.parse(await readFile(join(root, 'basic-chat.lock'), 'utf8'));
-      assert.equal(lock.pid, process.pid);
-      await app.close();
-      assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-  });
-
-  it('L: competing stale recovery attempts never produce two live hosts', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'agentos-life-l-'));
-    try {
-      await installLocal({ root });
-      await writeFile(join(root, 'basic-chat.lock'), `${JSON.stringify({ pid: 999999, startedAt: new Date().toISOString() })}\n`);
+      const payload = JSON.stringify({ pid: 999999, startedAt: '2020-01-01T00:00:00Z' });
+      await writeFile(join(root, 'basic-chat.lock'), payload);
       const results = await Promise.allSettled([createLocalChat({ root }), createLocalChat({ root })]);
-      const winners = results.filter((result) => result.status === 'fulfilled');
-      const rejected = results.filter((result) => result.status === 'rejected');
-      assert.equal(winners.length, 1);
-      assert.equal(rejected.length, 1);
-      assert.match(String(rejected[0].reason?.message ?? rejected[0].reason), /BASIC_CHAT_ALREADY_RUNNING/);
-      await winners[0].value.close();
-      assert.equal(await fileExists(join(root, 'basic-chat.lock')), false);
+      for (const result of results) {
+        assert.equal(result.status, 'rejected');
+        assert.match(result.reason.message, /RECOVERY_REQUIRED/);
+      }
+      assert.equal(await readFile(join(root, 'basic-chat.lock'), 'utf8'), payload);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
