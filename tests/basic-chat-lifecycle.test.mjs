@@ -133,10 +133,9 @@ it('an empty lock during another owner publication must not be stolen', async ()
   try {
     await installLocal({ root });
     await writeFile(join(root, 'basic-chat.lock'), '');
-    let contender;
-    try {
-      await assert.rejects(async () => { contender = await createLocalChat({ root }); }, /BASIC_CHAT_/);
-    } finally { await contender?.close(); }
+    await assert.rejects(() => createLocalChat({ root }), /BASIC_CHAT_/);
     assert.equal(await readFile(join(root, 'basic-chat.lock'), 'utf8'), '');
-  } finally { await rm(root, {recursive: true, force: true}); }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
