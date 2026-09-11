@@ -110,19 +110,8 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       return Object.freeze({ success: true, replayed: true, receipt_id: receiptId, ...intent });
     }
 
-    const before = await readHash(target.canonical);
-    if (before.exists && before.hash === posthash) {
-      throw fail('PROJECT_FILE_RECONCILIATION_REQUIRED', { path: target.canonical, postimage_sha256: posthash });
-    }
-    if (before.exists) {
-      if (expectedPreimageSha256 === null || before.hash !== expectedPreimageSha256.toLowerCase()) {
-        throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: before.hash });
-      }
-    } else if (expectedPreimageSha256 !== null) {
-      throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: null });
-    }
-
     const lock = `${target.canonical}.agentos-write-lock`;
+    if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     try { await fs.mkdir(lock); }
     catch (error) {
       if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock });
@@ -132,6 +121,21 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
     try {
+      // Authoritative compare-and-swap validation must occur after this writer owns
+      // the target lock. Any pre-lock observation is advisory only; validating here
+      // closes the stale-preimage race between target inspection and lock acquisition.
+      const before = await readHash(target.canonical);
+      if (before.exists && before.hash === posthash) {
+        throw fail('PROJECT_FILE_RECONCILIATION_REQUIRED', { path: target.canonical, postimage_sha256: posthash });
+      }
+      if (before.exists) {
+        if (expectedPreimageSha256 === null || before.hash !== expectedPreimageSha256.toLowerCase()) {
+          throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: before.hash });
+        }
+      } else if (expectedPreimageSha256 !== null) {
+        throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: null });
+      }
+
       const handle = await fs.open(temp, 'wx', 0o600);
       try {
         await handle.writeFile(desired);
