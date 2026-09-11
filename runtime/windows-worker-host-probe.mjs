@@ -4,6 +4,33 @@
 
 const REQUIRED_TOOLS = Object.freeze(['powershell.exe', 'git.exe', 'npm.cmd']);
 
+export function deriveWindowsWorkerCapabilities(probeResult = {}) {
+  const evaluation = probeResult?.evaluation ?? {};
+  if (evaluation.windows !== true) return Object.freeze([]);
+
+  const tools = evaluation.tools ?? {};
+  const workspace = evaluation.workspace ?? {};
+  const capabilities = [];
+
+  if (tools['powershell.exe'] === true) {
+    capabilities.push('shell.powershell.system.read');
+  }
+  if (tools['powershell.exe'] === true && tools['git.exe'] === true && workspace.readable === true) {
+    capabilities.push('shell.powershell.repo.read');
+  }
+  if (
+    tools['powershell.exe'] === true &&
+    tools['git.exe'] === true &&
+    tools['npm.cmd'] === true &&
+    workspace.readable === true &&
+    workspace.writable === true
+  ) {
+    capabilities.push('shell.powershell.dev.execute');
+  }
+
+  return Object.freeze(capabilities);
+}
+
 export function createWindowsWorkerHostProbe({
   platform = process.platform,
   commandProbe,
@@ -42,16 +69,19 @@ export function createWindowsWorkerHostProbe({
     if (!workspace.readable) missingRequired.push('workspace.read');
     if (!workspace.writable) missingRequired.push('workspace.write');
 
+    const evaluation = Object.freeze({
+      eligible: missingRequired.length === 0,
+      windows,
+      tools: Object.freeze({ ...toolResults }),
+      workspace: Object.freeze({ ...workspace }),
+      missingRequired: Object.freeze(missingRequired),
+    });
+
     return Object.freeze({
       agent_id: agentId ?? null,
       mode: 'DRY_RUN',
-      evaluation: Object.freeze({
-        eligible: missingRequired.length === 0,
-        windows,
-        tools: Object.freeze({ ...toolResults }),
-        workspace: Object.freeze({ ...workspace }),
-        missingRequired: Object.freeze(missingRequired),
-      }),
+      evaluation,
+      capabilities: deriveWindowsWorkerCapabilities({ evaluation }),
     });
   }
 
