@@ -96,6 +96,26 @@ test('overwrite requires exact preimage identity', async () => {
   } finally { await f.cleanup(); }
 });
 
+test('stale preimage introduced after inspection but before lock fails closed under the lock', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const target = path.join(f.root, 'fixture.txt');
+    await writeFile(target, 'old\n');
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      hooks: { beforeLock: async () => { await writeFile(target, 'raced\n'); } },
+    });
+    await assert.rejects(
+      writer.execute({ task, targetPath: target, content: 'new\n', expectedPreimageSha256: hash(Buffer.from('old\n')), idempotencyKey: 'idem-stale-between-observation-and-lock' }),
+      (error) => error.code === 'PROJECT_FILE_VERSION_CONFLICT' && error.actual_preimage_sha256 === hash(Buffer.from('raced\n'))
+    );
+    assert.equal(await readFile(target, 'utf8'), 'raced\n');
+    assert.equal(p.artifacts.size, 0);
+  } finally { await f.cleanup(); }
+});
+
 test('existing lock is recovery-required and never stolen', async () => {
   const f = await fixture();
   try {
