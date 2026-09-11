@@ -1,5 +1,8 @@
 # AgentOS Commercial Access Model
 
+> **SUPERSEDED FOR ACTIVE PRICING / PACKAGING — 2026-09-12**  
+> This document is retained as historical product research. The current commercial source of truth is `docs/COMMERCIAL-PRODUCT-SOURCE-OF-TRUTH-2026-09-12.md`. Active pricing is **Free -> $39/year Co-worker -> $99/year Operator -> optional add-ons/BYO AI**. Where this document conflicts with the current source of truth on pricing, entitlement ceilings, Night Shift, recurring work, concurrency, persistence, integrations or Operator positioning, the 2026-09-12 source of truth controls.
+
 ## Purpose
 
 Define the commercial boundary between Free, $29/year and $99/year without turning paid plans into different AgentOS products.
