@@ -3,6 +3,7 @@
 // it does not grant authority, schedule work, elevate privileges, or bypass Green/PRS.
 
 import { execFile as execFileCallback } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { resolve, relative, isAbsolute } from 'node:path';
 
@@ -17,10 +18,25 @@ const OPERATIONS = Object.freeze({
   'service.list': { capability: 'shell.powershell.system.read', script: 'Get-Service | Select-Object -First 200 Name,Status,StartType | ConvertTo-Json -Compress' },
 });
 
-function assertAllowedRoot(cwd, allowedRoots) {
-  const target = resolve(cwd);
+const defaultPathResolver = (input) => realpathSync.native(input);
+
+function canonicalizePath(input, pathResolver) {
+  try {
+    return resolve(pathResolver(resolve(input)));
+  } catch {
+    throw new Error('POWERSHELL_PATH_CANONICALIZATION_FAILED');
+  }
+}
+
+function assertAllowedRoot(cwd, allowedRoots, pathResolver) {
+  const target = canonicalizePath(cwd, pathResolver);
   const allowed = allowedRoots.some((root) => {
-    const base = resolve(root);
+    let base;
+    try {
+      base = canonicalizePath(root, pathResolver);
+    } catch {
+      return false;
+    }
     const rel = relative(base, target);
     return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
   });
@@ -33,9 +49,10 @@ async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) 
   return { stdout: result.stdout ?? '', stderr: result.stderr ?? '', exitCode: 0 };
 }
 
-export function createWindowsPowerShellAdapter({ allowedRoots, executor = defaultExecutor, executable = 'powershell.exe', timeoutMs = 120_000, maxBuffer = 1_048_576 } = {}) {
+export function createWindowsPowerShellAdapter({ allowedRoots, executor = defaultExecutor, pathResolver = defaultPathResolver, executable = 'powershell.exe', timeoutMs = 120_000, maxBuffer = 1_048_576 } = {}) {
   if (!Array.isArray(allowedRoots) || allowedRoots.length === 0) throw new TypeError('allowedRoots must be non-empty');
   if (typeof executor !== 'function') throw new TypeError('executor must be a function');
+  if (typeof pathResolver !== 'function') throw new TypeError('pathResolver must be a function');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new TypeError('timeoutMs must be a positive integer');
   if (!Number.isInteger(maxBuffer) || maxBuffer < 1) throw new TypeError('maxBuffer must be a positive integer');
 
@@ -49,7 +66,7 @@ export function createWindowsPowerShellAdapter({ allowedRoots, executor = defaul
     const spec = OPERATIONS[operation];
     if (!spec) throw new Error('POWERSHELL_OPERATION_NOT_ALLOWED');
     if (typeof cwd !== 'string' || !cwd) throw new TypeError('cwd is required');
-    const safeCwd = assertAllowedRoot(cwd, allowedRoots);
+    const safeCwd = assertAllowedRoot(cwd, allowedRoots, pathResolver);
     const startedAt = new Date().toISOString();
     try {
       const result = await executor({ executable, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', spec.script], cwd: safeCwd, timeoutMs, maxBuffer });
