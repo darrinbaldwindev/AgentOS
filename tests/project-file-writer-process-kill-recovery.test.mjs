@@ -58,8 +58,9 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     `;
     const child = spawn(process.execPath, ['--input-type=module', '-e', childSource], { stdio: ['ignore', 'pipe', 'pipe'] });
     await waitFor(marker);
+    const exited = new Promise((resolve) => child.once('exit', resolve));
     child.kill('SIGKILL');
-    await new Promise((resolve) => child.once('exit', resolve));
+    await exited;
 
     assert.equal(await readFile(target, 'utf8'), 'old\n');
     const lock = `${target}.agentos-write-lock`;
