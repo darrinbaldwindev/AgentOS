@@ -4,8 +4,8 @@
 
 import { execFile as execFileCallback } from 'node:child_process';
 import { realpathSync } from 'node:fs';
+import path from 'node:path';
 import { promisify } from 'node:util';
-import { resolve, relative, isAbsolute } from 'node:path';
 
 const execFile = promisify(execFileCallback);
 
@@ -20,25 +20,22 @@ const OPERATIONS = Object.freeze({
 
 const defaultPathResolver = (input) => realpathSync.native(input);
 
-function canonicalizePath(input, pathResolver) {
+function canonicalizePath(input, pathResolver, pathModule, errorCode) {
   try {
-    return resolve(pathResolver(resolve(input)));
+    return pathModule.resolve(pathResolver(pathModule.resolve(input)));
   } catch {
-    throw new Error('POWERSHELL_PATH_CANONICALIZATION_FAILED');
+    throw new Error(errorCode);
   }
 }
 
-function assertAllowedRoot(cwd, allowedRoots, pathResolver) {
-  const target = canonicalizePath(cwd, pathResolver);
-  const allowed = allowedRoots.some((root) => {
-    let base;
-    try {
-      base = canonicalizePath(root, pathResolver);
-    } catch {
-      return false;
-    }
-    const rel = relative(base, target);
-    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+function assertAllowedRoot(cwd, allowedRoots, pathResolver, pathModule) {
+  const target = canonicalizePath(cwd, pathResolver, pathModule, 'POWERSHELL_PATH_CANONICALIZATION_FAILED');
+  const canonicalRoots = allowedRoots.map((root) =>
+    canonicalizePath(root, pathResolver, pathModule, 'POWERSHELL_ALLOWED_ROOT_CANONICALIZATION_FAILED')
+  );
+  const allowed = canonicalRoots.some((base) => {
+    const rel = pathModule.relative(base, target);
+    return rel === '' || (!rel.startsWith('..') && !pathModule.isAbsolute(rel));
   });
   if (!allowed) throw new Error('POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT');
   return target;
@@ -49,10 +46,21 @@ async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) 
   return { stdout: result.stdout ?? '', stderr: result.stderr ?? '', exitCode: 0 };
 }
 
-export function createWindowsPowerShellAdapter({ allowedRoots, executor = defaultExecutor, pathResolver = defaultPathResolver, executable = 'powershell.exe', timeoutMs = 120_000, maxBuffer = 1_048_576 } = {}) {
+export function createWindowsPowerShellAdapter({
+  allowedRoots,
+  executor = defaultExecutor,
+  pathResolver = defaultPathResolver,
+  pathModule = path,
+  executable = 'powershell.exe',
+  timeoutMs = 120_000,
+  maxBuffer = 1_048_576,
+} = {}) {
   if (!Array.isArray(allowedRoots) || allowedRoots.length === 0) throw new TypeError('allowedRoots must be non-empty');
   if (typeof executor !== 'function') throw new TypeError('executor must be a function');
   if (typeof pathResolver !== 'function') throw new TypeError('pathResolver must be a function');
+  if (!pathModule || typeof pathModule.resolve !== 'function' || typeof pathModule.relative !== 'function' || typeof pathModule.isAbsolute !== 'function') {
+    throw new TypeError('pathModule must provide resolve, relative, and isAbsolute');
+  }
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new TypeError('timeoutMs must be a positive integer');
   if (!Number.isInteger(maxBuffer) || maxBuffer < 1) throw new TypeError('maxBuffer must be a positive integer');
 
@@ -66,7 +74,7 @@ export function createWindowsPowerShellAdapter({ allowedRoots, executor = defaul
     const spec = OPERATIONS[operation];
     if (!spec) throw new Error('POWERSHELL_OPERATION_NOT_ALLOWED');
     if (typeof cwd !== 'string' || !cwd) throw new TypeError('cwd is required');
-    const safeCwd = assertAllowedRoot(cwd, allowedRoots, pathResolver);
+    const safeCwd = assertAllowedRoot(cwd, allowedRoots, pathResolver, pathModule);
     const startedAt = new Date().toISOString();
     try {
       const result = await executor({ executable, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', spec.script], cwd: safeCwd, timeoutMs, maxBuffer });
