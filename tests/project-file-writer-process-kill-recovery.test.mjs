@@ -52,7 +52,10 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
       const persistence = await createLocalPersistence({ filePath: ${JSON.stringify(stateFile)} });
       const writer = await createProjectFileWriter({
         approvedRoots: [${JSON.stringify(root)}], persistence,
-        hooks: { beforePublish: async () => { await writeFile(${JSON.stringify(marker)}, 'prepared'); await new Promise(() => {}); } },
+        hooks: { beforePublish: async () => {
+          await writeFile(${JSON.stringify(marker)}, 'prepared');
+          await new Promise(() => { setInterval(() => {}, 1000); });
+        } },
       });
       await writer.execute({ task: ${JSON.stringify(task)}, targetPath: ${JSON.stringify(target)}, content: ${JSON.stringify(content)}, expectedPreimageSha256: ${JSON.stringify(expectedPreimageSha256)}, idempotencyKey: ${JSON.stringify(idempotencyKey)} });
     `;
