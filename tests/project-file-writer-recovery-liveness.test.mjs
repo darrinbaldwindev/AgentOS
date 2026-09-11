@@ -42,7 +42,7 @@ function lockHold() {
   };
 }
 
-test('prepared-before-publish interruption resumes exactly once under the target lock', async () => {
+test('prepared-before-publish interruption resumes exactly once only with governed recovery evidence', async () => {
   const f = await fixture();
   try {
     const p = persistenceHarness();
@@ -57,7 +57,18 @@ test('prepared-before-publish interruption resumes exactly once under the target
     await assert.rejects(interrupted.execute(args), (error) => error.recovery_required === true);
     assert.equal(await readFile(target, 'utf8'), 'old\n');
 
-    const resumed = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api });
+    const failClosed = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api });
+    await assert.rejects(failClosed.execute(args), (error) => error.code === 'PROJECT_FILE_RECOVERY_STATE_MISMATCH' && error.recovery_required === true);
+    assert.equal(await readFile(target, 'utf8'), 'old\n');
+
+    const resumed = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      reconcilePreparedWrite: async ({ prepared, current }) => {
+        assert.equal(prepared.preimage_sha256, current.hash);
+        return { status: 'RESUME', evidence_id: 'green-prepared-recovery-fixture-001' };
+      },
+    });
     const result = await resumed.execute(args);
     assert.equal(result.success, true);
     assert.equal(result.replayed, true);
