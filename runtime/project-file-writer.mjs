@@ -65,12 +65,24 @@ async function inspectTarget(requestedPath, roots) {
   return { requested, canonical, exists };
 }
 
-async function readHash(target) {
+function statIdentity(stat) {
+  return Object.freeze({
+    dev: String(stat.dev),
+    ino: String(stat.ino),
+    size: String(stat.size),
+  });
+}
+
+function sameIdentity(left, right) {
+  return Boolean(left && right && left.dev === right.dev && left.ino === right.ino && left.size === right.size);
+}
+
+async function readState(target) {
   try {
-    const bytes = await fs.readFile(target);
-    return { exists: true, hash: sha256(bytes), bytes };
+    const [bytes, stat] = await Promise.all([fs.readFile(target), fs.stat(target)]);
+    return { exists: true, hash: sha256(bytes), bytes, identity: statIdentity(stat) };
   } catch (error) {
-    if (error?.code === 'ENOENT') return { exists: false, hash: null, bytes: null };
+    if (error?.code === 'ENOENT') return { exists: false, hash: null, bytes: null, identity: null };
     throw error;
   }
 }
@@ -100,19 +112,65 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     const posthash = sha256(desired);
     const intent = Object.freeze({ ...correlation, path: target.canonical, expected_preimage_sha256: expectedPreimageSha256, postimage_sha256: posthash });
     const intentHash = sha256(JSON.stringify(intent));
-    const receiptId = `project_file_write_${sha256(idempotencyKey).slice(0, 32)}`;
+    const keyHash = sha256(idempotencyKey);
+    const receiptId = `project_file_write_${keyHash.slice(0, 32)}`;
+    const preparedId = `project_file_write_prepared_${keyHash.slice(0, 32)}`;
 
-    async function replayIfPresent() {
+    async function receiptIfPresent() {
       const prior = await persistence.get('artifact', receiptId);
       if (!prior) return null;
       if (prior.intent_hash !== intentHash) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { receipt_id: receiptId });
-      const current = await readHash(target.canonical);
+      const current = await readState(target.canonical);
       if (!current.exists || current.hash !== posthash) throw fail('PROJECT_FILE_RECEIPT_MISMATCH', { receipt_id: receiptId });
-      return Object.freeze({ success: true, replayed: true, receipt_id: receiptId, ...intent });
+      return Object.freeze({ success: true, replayed: true, recovered: false, receipt_id: receiptId, ...intent });
     }
 
-    const priorReplay = await replayIfPresent();
-    if (priorReplay) return priorReplay;
+    function receiptFromPrepared(prepared) {
+      return {
+        id: receiptId,
+        artifact_kind: 'project.file.write.receipt',
+        idempotency_key_sha256: keyHash,
+        intent_hash: intentHash,
+        ...intent,
+        preimage_sha256: prepared.preimage_sha256,
+        postimage_sha256: posthash,
+        prepared_artifact_id: preparedId,
+        result: 'MUTATED_VERIFIED',
+        recovery_required: false,
+        recovered_from_prepared_intent: true,
+        recorded_at: new Date().toISOString(),
+      };
+    }
+
+    async function recoverPreparedIfPresent() {
+      const prepared = await persistence.get('artifact', preparedId);
+      if (!prepared) return null;
+      if (prepared.intent_hash !== intentHash) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { prepared_id: preparedId });
+      const current = await readState(target.canonical);
+      if (!current.exists || current.hash !== posthash || !sameIdentity(current.identity, prepared.prepared_file_identity)) {
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', {
+          prepared_id: preparedId,
+          path: target.canonical,
+          actual_postimage_sha256: current.hash,
+          recovery_required: true,
+        });
+      }
+      const receipt = receiptFromPrepared(prepared);
+      try {
+        await persistence.create('artifact', receipt);
+      } catch (error) {
+        const raced = await persistence.get('artifact', receiptId);
+        if (!raced || raced.intent_hash !== intentHash) {
+          throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true });
+        }
+      }
+      return Object.freeze({ success: true, replayed: true, recovered: true, receipt_id: receiptId, ...intent, preimage_sha256: prepared.preimage_sha256 });
+    }
+
+    const priorReceipt = await receiptIfPresent();
+    if (priorReceipt) return priorReceipt;
+    const priorRecovery = await recoverPreparedIfPresent();
+    if (priorRecovery) return priorRecovery;
 
     const lock = `${target.canonical}.agentos-write-lock`;
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
@@ -125,17 +183,12 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
     try {
-      // A competing invocation can pass the advisory pre-lock receipt lookup before
-      // this writer acquires the target lock. Re-check the deterministic receipt ID
-      // while holding the lock so an already-completed same-intent duplicate returns
-      // a replay and a different-intent duplicate fails closed before any mutation.
-      const lockedReplay = await replayIfPresent();
-      if (lockedReplay) return lockedReplay;
+      const lockedReceipt = await receiptIfPresent();
+      if (lockedReceipt) return lockedReceipt;
+      const lockedRecovery = await recoverPreparedIfPresent();
+      if (lockedRecovery) return lockedRecovery;
 
-      // Authoritative compare-and-swap validation must occur after this writer owns
-      // the target lock. Any pre-lock observation is advisory only; validating here
-      // closes the stale-preimage race between target inspection and lock acquisition.
-      const before = await readHash(target.canonical);
+      const before = await readState(target.canonical);
       if (before.exists && before.hash === posthash) {
         throw fail('PROJECT_FILE_RECONCILIATION_REQUIRED', { path: target.canonical, postimage_sha256: posthash });
       }
@@ -155,34 +208,49 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         await handle.close();
       }
 
+      const preparedStat = await fs.stat(temp);
+      const prepared = {
+        id: preparedId,
+        artifact_kind: 'project.file.write.prepared',
+        idempotency_key_sha256: keyHash,
+        intent_hash: intentHash,
+        ...intent,
+        preimage_sha256: before.hash,
+        postimage_sha256: posthash,
+        prepared_file_identity: statIdentity(preparedStat),
+        prepared_at: new Date().toISOString(),
+      };
+      try {
+        await persistence.create('artifact', prepared);
+      } catch (error) {
+        const raced = await persistence.get('artifact', preparedId);
+        if (!raced || raced.intent_hash !== intentHash) {
+          if (raced) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { prepared_id: preparedId });
+          throw fail('PROJECT_FILE_PREPARED_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId });
+        }
+        throw fail('PROJECT_FILE_RECOVERY_REQUIRED', { prepared_id: preparedId, recovery_required: true });
+      }
+
       if (typeof hooks.beforePublish === 'function') await hooks.beforePublish({ target: target.canonical, temp, intent });
       await fs.rename(temp, target.canonical);
       published = true;
       if (typeof hooks.afterPublish === 'function') await hooks.afterPublish({ target: target.canonical, intent });
 
-      const after = await readHash(target.canonical);
-      if (!after.exists || after.hash !== posthash) {
-        throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash });
+      const after = await readState(target.canonical);
+      if (!after.exists || after.hash !== posthash || !sameIdentity(after.identity, prepared.prepared_file_identity)) {
+        throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
 
       const receipt = {
-        id: receiptId,
-        artifact_kind: 'project.file.write.receipt',
-        idempotency_key_sha256: sha256(idempotencyKey),
-        intent_hash: intentHash,
-        ...intent,
-        preimage_sha256: before.hash,
-        postimage_sha256: posthash,
-        result: 'MUTATED_VERIFIED',
-        recovery_required: false,
-        recorded_at: new Date().toISOString(),
+        ...receiptFromPrepared(prepared),
+        recovered_from_prepared_intent: false,
       };
       try {
         await persistence.create('artifact', receipt);
       } catch (error) {
-        throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, path: target.canonical, postimage_sha256: posthash, recovery_required: true });
+        throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true });
       }
-      return Object.freeze({ success: true, replayed: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
+      return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
     } catch (error) {
       if (published && !error.recovery_required) error.recovery_required = true;
       throw error;
