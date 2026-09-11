@@ -102,13 +102,17 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     const intentHash = sha256(JSON.stringify(intent));
     const receiptId = `project_file_write_${sha256(idempotencyKey).slice(0, 32)}`;
 
-    const prior = await persistence.get('artifact', receiptId);
-    if (prior) {
+    async function replayIfPresent() {
+      const prior = await persistence.get('artifact', receiptId);
+      if (!prior) return null;
       if (prior.intent_hash !== intentHash) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { receipt_id: receiptId });
       const current = await readHash(target.canonical);
       if (!current.exists || current.hash !== posthash) throw fail('PROJECT_FILE_RECEIPT_MISMATCH', { receipt_id: receiptId });
       return Object.freeze({ success: true, replayed: true, receipt_id: receiptId, ...intent });
     }
+
+    const priorReplay = await replayIfPresent();
+    if (priorReplay) return priorReplay;
 
     const lock = `${target.canonical}.agentos-write-lock`;
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
@@ -121,6 +125,13 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
     try {
+      // A competing invocation can pass the advisory pre-lock receipt lookup before
+      // this writer acquires the target lock. Re-check the deterministic receipt ID
+      // while holding the lock so an already-completed same-intent duplicate returns
+      // a replay and a different-intent duplicate fails closed before any mutation.
+      const lockedReplay = await replayIfPresent();
+      if (lockedReplay) return lockedReplay;
+
       // Authoritative compare-and-swap validation must occur after this writer owns
       // the target lock. Any pre-lock observation is advisory only; validating here
       // closes the stale-preimage race between target inspection and lock acquisition.
