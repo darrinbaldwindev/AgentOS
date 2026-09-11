@@ -100,13 +100,16 @@ function validatePreparedTempPath(target, temp) {
   return path.basename(temp).startsWith(prefix) && path.basename(temp).endsWith('.tmp');
 }
 
-export async function createProjectFileWriter({ approvedRoots, persistence, maxContentBytes = MAX_CONTENT_BYTES, hooks = {}, reconcileAbandonedLock = null } = {}) {
+export async function createProjectFileWriter({ approvedRoots, persistence, maxContentBytes = MAX_CONTENT_BYTES, hooks = {}, reconcileAbandonedLock = null, reconcilePreparedWrite = null } = {}) {
   if (!Array.isArray(approvedRoots) || approvedRoots.length === 0) throw new TypeError('approvedRoots must be non-empty');
   if (!persistence || typeof persistence.get !== 'function' || typeof persistence.create !== 'function') {
     throw new TypeError('persistence.get and persistence.create are required');
   }
   if (reconcileAbandonedLock !== null && typeof reconcileAbandonedLock !== 'function') {
     throw new TypeError('reconcileAbandonedLock must be a function or null');
+  }
+  if (reconcilePreparedWrite !== null && typeof reconcilePreparedWrite !== 'function') {
+    throw new TypeError('reconcilePreparedWrite must be a function or null');
   }
   if (!Number.isInteger(maxContentBytes) || maxContentBytes < 1) throw new TypeError('maxContentBytes must be a positive integer');
 
@@ -141,7 +144,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       return Object.freeze({ success: true, replayed: true, recovered: false, receipt_id: receiptId, ...intent });
     }
 
-    function receiptFromPrepared(prepared, result = 'MUTATED_VERIFIED') {
+    function receiptFromPrepared(prepared, result = 'MUTATED_VERIFIED', recoveryEvidenceId = null) {
       return {
         id: receiptId,
         artifact_kind: 'project.file.write.receipt',
@@ -154,12 +157,13 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         result,
         recovery_required: false,
         recovered_from_prepared_intent: true,
+        ...(recoveryEvidenceId ? { recovery_evidence_id: recoveryEvidenceId } : {}),
         recorded_at: new Date().toISOString(),
       };
     }
 
-    async function finalizePreparedReceipt(prepared, result) {
-      const receipt = receiptFromPrepared(prepared, result);
+    async function finalizePreparedReceipt(prepared, result, recoveryEvidenceId = null) {
+      const receipt = receiptFromPrepared(prepared, result, recoveryEvidenceId);
       try {
         await persistence.create('artifact', receipt);
       } catch (error) {
@@ -194,21 +198,24 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
 
       const tempState = await readState(tempPath);
       if (!tempState.exists || tempState.hash !== posthash || !sameIdentity(tempState.identity, prepared.prepared_file_identity)) {
-        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', {
-          prepared_id: preparedId,
-          path: target.canonical,
-          recovery_required: true,
-        });
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', { prepared_id: preparedId, path: target.canonical, recovery_required: true });
       }
 
       if (!allowPublish) return null;
+      if (!reconcilePreparedWrite) {
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', { prepared_id: preparedId, path: target.canonical, recovery_required: true });
+      }
+      const decision = await reconcilePreparedWrite({ prepared, current, target: target.canonical, temp: tempPath, intent });
+      if (decision?.status !== 'RESUME' || typeof decision.evidence_id !== 'string' || decision.evidence_id.length === 0) {
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', { prepared_id: preparedId, path: target.canonical, recovery_required: true });
+      }
       if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
       await fs.rename(tempPath, target.canonical);
       const after = await readState(target.canonical);
       if (!after.exists || after.hash !== posthash || !sameIdentity(after.identity, prepared.prepared_file_identity)) {
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
-      return finalizePreparedReceipt(prepared, 'RECOVERED_PREPARED_AND_VERIFIED');
+      return finalizePreparedReceipt(prepared, 'RECOVERED_PREPARED_AND_VERIFIED', decision.evidence_id);
     }
 
     const priorReceipt = await receiptIfPresent();
@@ -217,15 +224,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     if (priorRecovery) return priorRecovery;
 
     const lock = `${target.canonical}.agentos-write-lock`;
-    const lockOwner = Object.freeze({
-      lock_id: randomUUID(),
-      pid: process.pid,
-      ...correlation,
-      target_path: target.canonical,
-      intent_hash: intentHash,
-      idempotency_key_sha256: keyHash,
-      acquired_at: new Date().toISOString(),
-    });
+    const lockOwner = Object.freeze({ lock_id: randomUUID(), pid: process.pid, ...correlation, target_path: target.canonical, intent_hash: intentHash, idempotency_key_sha256: keyHash, acquired_at: new Date().toISOString() });
 
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     let lockOwned = false;
@@ -250,7 +249,6 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       if (!reconcileAbandonedLock) {
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
       }
-
       const decision = await reconcileAbandonedLock({ lock, owner: observedOwner, requested_owner: lockOwner, target: target.canonical, intent });
       if (decision?.status === 'LIVE') {
         throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: observedOwner, retryable: true, recovery_required: false });
@@ -258,7 +256,6 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       if (decision?.status !== 'ABANDONED' || typeof decision.evidence_id !== 'string' || decision.evidence_id.length === 0) {
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
       }
-
       const recheckedOwner = await readLockOwner(lock);
       if (!sameLockOwner(observedOwner, recheckedOwner)) {
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: recheckedOwner, recovery_required: true });
@@ -287,13 +284,9 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       if (lockedRecovery) return lockedRecovery;
 
       const before = await readState(target.canonical);
-      if (before.exists && before.hash === posthash) {
-        throw fail('PROJECT_FILE_RECONCILIATION_REQUIRED', { path: target.canonical, postimage_sha256: posthash });
-      }
+      if (before.exists && before.hash === posthash) throw fail('PROJECT_FILE_RECONCILIATION_REQUIRED', { path: target.canonical, postimage_sha256: posthash });
       if (before.exists) {
-        if (expectedPreimageSha256 === null || before.hash !== expectedPreimageSha256.toLowerCase()) {
-          throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: before.hash });
-        }
+        if (expectedPreimageSha256 === null || before.hash !== expectedPreimageSha256.toLowerCase()) throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: before.hash });
       } else if (expectedPreimageSha256 !== null) {
         throw fail('PROJECT_FILE_VERSION_CONFLICT', { actual_preimage_sha256: null });
       }
@@ -340,13 +333,9 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       if (!after.exists || after.hash !== posthash || !sameIdentity(after.identity, prepared.prepared_file_identity)) {
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
-
       const receipt = { ...receiptFromPrepared(prepared), recovered_from_prepared_intent: false };
-      try {
-        await persistence.create('artifact', receipt);
-      } catch (error) {
-        throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true });
-      }
+      try { await persistence.create('artifact', receipt); }
+      catch (error) { throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true }); }
       return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
     } catch (error) {
       if ((published || preparedPersisted) && !error.recovery_required) error.recovery_required = true;
