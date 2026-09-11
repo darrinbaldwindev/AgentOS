@@ -2,6 +2,8 @@
 // This module derives status from existing durable AgentOS evidence. It does not
 // mutate state, wake the host, grant authority, clear locks, retry work, or promote assurance.
 
+import { observeBasicChatLock } from './basic-chat-lock-observer.mjs';
+
 const ACTIVE_TASK_STATES = new Set(['running', 'executing', 'in_flight', 'working']);
 const BLOCKED_TASK_STATES = new Set(['blocked', 'green_blocked']);
 const RECOVERY_STATES = new Set(['recovery_required']);
@@ -234,8 +236,31 @@ export function deriveLocalHostStatus({
   });
 }
 
-export async function readLocalHostStatus({ persistence, hostIdentity, config, claims = [], locks = [], observedAt, staleAfterMs } = {}) {
+export async function readLocalHostStatus({
+  persistence,
+  hostIdentity,
+  config,
+  claims = [],
+  locks = [],
+  root,
+  processAlive,
+  observedAt,
+  staleAfterMs,
+} = {}) {
   if (!persistence?.list) throw new TypeError('persistence.list is required');
-  const [artifacts, events] = await Promise.all([persistence.list('artifact'), persistence.list('event')]);
-  return deriveLocalHostStatus({ hostIdentity, config, artifacts, events, claims, locks, observedAt, staleAfterMs });
+  const [artifacts, events, observedLocks] = await Promise.all([
+    persistence.list('artifact'),
+    persistence.list('event'),
+    root ? observeBasicChatLock({ root, processAlive }) : Promise.resolve([]),
+  ]);
+  return deriveLocalHostStatus({
+    hostIdentity,
+    config,
+    artifacts,
+    events,
+    claims,
+    locks: [...locks, ...observedLocks],
+    observedAt,
+    staleAfterMs,
+  });
 }
