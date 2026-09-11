@@ -18,7 +18,7 @@ function admittedTask(requiredCapabilities) {
     created_at: '2026-09-11T00:00:00.000Z',
     required_capabilities: requiredCapabilities,
     scope: ['local-runtime'],
-    constraints: ['DRY_RUN only', 'no production writes'],
+    constraints: ['DRY_RUN only', 'no external side effects', 'no credentials'],
   };
 }
 
