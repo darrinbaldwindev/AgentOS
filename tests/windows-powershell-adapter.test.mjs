@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import { createWindowsPowerShellAdapter } from '../runtime/windows-powershell-adapter.mjs';
 
 function fixture(overrides = {}) {
   const calls = [];
   const adapter = createWindowsPowerShellAdapter({
     allowedRoots: ['C:/agentos'],
+    pathResolver: (input) => input,
     executor: async (request) => {
       calls.push(request);
       return { stdout: 'ok', stderr: '', exitCode: 0 };
@@ -24,6 +26,22 @@ test('unknown operation is rejected before execution', async () => {
 test('cwd outside approved project roots is rejected before execution', async () => {
   const { adapter, calls } = fixture();
   await assert.rejects(adapter.execute({ operation: 'repo.status', cwd: 'C:/Windows/System32' }), /POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT/);
+  assert.equal(calls.length, 0);
+});
+
+test('canonical path escape through a junction or symlink is rejected before execution', async () => {
+  const lexicalEscape = resolve('C:/agentos/linked');
+  const physicalOutside = resolve('D:/outside');
+  const { adapter, calls } = fixture({
+    pathResolver: (input) => input === lexicalEscape ? physicalOutside : input,
+  });
+  await assert.rejects(adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/linked' }), /POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT/);
+  assert.equal(calls.length, 0);
+});
+
+test('path canonicalization failure is fail-closed before execution', async () => {
+  const { adapter, calls } = fixture({ pathResolver: () => { throw new Error('realpath failed'); } });
+  await assert.rejects(adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' }), /POWERSHELL_PATH_CANONICALIZATION_FAILED/);
   assert.equal(calls.length, 0);
 });
 
