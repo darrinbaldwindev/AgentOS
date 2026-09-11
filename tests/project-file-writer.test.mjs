@@ -31,6 +31,28 @@ async function fixture() {
   return { root, cleanup: () => rm(root, { recursive: true, force: true }) };
 }
 
+function twoCallLockBarrier() {
+  let arrivals = 0;
+  let releaseFirst;
+  let releaseSecond;
+  const firstGate = new Promise((resolve) => { releaseFirst = resolve; });
+  const secondGate = new Promise((resolve) => { releaseSecond = resolve; });
+  return {
+    releaseSecond: () => releaseSecond(),
+    hook: async () => {
+      arrivals += 1;
+      if (arrivals === 1) {
+        await firstGate;
+        return;
+      }
+      if (arrivals === 2) {
+        releaseFirst();
+        await secondGate;
+      }
+    },
+  };
+}
+
 test('creates a bounded file and records exact correlated mutation receipt', async () => {
   const f = await fixture();
   try {
@@ -66,6 +88,25 @@ test('same idempotency key and same intent replays without a second mutation', a
   } finally { await f.cleanup(); }
 });
 
+test('concurrent same-key same-intent duplicate resolves as one mutation plus deterministic replay', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const barrier = twoCallLockBarrier();
+    const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api, hooks: { beforeLock: barrier.hook } });
+    const target = path.join(f.root, 'fixture.txt');
+    const args = { task, targetPath: target, content: 'concurrent-same\n', idempotencyKey: 'idem-concurrent-same' };
+    const firstPromise = writer.execute(args).then((result) => { barrier.releaseSecond(); return result; });
+    const secondPromise = writer.execute(args);
+    const [first, second] = await Promise.all([firstPromise, secondPromise]);
+    assert.equal(first.replayed, false);
+    assert.equal(second.replayed, true);
+    assert.equal(second.receipt_id, first.receipt_id);
+    assert.equal(p.artifacts.size, 1);
+    assert.equal(await readFile(target, 'utf8'), 'concurrent-same\n');
+  } finally { await f.cleanup(); }
+});
+
 test('same idempotency key with different intent fails closed', async () => {
   const f = await fixture();
   try {
@@ -78,6 +119,23 @@ test('same idempotency key with different intent fails closed', async () => {
       (error) => error.code === 'PROJECT_FILE_IDEMPOTENCY_CONFLICT'
     );
     assert.equal(await readFile(target, 'utf8'), 'one\n');
+  } finally { await f.cleanup(); }
+});
+
+test('concurrent same-key different-intent duplicate fails closed under the target lock', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const barrier = twoCallLockBarrier();
+    const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api, hooks: { beforeLock: barrier.hook } });
+    const target = path.join(f.root, 'fixture.txt');
+    const firstPromise = writer.execute({ task, targetPath: target, content: 'winner\n', idempotencyKey: 'idem-concurrent-conflict' }).then((result) => { barrier.releaseSecond(); return result; });
+    const secondPromise = writer.execute({ task, targetPath: target, content: 'conflict\n', idempotencyKey: 'idem-concurrent-conflict' });
+    const first = await firstPromise;
+    assert.equal(first.replayed, false);
+    await assert.rejects(secondPromise, (error) => error.code === 'PROJECT_FILE_IDEMPOTENCY_CONFLICT');
+    assert.equal(p.artifacts.size, 1);
+    assert.equal(await readFile(target, 'utf8'), 'winner\n');
   } finally { await f.cleanup(); }
 });
 
