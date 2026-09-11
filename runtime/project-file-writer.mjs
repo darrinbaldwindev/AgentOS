@@ -9,6 +9,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 const MAX_CONTENT_BYTES = 1_048_576;
+const LOCK_OWNER_FILE = 'owner.json';
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -66,11 +67,7 @@ async function inspectTarget(requestedPath, roots) {
 }
 
 function statIdentity(stat) {
-  return Object.freeze({
-    dev: String(stat.dev),
-    ino: String(stat.ino),
-    size: String(stat.size),
-  });
+  return Object.freeze({ dev: String(stat.dev), ino: String(stat.ino), size: String(stat.size) });
 }
 
 function sameIdentity(left, right) {
@@ -87,10 +84,29 @@ async function readState(target) {
   }
 }
 
-export async function createProjectFileWriter({ approvedRoots, persistence, maxContentBytes = MAX_CONTENT_BYTES, hooks = {} } = {}) {
+async function readLockOwner(lock) {
+  try { return JSON.parse(await fs.readFile(path.join(lock, LOCK_OWNER_FILE), 'utf8')); }
+  catch { return null; }
+}
+
+function sameLockOwner(left, right) {
+  return Boolean(left && right && left.lock_id === right.lock_id && left.intent_hash === right.intent_hash && left.worker_id === right.worker_id);
+}
+
+function validatePreparedTempPath(target, temp) {
+  if (typeof temp !== 'string') return false;
+  if (path.dirname(temp) !== path.dirname(target)) return false;
+  const prefix = `.${path.basename(target)}.agentos-`;
+  return path.basename(temp).startsWith(prefix) && path.basename(temp).endsWith('.tmp');
+}
+
+export async function createProjectFileWriter({ approvedRoots, persistence, maxContentBytes = MAX_CONTENT_BYTES, hooks = {}, reconcileAbandonedLock = null } = {}) {
   if (!Array.isArray(approvedRoots) || approvedRoots.length === 0) throw new TypeError('approvedRoots must be non-empty');
   if (!persistence || typeof persistence.get !== 'function' || typeof persistence.create !== 'function') {
     throw new TypeError('persistence.get and persistence.create are required');
+  }
+  if (reconcileAbandonedLock !== null && typeof reconcileAbandonedLock !== 'function') {
+    throw new TypeError('reconcileAbandonedLock must be a function or null');
   }
   if (!Number.isInteger(maxContentBytes) || maxContentBytes < 1) throw new TypeError('maxContentBytes must be a positive integer');
 
@@ -125,7 +141,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       return Object.freeze({ success: true, replayed: true, recovered: false, receipt_id: receiptId, ...intent });
     }
 
-    function receiptFromPrepared(prepared) {
+    function receiptFromPrepared(prepared, result = 'MUTATED_VERIFIED') {
       return {
         id: receiptId,
         artifact_kind: 'project.file.write.receipt',
@@ -135,27 +151,15 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         preimage_sha256: prepared.preimage_sha256,
         postimage_sha256: posthash,
         prepared_artifact_id: preparedId,
-        result: 'MUTATED_VERIFIED',
+        result,
         recovery_required: false,
         recovered_from_prepared_intent: true,
         recorded_at: new Date().toISOString(),
       };
     }
 
-    async function recoverPreparedIfPresent() {
-      const prepared = await persistence.get('artifact', preparedId);
-      if (!prepared) return null;
-      if (prepared.intent_hash !== intentHash) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { prepared_id: preparedId });
-      const current = await readState(target.canonical);
-      if (!current.exists || current.hash !== posthash || !sameIdentity(current.identity, prepared.prepared_file_identity)) {
-        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', {
-          prepared_id: preparedId,
-          path: target.canonical,
-          actual_postimage_sha256: current.hash,
-          recovery_required: true,
-        });
-      }
-      const receipt = receiptFromPrepared(prepared);
+    async function finalizePreparedReceipt(prepared, result) {
+      const receipt = receiptFromPrepared(prepared, result);
       try {
         await persistence.create('artifact', receipt);
       } catch (error) {
@@ -167,25 +171,119 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       return Object.freeze({ success: true, replayed: true, recovered: true, receipt_id: receiptId, ...intent, preimage_sha256: prepared.preimage_sha256 });
     }
 
+    async function recoverPreparedIfPresent({ allowPublish = false } = {}) {
+      const prepared = await persistence.get('artifact', preparedId);
+      if (!prepared) return null;
+      if (prepared.intent_hash !== intentHash) throw fail('PROJECT_FILE_IDEMPOTENCY_CONFLICT', { prepared_id: preparedId });
+
+      const current = await readState(target.canonical);
+      if (current.exists && current.hash === posthash && sameIdentity(current.identity, prepared.prepared_file_identity)) {
+        return finalizePreparedReceipt(prepared, 'MUTATED_VERIFIED');
+      }
+
+      const targetStillPreimage = current.hash === prepared.preimage_sha256;
+      const tempPath = prepared.prepared_temp_path;
+      if (!targetStillPreimage || !validatePreparedTempPath(target.canonical, tempPath)) {
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', {
+          prepared_id: preparedId,
+          path: target.canonical,
+          actual_postimage_sha256: current.hash,
+          recovery_required: true,
+        });
+      }
+
+      const tempState = await readState(tempPath);
+      if (!tempState.exists || tempState.hash !== posthash || !sameIdentity(tempState.identity, prepared.prepared_file_identity)) {
+        throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', {
+          prepared_id: preparedId,
+          path: target.canonical,
+          recovery_required: true,
+        });
+      }
+
+      if (!allowPublish) return null;
+      if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
+      await fs.rename(tempPath, target.canonical);
+      const after = await readState(target.canonical);
+      if (!after.exists || after.hash !== posthash || !sameIdentity(after.identity, prepared.prepared_file_identity)) {
+        throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
+      }
+      return finalizePreparedReceipt(prepared, 'RECOVERED_PREPARED_AND_VERIFIED');
+    }
+
     const priorReceipt = await receiptIfPresent();
     if (priorReceipt) return priorReceipt;
-    const priorRecovery = await recoverPreparedIfPresent();
+    const priorRecovery = await recoverPreparedIfPresent({ allowPublish: false });
     if (priorRecovery) return priorRecovery;
 
     const lock = `${target.canonical}.agentos-write-lock`;
+    const lockOwner = Object.freeze({
+      lock_id: randomUUID(),
+      pid: process.pid,
+      ...correlation,
+      target_path: target.canonical,
+      intent_hash: intentHash,
+      idempotency_key_sha256: keyHash,
+      acquired_at: new Date().toISOString(),
+    });
+
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
-    try { await fs.mkdir(lock); }
-    catch (error) {
-      if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock });
-      throw error;
+    let lockOwned = false;
+    async function establishLock() {
+      try {
+        await fs.mkdir(lock);
+        lockOwned = true;
+        await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify(lockOwner), { flag: 'wx', mode: 0o600 });
+        return;
+      } catch (error) {
+        if (lockOwned) {
+          await fs.rm(lock, { recursive: true, force: true }).catch(() => undefined);
+          lockOwned = false;
+        }
+        if (error?.code !== 'EEXIST') throw error;
+      }
+
+      const observedOwner = await readLockOwner(lock);
+      if (observedOwner?.pid === process.pid) {
+        throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: observedOwner, retryable: true, recovery_required: false });
+      }
+      if (!reconcileAbandonedLock) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
+      }
+
+      const decision = await reconcileAbandonedLock({ lock, owner: observedOwner, requested_owner: lockOwner, target: target.canonical, intent });
+      if (decision?.status === 'LIVE') {
+        throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: observedOwner, retryable: true, recovery_required: false });
+      }
+      if (decision?.status !== 'ABANDONED' || typeof decision.evidence_id !== 'string' || decision.evidence_id.length === 0) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
+      }
+
+      const recheckedOwner = await readLockOwner(lock);
+      if (!sameLockOwner(observedOwner, recheckedOwner)) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: recheckedOwner, recovery_required: true });
+      }
+      await fs.rm(lock, { recursive: true, force: true });
+      try {
+        await fs.mkdir(lock);
+      } catch (error) {
+        if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: await readLockOwner(lock), retryable: true, recovery_required: false });
+        throw error;
+      }
+      lockOwned = true;
+      await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify({ ...lockOwner, recovered_abandoned_lock_evidence_id: decision.evidence_id }), { flag: 'wx', mode: 0o600 });
     }
+
+    await establishLock();
+    if (typeof hooks.afterLockAcquired === 'function') await hooks.afterLockAcquired({ target: target.canonical, lock, intent, lockOwner });
 
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
+    let preparedPersisted = false;
     try {
       const lockedReceipt = await receiptIfPresent();
       if (lockedReceipt) return lockedReceipt;
-      const lockedRecovery = await recoverPreparedIfPresent();
+      const lockedRecovery = await recoverPreparedIfPresent({ allowPublish: true });
       if (lockedRecovery) return lockedRecovery;
 
       const before = await readState(target.canonical);
@@ -218,10 +316,12 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         preimage_sha256: before.hash,
         postimage_sha256: posthash,
         prepared_file_identity: statIdentity(preparedStat),
+        prepared_temp_path: temp,
         prepared_at: new Date().toISOString(),
       };
       try {
         await persistence.create('artifact', prepared);
+        preparedPersisted = true;
       } catch (error) {
         const raced = await persistence.get('artifact', preparedId);
         if (!raced || raced.intent_hash !== intentHash) {
@@ -241,10 +341,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
 
-      const receipt = {
-        ...receiptFromPrepared(prepared),
-        recovered_from_prepared_intent: false,
-      };
+      const receipt = { ...receiptFromPrepared(prepared), recovered_from_prepared_intent: false };
       try {
         await persistence.create('artifact', receipt);
       } catch (error) {
@@ -252,11 +349,11 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
       return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
     } catch (error) {
-      if (published && !error.recovery_required) error.recovery_required = true;
+      if ((published || preparedPersisted) && !error.recovery_required) error.recovery_required = true;
       throw error;
     } finally {
-      await fs.rm(temp, { force: true }).catch(() => undefined);
-      await fs.rmdir(lock).catch(() => undefined);
+      if (!preparedPersisted || published) await fs.rm(temp, { force: true }).catch(() => undefined);
+      if (lockOwned) await fs.rm(lock, { recursive: true, force: true }).catch(() => undefined);
     }
   }
 
