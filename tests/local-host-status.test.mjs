@@ -85,6 +85,19 @@ test('PR91-shaped queued task plus fresh durable claim reports working', () => {
   assert.deepEqual(result.current, { task_id: 'task-1', mission_id: 'mission-1', wake_trace_id: 'wake-1' });
 });
 
+test('foreign host claim with matching delivery correlation fails closed', () => {
+  const result = deriveLocalHostStatus({
+    hostIdentity,
+    config,
+    artifacts: [task({ status: 'queued', pickup_state: 'QUEUED' })],
+    claims: [claim({ host_id: 'host-b' })],
+    observedAt,
+  });
+  assert.equal(result.lifecycle_state, 'blocked');
+  assert.equal(result.reason, 'CLAIM_CORRELATION_CONFLICT');
+  assert.equal(result.evidence_freshness, 'conflicting');
+});
+
 test('synthetic explicit running state remains supported', () => {
   const result = deriveLocalHostStatus({ hostIdentity, config, artifacts: [task()], observedAt });
   assert.equal(result.lifecycle_state, 'working');
