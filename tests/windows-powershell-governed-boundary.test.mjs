@@ -8,6 +8,7 @@ function harness({ authorityAllowed = true, approvalRequired = false, approved =
   let invoked = 0;
   const powershell = createWindowsPowerShellAdapter({
     allowedRoots: ['C:/agentos'],
+    pathResolver: (input) => input,
     executor: async (request) => {
       invoked += 1;
       events.push('powershell');
