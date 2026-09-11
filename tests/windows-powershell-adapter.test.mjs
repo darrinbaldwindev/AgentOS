@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
+import path from 'node:path';
 import { createWindowsPowerShellAdapter } from '../runtime/windows-powershell-adapter.mjs';
 
 function fixture(overrides = {}) {
@@ -17,6 +17,33 @@ function fixture(overrides = {}) {
   return { adapter, calls };
 }
 
+function createWin32Resolver(entries) {
+  const canonical = new Map(
+    Object.entries(entries).map(([input, output]) => [path.win32.normalize(input).toLowerCase(), output])
+  );
+  return (input) => {
+    const key = path.win32.normalize(input).toLowerCase();
+    if (!canonical.has(key)) {
+      const error = new Error(`ENOENT: ${input}`);
+      error.code = 'ENOENT';
+      throw error;
+    }
+    return canonical.get(key);
+  };
+}
+
+function win32Fixture({ allowedRoots = ['C:\\AgentOS'], mappings = {}, ...overrides } = {}) {
+  return fixture({
+    allowedRoots,
+    pathModule: path.win32,
+    pathResolver: createWin32Resolver({
+      'C:\\AgentOS': 'C:\\AgentOS',
+      ...mappings,
+    }),
+    ...overrides,
+  });
+}
+
 test('unknown operation is rejected before execution', async () => {
   const { adapter, calls } = fixture();
   await assert.rejects(adapter.execute({ operation: 'shell.anything', cwd: 'C:/agentos' }), /POWERSHELL_OPERATION_NOT_ALLOWED/);
@@ -30,8 +57,8 @@ test('cwd outside approved project roots is rejected before execution', async ()
 });
 
 test('canonical path escape through a junction or symlink is rejected before execution', async () => {
-  const lexicalEscape = resolve('C:/agentos/linked');
-  const physicalOutside = resolve('D:/outside');
+  const lexicalEscape = path.resolve('C:/agentos/linked');
+  const physicalOutside = path.resolve('D:/outside');
   const { adapter, calls } = fixture({
     pathResolver: (input) => input === lexicalEscape ? physicalOutside : input,
   });
@@ -42,6 +69,66 @@ test('canonical path escape through a junction or symlink is rejected before exe
 test('path canonicalization failure is fail-closed before execution', async () => {
   const { adapter, calls } = fixture({ pathResolver: () => { throw new Error('realpath failed'); } });
   await assert.rejects(adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' }), /POWERSHELL_PATH_CANONICALIZATION_FAILED/);
+  assert.equal(calls.length, 0);
+});
+
+test('configured allowed-root canonicalization failure is fail-closed before execution', async () => {
+  const { adapter, calls } = win32Fixture({
+    allowedRoots: ['C:\\AgentOS', 'Z:\\invalid'],
+  });
+  await assert.rejects(
+    adapter.execute({ operation: 'repo.status', cwd: 'C:\\AgentOS' }),
+    /POWERSHELL_ALLOWED_ROOT_CANONICALIZATION_FAILED/
+  );
+  assert.equal(calls.length, 0);
+});
+
+test('win32 semantics allow exact canonical approved root', async () => {
+  const { adapter, calls } = win32Fixture();
+  const result = await adapter.execute({ operation: 'repo.status', cwd: 'C:\\AgentOS' });
+  assert.equal(result.success, true);
+  assert.equal(calls.length, 1);
+});
+
+test('win32 semantics allow case-insensitive child path', async () => {
+  const { adapter, calls } = win32Fixture({
+    mappings: { 'c:\\agentos\\src': 'C:\\AgentOS\\src' },
+  });
+  const result = await adapter.execute({ operation: 'repo.status', cwd: 'c:\\agentos\\src' });
+  assert.equal(result.success, true);
+  assert.equal(calls.length, 1);
+});
+
+test('win32 semantics reject root-prefix collision', async () => {
+  const { adapter, calls } = win32Fixture({
+    mappings: { 'C:\\AgentOS2': 'C:\\AgentOS2' },
+  });
+  await assert.rejects(
+    adapter.execute({ operation: 'repo.status', cwd: 'C:\\AgentOS2' }),
+    /POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT/
+  );
+  assert.equal(calls.length, 0);
+});
+
+test('win32 semantics reject cross-drive target', async () => {
+  const { adapter, calls } = win32Fixture({
+    mappings: { 'D:\\outside': 'D:\\outside' },
+  });
+  await assert.rejects(
+    adapter.execute({ operation: 'repo.status', cwd: 'D:\\outside' }),
+    /POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT/
+  );
+  assert.equal(calls.length, 0);
+});
+
+test('win32 semantics reject canonical reparse escape across drives', async () => {
+  const { adapter, calls } = win32Fixture({
+    mappings: { 'C:\\AgentOS\\linked': 'D:\\outside' },
+  });
+  await assert.rejects(
+    adapter.execute({ operation: 'repo.status', cwd: 'C:\\AgentOS\\linked' }),
+    /POWERSHELL_CWD_OUTSIDE_ALLOWED_ROOT/
+  );
   assert.equal(calls.length, 0);
 });
 
