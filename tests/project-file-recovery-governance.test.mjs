@@ -40,8 +40,15 @@ const expected = {
   idempotencyKeySha256: keyHash, preparedId: 'prepared-1',
 };
 
-test('accepts fresh exact durable recovery decision backed by correlated authority artifact', async () => {
+test('accepts fresh exact durable recovery decision backed by correlated approval authority', async () => {
   const p = harness([authority(), decision()]);
+  const governance = createProjectFileRecoveryGovernance({ persistence: p.api, now: () => NOW });
+  const loaded = await governance.loadDecision('decision-1', expected);
+  assert.equal(loaded.id, 'decision-1');
+});
+
+test('accepts fresh exact durable recovery decision backed by correlated canonical authority decision', async () => {
+  const p = harness([authority({ artifact_kind: 'authority.decision' }), decision()]);
   const governance = createProjectFileRecoveryGovernance({ persistence: p.api, now: () => NOW });
   const loaded = await governance.loadDecision('decision-1', expected);
   assert.equal(loaded.id, 'decision-1');
@@ -82,6 +89,17 @@ test('authority artifact must be allowed, exact-correlated and bind the same dec
     await assert.rejects(
       governance.loadDecision('decision-1', expected),
       (error) => ['PROJECT_FILE_RECOVERY_AUTHORITY_UNPROVEN', 'PROJECT_FILE_RECOVERY_AUTHORITY_MISMATCH'].includes(error.code)
+    );
+  }
+});
+
+test('Green and PRS assurance dispositions cannot grant recovery execution authority', async () => {
+  for (const artifactKind of ['green.disposition', 'prs.disposition']) {
+    const p = harness([authority({ artifact_kind: artifactKind }), decision()]);
+    const governance = createProjectFileRecoveryGovernance({ persistence: p.api, now: () => NOW });
+    await assert.rejects(
+      governance.loadDecision('decision-1', expected),
+      (error) => error.code === 'PROJECT_FILE_RECOVERY_AUTHORITY_UNPROVEN'
     );
   }
 });
