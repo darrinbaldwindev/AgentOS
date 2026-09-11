@@ -72,6 +72,17 @@ function conflictingHostEvidence(records, hostId) {
   return foreign.some((record) => correlationValues(record).some((value) => localIds.has(value)));
 }
 
+function conflictingClaimEvidence(records, claims, hostId) {
+  const localIds = new Set(records
+    .filter((record) => exactHostMatch(record, hostId))
+    .flatMap(correlationValues));
+  return claims.some((claim) => {
+    const payload = payloadOf(claim);
+    return payload.host_id && payload.host_id !== hostId &&
+      correlationValues(claim).some((value) => localIds.has(value));
+  });
+}
+
 function completedResult(hostArtifacts, hostId) {
   const receipts = newestFirst(hostArtifacts
     .filter((record) => record?.artifactType === 'remote.execution.receipt')
@@ -118,6 +129,14 @@ export function deriveLocalHostStatus({
 
   const hostId = hostIdentity.host_id;
   const allDurable = [...artifacts, ...events];
+  if (conflictingClaimEvidence(allDurable, claims, hostId)) {
+    return Object.freeze({
+      schema_version: 1, host_id: hostId, observed_at: observedAt, last_seen: hostIdentity.last_seen ?? null,
+      lifecycle_state: 'blocked', reason: 'CLAIM_CORRELATION_CONFLICT', evidence_freshness: 'conflicting',
+      scheduler_enabled: config?.scheduler?.enabled === true, current: null, last_result: null,
+      assurance: { green: 'unknown', prs: 'unknown' },
+    });
+  }
   if (conflictingHostEvidence(allDurable, hostId)) {
     return Object.freeze({
       schema_version: 1, host_id: hostId, observed_at: observedAt, last_seen: hostIdentity.last_seen ?? null,
