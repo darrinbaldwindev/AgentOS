@@ -6,8 +6,6 @@ const DEFAULT_MAX_AGE_MS = 15 * 60 * 1000;
 const AUTHORITY_KINDS = new Set([
   'authority.decision',
   'approval.receipt',
-  'green.disposition',
-  'prs.disposition',
 ]);
 
 function fail(code, details = {}) {
