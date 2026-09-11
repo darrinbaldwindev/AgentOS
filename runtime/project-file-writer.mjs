@@ -79,7 +79,7 @@ function sameIdentity(left, right) {
 
 async function readState(target) {
   try {
-    const [bytes, stat] = await Promise.all([fs.readFile(target), fs.stat(target)]);
+    const [bytes, stat] = await Promise.all([fs.readFile(target), fs.stat(target, { bigint: true })]);
     return { exists: true, hash: sha256(bytes), bytes, identity: statIdentity(stat) };
   } catch (error) {
     if (error?.code === 'ENOENT') return { exists: false, hash: null, bytes: null, identity: null };
@@ -208,7 +208,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         await handle.close();
       }
 
-      const preparedStat = await fs.stat(temp);
+      const preparedStat = await fs.stat(temp, { bigint: true });
       const prepared = {
         id: preparedId,
         artifact_kind: 'project.file.write.prepared',
