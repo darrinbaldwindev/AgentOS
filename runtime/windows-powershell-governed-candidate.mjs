@@ -74,9 +74,21 @@ export async function executeWindowsPowerShellGovernedCandidate({
     throw error;
   }
 
+  // Pickup eligibility proves only that the task/host/capability correlation is
+  // suitable for this worker. The remote PowerShell gate deliberately returns
+  // execution_authorized=false until runtime wiring is explicitly implemented.
+  // Treat that flag as authoritative so a fail-closed runtime-disabled state can
+  // never reach the governed boundary or adapter by accident.
+  if (pickup.execution_authorized !== true) {
+    const error = new Error(`POWERSHELL_EXECUTION_NOT_AUTHORIZED:${pickup.disposition}`);
+    error.code = 'POWERSHELL_EXECUTION_NOT_AUTHORIZED';
+    error.pickup = pickup;
+    throw error;
+  }
+
   // Host eligibility is evidence, not authority. Authority/consent/policy/risk/
   // budget/approval/receipt/verification remain exclusively in the existing
-  // governed execution boundary below.
+  // governed execution boundary below once runtime execution is explicitly wired.
   const governed = await executionBoundary.execute({
     actorContext,
     task: admittedTask,
