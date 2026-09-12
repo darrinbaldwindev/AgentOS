@@ -11,6 +11,7 @@ function admittedTask(hostId, overrides = {}) {
     mission_id: 'mission-pwsh-governed-1',
     delivery_id: 'delivery-pwsh-governed-1',
     request_id: 'request-pwsh-governed-1',
+    wake_trace_id: 'wake-pwsh-governed-1',
     project_id: 'agentos-local',
     target_host_id: hostId,
     admitted_by: 'agentos:overseer',
@@ -74,6 +75,7 @@ function harness({ authorityAllowed = true } = {}) {
         receipt_id: 'receipt-pwsh-1',
         task_id: task.task_id,
         mission_id: task.mission_id,
+        wake_trace_id: task.wake_trace_id,
         operation: result.operation,
         cwd: result.cwd,
         exit_code: result.exit_code,
@@ -83,6 +85,7 @@ function harness({ authorityAllowed = true } = {}) {
       verify: async ({ task, result, receipt }) => ({
         passed: receipt.task_id === task.task_id &&
           receipt.mission_id === task.mission_id &&
+          receipt.wake_trace_id === task.wake_trace_id &&
           receipt.operation === task.execution.operation &&
           receipt.cwd === result.cwd &&
           receipt.exit_code === result.exit_code &&
@@ -108,12 +111,29 @@ test('exact admitted PowerShell intent passes host gate then existing governed b
   });
 
   assert.equal(result.status, 'VERIFIED');
+  assert.equal(result.wake_trace_id, task.wake_trace_id);
   assert.equal(result.pickup.pickup_eligible, true);
   assert.equal(result.pickup.execution_authorized, false);
   assert.equal(result.intent.cwd, task.execution.cwd);
   assert.equal(result.governed.result.operation, 'repo.status');
   assert.equal(result.governed.result.cwd, path.win32.resolve(task.execution.cwd));
   assert.equal(h.invoked(), 1);
+});
+
+test('missing exact wake correlation blocks before host gate, governance and PowerShell invocation', async () => {
+  const hostIdentity = { host_id: 'host-win-governed-missing-wake' };
+  const h = harness();
+  await assert.rejects(executeWindowsPowerShellGovernedCandidate({
+    admittedTask: admittedTask(hostIdentity.host_id, { wake_trace_id: '' }),
+    actorContext: { actor_id: 'agentos:overseer' },
+    hostIdentity,
+    workspaceRoot: 'C:/agentos/AgentOS',
+    hostProbe: hostProbe(),
+    powerShellAdapter: h.adapter,
+    executionBoundary: h.boundary,
+  }), /admittedTask.wake_trace_id is required/);
+  assert.equal(h.invoked(), 0);
+  assert.deepEqual(h.events, []);
 });
 
 test('host capability mismatch blocks before governed boundary and PowerShell invocation', async () => {
