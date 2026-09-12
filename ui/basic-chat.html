@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AgentOS Basic Chat</title>
+  <link rel="stylesheet" href="/chat.css">
+  <script src="/chat.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>AgentOS <span>Basic Chat</span></h1>
+      <p class="sub">Local · DRY_RUN · Autonomy disabled</p>
+      <p id="status" role="status">Loading…</p>
+      <div class="controls">
+        <button type="button" data-action="pause">Pause</button>
+        <button type="button" data-action="resume">Resume</button>
+        <button type="button" data-action="stop">Stop</button>
+      </div>
+      <p class="note">Pause and stop block new sends. A current bounded turn may finish first. Composer stays visible.</p>
+    </header>
+    <section id="history" class="history" aria-label="Conversation" aria-live="polite"></section>
+    <footer class="composer-area">
+      <form id="chat">
+        <label for="message">Message AgentOS</label>
+        <textarea id="message" maxlength="4000" rows="3" required placeholder="One bounded local check…"></textarea>
+        <div class="row">
+          <small>Governed local path · Green required before complete</small>
+          <button id="send" type="submit">Send</button>
+        </div>
+      </form>
+      <p id="error" role="alert"></p>
+    </footer>
+  </div>
+</body>
+</html>

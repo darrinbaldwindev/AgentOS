@@ -14,7 +14,8 @@ export const DEFAULT_CONFIG = Object.freeze({
   autonomyEnabled: false,
   workspaceRoot: 'workspaces',
   stateFile: 'state/agentos.json',
-  scheduler: Object.freeze({ enabled: true, cadenceMinutes: 5 }),
+  // V1 safe default: scheduler OFF (chat-ready). Enable deliberately later.
+  scheduler: Object.freeze({ enabled: false, cadenceMinutes: 5 }),
   github: Object.freeze({ canonicalSync: true }),
 });
 
