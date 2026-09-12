@@ -23,6 +23,76 @@ function validateAssuranceClaim(claim, index) {
   return claim;
 }
 
+/**
+ * Read-only hard gate for worker completion claims.
+ * A worker claim is never sufficient by itself: Green independently checks task identity,
+ * every acceptance criterion, implementation/test evidence, authorization boundaries,
+ * side effects, and unresolved gaps. Only PASS may advance to PRS.
+ */
+export function evaluateTaskCompletion({ task, workerResult, evidence = {}, timestamp = new Date(0).toISOString() } = {}) {
+  if (!task || typeof task !== 'object') throw new TypeError('task is required');
+  if (!workerResult || typeof workerResult !== 'object') throw new TypeError('workerResult is required');
+  requireText(task.task_id, 'task.task_id');
+  if (!Array.isArray(task.acceptance_criteria) || task.acceptance_criteria.length === 0) throw new TypeError('task.acceptance_criteria must be non-empty');
+
+  const failures = [];
+  const claimedTaskId = workerResult.task_id ?? workerResult.taskId ?? null;
+  const taskIdentityVerified = claimedTaskId === task.task_id;
+  if (!taskIdentityVerified) failures.push('worker result does not match assigned task');
+
+  const criterionEvidence = Array.isArray(evidence.acceptance_criteria) ? evidence.acceptance_criteria : [];
+  const criteria = task.acceptance_criteria.map((criterion) => {
+    const match = criterionEvidence.find((item) => item && (item.criterion === criterion || item.acceptance_criterion === criterion));
+    const verified = match?.status === 'verified';
+    if (!verified) failures.push(`acceptance criterion not independently verified: ${criterion}`);
+    return Object.freeze({ criterion, status: verified ? 'verified' : 'insufficient_evidence', evidence_ref: match ?? null });
+  });
+
+  const implementationVerified = evidence.implementation?.status === 'verified';
+  if (!implementationVerified) failures.push('implementation evidence is not independently verified');
+
+  const testsVerified = evidence.tests?.status === 'verified';
+  if (!testsVerified) failures.push('relevant test evidence is not independently verified');
+
+  const authorizationVerified = evidence.authorization?.status === 'verified';
+  if (!authorizationVerified) failures.push('authorization/scope compliance is not independently verified');
+
+  const unauthorizedChanges = Array.isArray(evidence.authorization?.unauthorized_changes) ? evidence.authorization.unauthorized_changes : [];
+  if (unauthorizedChanges.length > 0) failures.push('unauthorized changes detected');
+
+  const sideEffects = Array.isArray(evidence.side_effects) ? evidence.side_effects : [];
+  const blockingSideEffects = sideEffects.filter((item) => item && item.allowed !== true);
+  if (blockingSideEffects.length > 0) failures.push('unapproved side effects detected');
+
+  const gaps = Array.isArray(evidence.gaps) ? evidence.gaps.filter(Boolean) : [];
+  if (gaps.length > 0) failures.push('unresolved completion gaps remain');
+
+  const workerClaimedComplete = workerResult.status === 'complete' || workerResult.status === 'completed' || workerResult.claimed_complete === true;
+  if (!workerClaimedComplete) failures.push('worker has not supplied a completion claim');
+
+  const disposition = failures.length === 0 ? 'pass' : 'fail';
+  return Object.freeze({
+    task_id: task.task_id,
+    timestamp,
+    assurance_owner: 'green-agent',
+    read_only: true,
+    worker_claimed_complete: workerClaimedComplete,
+    task_identity: Object.freeze({ status: taskIdentityVerified ? 'verified' : 'failed', claimed_task_id: claimedTaskId }),
+    acceptance_criteria: Object.freeze(criteria),
+    implementation: Object.freeze({ status: implementationVerified ? 'verified' : 'insufficient_evidence', evidence_ref: evidence.implementation ?? null }),
+    tests: Object.freeze({ status: testsVerified ? 'verified' : 'insufficient_evidence', evidence_ref: evidence.tests ?? null }),
+    authorization: Object.freeze({ status: authorizationVerified && unauthorizedChanges.length === 0 ? 'verified' : 'failed', evidence_ref: evidence.authorization ?? null }),
+    side_effects: Object.freeze(sideEffects),
+    gaps: Object.freeze(gaps),
+    disposition,
+    task_status: disposition === 'pass' ? 'green_verified_complete' : 'incomplete',
+    advance_to_prs: disposition === 'pass',
+    remediation_required: disposition !== 'pass',
+    failures: Object.freeze([...new Set(failures)]),
+    production_promotion_allowed: false,
+  });
+}
+
 /** Read-only scheduler/wake reliability evaluation; it never schedules or mutates state. */
 export function inspectScheduleHealth({ expectedWakes = [], tasks = [], now = Date.now(), dispatchSlaMs = 15 * 60_000, usefulProgressSlaMs = 30 * 60_000 } = {}) {
   if (!Number.isFinite(now)) throw new TypeError('now must be a finite timestamp');
@@ -73,5 +143,5 @@ export function createGreenAgent({ persistence, scan, createTask, rescan } = {})
   async function closeAfterRescan({ findingKey: key, taskId, resultEvidence } = {}) {
     requireText(key, 'findingKey'); requireText(taskId, 'taskId'); if (!resultEvidence || resultEvidence.status !== 'verified') throw new Error('verified worker result evidence is required'); const current = (await persistence.list('artifact')).find((artifact) => artifact.kind === 'green-finding' && artifact.correlationKey === key && artifact.current === true); if (!current) throw new Error(`finding not found: ${key}`); const rescanResult = await rescan({ finding: current.finding, taskId }); if (!rescanResult || !rescanResult.evidence || rescanResult.evidence.status !== 'verified') throw new Error('independent rescan evidence is required'); const closed = rescanResult.findingPresent === false; await persistence.update('artifact', current.id, { status: closed ? 'closed' : 'open', closedBy: closed ? 'independent-rescan' : null, rescanEvidence: rescanResult.evidence }); await persistence.create('event', { eventType: closed ? 'green.finding.closed' : 'green.finding.reopened', findingKey: key, taskId, evidence: rescanResult.evidence }); return Object.freeze({ findingKey: key, status: closed ? 'closed' : 'open', evidence: rescanResult.evidence });
   }
-  return Object.freeze({ runScan, closeAfterRescan, rankFinding, findingKey, inspectScheduleHealth });
+  return Object.freeze({ runScan, closeAfterRescan, rankFinding, findingKey, inspectScheduleHealth, evaluateTaskCompletion });
 }
