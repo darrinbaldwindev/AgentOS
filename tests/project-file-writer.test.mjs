@@ -352,17 +352,17 @@ test('external writer mutation during beforePublish is rejected and external con
   try {
     const p = persistenceHarness();
     const target = path.join(f.root, 'fixture.txt');
-    await writeFile(target, 'old
+    await writeFile(target, 'old');
     const writer = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
-      hooks: { beforePublish: async () => { await writeFile(target, 'external
+      hooks: { beforePublish: async () => { await writeFile(target, 'external'); } },
     });
     await assert.rejects(
-      writer.execute({ task, targetPath: target, content: 'new
+      writer.execute({ task, targetPath: target, content: 'new', expectedPreimageSha256: hash(Buffer.from('old')), idempotencyKey: 'idem-external-mutation' }),
       (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true
     );
-    assert.equal(await readFile(target, 'utf8'), 'external
+    assert.equal(await readFile(target, 'utf8'), 'external');
     const prepared = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.prepared');
     assert.ok(prepared);
     const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
@@ -378,13 +378,13 @@ test('external file creation during beforePublish when target originally absent 
     const writer = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
-      hooks: { beforePublish: async () => { await writeFile(target, 'external
+      hooks: { beforePublish: async () => { await writeFile(target, 'external'); } },
     });
     await assert.rejects(
-      writer.execute({ task, targetPath: target, content: 'new
+      writer.execute({ task, targetPath: target, content: 'new', idempotencyKey: 'idem-external-create' }),
       (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true
     );
-    assert.equal(await readFile(target, 'utf8'), 'external
+    assert.equal(await readFile(target, 'utf8'), 'external');
     const prepared = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.prepared');
     assert.ok(prepared);
     const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
@@ -397,26 +397,26 @@ test('external writer mutation during beforeRecoveryPublish is rejected and exte
   try {
     const p = persistenceHarness();
     const target = path.join(f.root, 'fixture.txt');
-    await writeFile(target, 'old
-    const writer = await createProjectFileWriter({
+    await writeFile(target, 'old');
+    const writerWithCrash = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
-      hooks: { afterPublish: async () => { throw new Error('simulated crash after publish'); } },
+      hooks: { beforePublish: async () => { throw new Error('simulated crash before publish'); } },
     });
-    const args = { task, targetPath: target, content: 'new
-    await assert.rejects(writer.execute(args));
-    assert.equal(await readFile(target, 'utf8'), 'new
+    const args = { task, targetPath: target, content: 'new', expectedPreimageSha256: hash(Buffer.from('old')), idempotencyKey: 'idem-recovery-external' };
+    await assert.rejects(writerWithCrash.execute(args), /simulated crash/);
+    assert.equal(await readFile(target, 'utf8'), 'old');
     const writerWithRecoveryHook = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
-      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external
+      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external'); } },
       reconcilePreparedWrite: async () => ({ status: 'RESUME', evidence_id: 'recovery-evidence-external' }),
     });
     await assert.rejects(
       writerWithRecoveryHook.execute(args),
       (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true
     );
-    assert.equal(await readFile(target, 'utf8'), 'external
+    assert.equal(await readFile(target, 'utf8'), 'external');
     const prepared = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.prepared');
     assert.ok(prepared);
     const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
