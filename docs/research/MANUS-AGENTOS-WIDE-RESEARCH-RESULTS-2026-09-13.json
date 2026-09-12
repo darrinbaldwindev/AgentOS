@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "input": "API v2 task creation, continuation, stop, task state semantics, result/message retrieval, and structured JSON output",
+      "output": {},
+      "error": "creditNotEnough"
+    },
+    {
+      "input": "Official Manus Desktop on Windows: documented local automation, IPC, CLI, browser control, local APIs, and authentication/session behavior",
+      "output": {},
+      "error": "creditNotEnough"
+    },
+    {
+      "input": "Project, agent, browser-client, file, website, and task-related APIs relevant to governed delegation, evidence capture, and result collection",
+      "output": {},
+      "error": "creditNotEnough"
+    },
+    {
+      "input": "Security, privacy, human confirmation, consent, access control, policy/safety constraints, credential storage, and unsafe automation limitations",
+      "output": {},
+      "error": "asyncBusinessBlocked"
+    },
+    {
+      "input": "Official documentation for task polling, webhook alternatives, error formats, asynchronous waiting/user-input states, cancellation, retries, and result durability",
+      "output": {},
+      "error": "asyncBusinessBlocked"
+    }
+  ]
+}

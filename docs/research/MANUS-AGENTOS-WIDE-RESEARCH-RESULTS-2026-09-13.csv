@@ -1,0 +1,6 @@
+Subject,Domain,Support Status,Key Findings,Primary Evidence,AgentOS Implication,Negative Findings,Confidence,Error
+"API v2 task creation, continuation, stop, task state semantics, result/message retrieval, and structured JSON output",,,,,,,,creditNotEnough
+"Official Manus Desktop on Windows: documented local automation, IPC, CLI, browser control, local APIs, and authentication/session behavior",,,,,,,,creditNotEnough
+"Project, agent, browser-client, file, website, and task-related APIs relevant to governed delegation, evidence capture, and result collection",,,,,,,,creditNotEnough
+"Security, privacy, human confirmation, consent, access control, policy/safety constraints, credential storage, and unsafe automation limitations",,,,,,,,asyncBusinessBlocked
+"Official documentation for task polling, webhook alternatives, error formats, asynchronous waiting/user-input states, cancellation, retries, and result durability",,,,,,,,asyncBusinessBlocked
