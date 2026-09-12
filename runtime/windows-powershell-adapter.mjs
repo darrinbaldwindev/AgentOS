@@ -2,12 +2,9 @@
 // Level-1 governed Windows worker adapter. This is a capability adapter only;
 // it does not grant authority, schedule work, elevate privileges, or bypass Green/PRS.
 
-import { execFile as execFileCallback } from 'node:child_process';
+import { execFile as execFileCallback, execFileSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import path from 'node:path';
-import { promisify } from 'node:util';
-
-const execFile = promisify(execFileCallback);
 
 const OPERATIONS = Object.freeze({
   'repo.status': { capability: 'shell.powershell.repo.read', script: 'git status --short --branch' },
@@ -41,11 +38,63 @@ function assertAllowedRoot(cwd, allowedRoots, pathResolver, pathModule) {
   return target;
 }
 
+function terminateWindowsProcessTree(child) {
+  if (!child || !Number.isInteger(child.pid) || child.pid <= 0) return false;
+  try {
+    execFileSync('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
+      windowsHide: true,
+      stdio: 'ignore',
+      timeout: 5_000,
+    });
+    return true;
+  } catch {
+    try {
+      return child.kill('SIGTERM');
+    } catch {
+      return false;
+    }
+  }
+}
+
 async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) {
-  const result = await execFile(executable, args, { cwd, windowsHide: true, timeout: timeoutMs, maxBuffer, encoding: 'utf8' });
-  // promisified execFile resolves only for a successful process exit. Non-zero
-  // process exits reject and are captured by execute() below with their code/output.
-  return { stdout: result.stdout ?? '', stderr: result.stderr ?? '', exitCode: 0 };
+  return await new Promise((resolve, reject) => {
+    let timedOut = false;
+    let timer = null;
+    const child = execFileCallback(
+      executable,
+      args,
+      { cwd, windowsHide: true, maxBuffer, encoding: 'utf8' },
+      (error, stdout = '', stderr = '') => {
+        if (timer) clearTimeout(timer);
+        if (error) {
+          error.stdout = error.stdout ?? stdout;
+          error.stderr = error.stderr ?? stderr;
+          if (timedOut) {
+            error.killed = true;
+            error.signal = error.signal ?? 'SIGTERM';
+          }
+          reject(error);
+          return;
+        }
+        if (timedOut) {
+          const timeoutError = new Error('POWERSHELL_PROCESS_TIMEOUT');
+          timeoutError.code = null;
+          timeoutError.killed = true;
+          timeoutError.signal = 'SIGTERM';
+          timeoutError.stdout = stdout;
+          timeoutError.stderr = stderr;
+          reject(timeoutError);
+          return;
+        }
+        resolve({ stdout, stderr, exitCode: 0 });
+      }
+    );
+
+    timer = setTimeout(() => {
+      timedOut = true;
+      terminateWindowsProcessTree(child);
+    }, timeoutMs);
+  });
 }
 
 export function createWindowsPowerShellAdapter({
