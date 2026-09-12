@@ -86,9 +86,19 @@ export async function executeWindowsPowerShellGovernedCandidate({
     throw error;
   }
 
+  const expectedExecutables = pickup.host_capability_evidence?.evaluation?.tool_evidence;
+  if (!expectedExecutables || typeof expectedExecutables !== 'object') {
+    const error = new Error('POWERSHELL_EXECUTABLE_IDENTITY_EVIDENCE_REQUIRED');
+    error.code = 'POWERSHELL_EXECUTABLE_IDENTITY_EVIDENCE_REQUIRED';
+    error.pickup = pickup;
+    throw error;
+  }
+
   // Host eligibility is evidence, not authority. Authority/consent/policy/risk/
   // budget/approval/receipt/verification remain exclusively in the existing
   // governed execution boundary below once runtime execution is explicitly wired.
+  // Probe-time executable identity is passed into the adapter so PATH/tool drift
+  // between capability discovery and invocation fails closed before process spawn.
   const governed = await executionBoundary.execute({
     actorContext,
     task: admittedTask,
@@ -96,6 +106,7 @@ export async function executeWindowsPowerShellGovernedCandidate({
     invoke: async () => powerShellAdapter.execute({
       operation: intent.operation,
       cwd: intent.cwd,
+      expectedExecutables,
     }),
   });
 
