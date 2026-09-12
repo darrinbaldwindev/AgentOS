@@ -142,14 +142,38 @@ test('repo status uses fixed non-interactive non-elevated PowerShell invocation'
   assert.equal(calls.length, 1);
   assert.equal(calls[0].executable, 'powershell.exe');
   assert.deepEqual(calls[0].args.slice(0, 6), ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command']);
-  assert.equal(calls[0].args[6], 'git status --short --branch');
+  assert.equal(calls[0].args[6], "& 'git.exe' status --short --branch");
+  assert.equal(result.resolved_executables['powershell.exe'].path, 'powershell.exe');
+  assert.equal(result.resolved_executables['git.exe'].path, 'git.exe');
 });
 
 test('development test operation is fixed and separately classified', async () => {
   const { adapter, calls } = fixture();
   const result = await adapter.execute({ operation: 'test.run', cwd: 'C:/agentos/AgentOS' });
   assert.equal(result.capability, 'shell.powershell.dev.execute');
-  assert.equal(calls[0].args[6], 'npm test');
+  assert.equal(calls[0].args[6], "& 'npm.cmd' test");
+});
+
+test('resolved executable paths are the exact paths passed to PowerShell and embedded operation tools', async () => {
+  const resolved = {
+    'powershell.exe': { path: 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', version: '5.1.26100.33296' },
+    'git.exe': { path: 'C:\\Program Files\\Git\\cmd\\git.exe', version: 'git version 2.55.0.windows.5' },
+  };
+  const { adapter, calls } = fixture({ toolResolver: async (tool) => resolved[tool] });
+  const result = await adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' });
+  assert.equal(calls[0].executable, resolved['powershell.exe'].path);
+  assert.equal(calls[0].args[6], `& '${resolved['git.exe'].path}' status --short --branch`);
+  assert.deepEqual(result.resolved_executables, resolved);
+});
+
+test('tool resolution failure returns fail-closed evidence without invoking executor', async () => {
+  const { adapter, calls } = fixture({
+    toolResolver: async (tool) => tool === 'powershell.exe' ? { path: 'powershell.exe', version: null } : null,
+  });
+  const result = await adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' });
+  assert.equal(result.success, false);
+  assert.match(result.stderr, /POWERSHELL_EXECUTABLE_RESOLUTION_FAILED:git\.exe/);
+  assert.equal(calls.length, 0);
 });
 
 test('process and service inspection are read-only system capabilities', () => {
