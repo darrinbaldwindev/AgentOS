@@ -10,15 +10,43 @@ import { createWindowsWorkerHostProbe } from './windows-worker-host-probe.mjs';
 
 const COMMAND_TIMEOUT_MS = 5_000;
 
-function probeFixedCommand({ platform, execFileImpl, tool }) {
-  if (platform !== 'win32') return Promise.resolve(false);
-  return new Promise((done) => {
+function firstLine(value) {
+  return String(value ?? '').split(/\r?\n/u).map((line) => line.trim()).find(Boolean) ?? '';
+}
+
+function execFixed(execFileImpl, executable, args) {
+  return new Promise((resolveResult) => {
     execFileImpl(
-      'where.exe',
-      [tool],
+      executable,
+      args,
       { windowsHide: true, timeout: COMMAND_TIMEOUT_MS, encoding: 'utf8' },
-      (error) => done(error == null),
+      (error, stdout = '') => resolveResult({ ok: error == null, stdout: String(stdout ?? '') }),
     );
+  });
+}
+
+async function probeFixedCommand({ platform, execFileImpl, fsRealpath, tool }) {
+  if (platform !== 'win32') return false;
+  const located = await execFixed(execFileImpl, 'where.exe', [tool]);
+  const rawPath = firstLine(located.stdout);
+  if (!located.ok || !rawPath) return false;
+
+  let executablePath;
+  try {
+    executablePath = await fsRealpath(rawPath);
+  } catch {
+    return false;
+  }
+
+  const versionArgs = tool === 'powershell.exe'
+    ? ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.ToString()']
+    : ['--version'];
+  const versionResult = await execFixed(execFileImpl, executablePath, versionArgs);
+
+  return Object.freeze({
+    available: true,
+    path: executablePath,
+    version: versionResult.ok ? firstLine(versionResult.stdout) || null : null,
   });
 }
 
@@ -36,17 +64,19 @@ export function createDefaultWindowsWorkerHostProbe({
   platform = process.platform,
   execFileImpl = execFile,
   fsAccess = fs.access,
+  fsRealpath = fs.realpath,
 } = {}) {
   if (typeof workspaceRoot !== 'string' || workspaceRoot.length === 0) {
     throw new TypeError('workspaceRoot is required');
   }
   if (typeof execFileImpl !== 'function') throw new TypeError('execFileImpl must be a function');
   if (typeof fsAccess !== 'function') throw new TypeError('fsAccess must be a function');
+  if (typeof fsRealpath !== 'function') throw new TypeError('fsRealpath must be a function');
 
   const canonicalWorkspaceRoot = resolve(workspaceRoot);
   return createWindowsWorkerHostProbe({
     platform,
-    commandProbe: (tool) => probeFixedCommand({ platform, execFileImpl, tool }),
+    commandProbe: (tool) => probeFixedCommand({ platform, execFileImpl, fsRealpath, tool }),
     workspaceProbe: async () => ({
       readable: await canAccess(fsAccess, canonicalWorkspaceRoot, constants.R_OK),
       writable: await canAccess(fsAccess, canonicalWorkspaceRoot, constants.W_OK),
