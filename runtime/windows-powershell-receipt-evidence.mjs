@@ -24,6 +24,21 @@ function executionExitCode(powerShellResult) {
   return integer(powerShellResult.exit_code, 'powerShellResult.exit_code');
 }
 
+function executableEvidence(powerShellResult) {
+  const input = powerShellResult?.resolved_executables;
+  if (input == null) return Object.freeze({});
+  if (typeof input !== 'object' || Array.isArray(input)) throw new TypeError('powerShellResult.resolved_executables must be an object');
+  const normalized = {};
+  for (const name of Object.keys(input).sort()) {
+    const entry = input[name];
+    if (!entry || typeof entry !== 'object') throw new TypeError(`resolved executable ${name} must be an object`);
+    const executablePath = requiredString(entry.path, `resolved executable ${name}.path`);
+    const version = entry.version == null ? null : requiredString(entry.version, `resolved executable ${name}.version`);
+    normalized[name] = Object.freeze({ path: executablePath, version });
+  }
+  return Object.freeze(normalized);
+}
+
 export function createWindowsPowerShellReceiptEvidence({
   candidate,
   task,
@@ -53,6 +68,7 @@ export function createWindowsPowerShellReceiptEvidence({
     throw new TypeError('PowerShell timeout/truncation evidence must be boolean');
   }
   const exitCode = executionExitCode(powerShellResult);
+  const resolvedExecutables = executableEvidence(powerShellResult);
 
   if (task.delivery_id !== candidate?.delivery_id || task.request_id !== candidate?.request_id) {
     throw new Error('POWERSHELL_RECEIPT_DELIVERY_CORRELATION_MISMATCH');
@@ -73,6 +89,10 @@ export function createWindowsPowerShellReceiptEvidence({
     `powershell:stdout_bytes:${Buffer.byteLength(powerShellResult.stdout, 'utf8')}`,
     `powershell:stderr_bytes:${Buffer.byteLength(powerShellResult.stderr, 'utf8')}`,
   ];
+  for (const [name, entry] of Object.entries(resolvedExecutables)) {
+    evidence.push(`powershell:executable:${name}:path:${entry.path}`);
+    evidence.push(`powershell:executable:${name}:version:${entry.version ?? 'unknown'}`);
+  }
 
   const receipt = createRemoteExecutionReceipt({
     candidate,
@@ -101,6 +121,7 @@ export function createWindowsPowerShellReceiptEvidence({
       truncated: powerShellResult.truncated,
       stdout: powerShellResult.stdout,
       stderr: powerShellResult.stderr,
+      resolved_executables: resolvedExecutables,
     }),
   });
 }
