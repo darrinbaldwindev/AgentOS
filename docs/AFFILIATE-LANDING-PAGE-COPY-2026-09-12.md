@@ -14,6 +14,20 @@ Your job as an affiliate is not to oversell that promise. It is to explain where
 
 **CTA:** Apply to the AgentOS Affiliate Program
 
+## Recommended launch offer
+
+**25% of qualifying net revenue during the referred customer's first 12 months.**
+
+With AgentOS's current annual billing, that normally means:
+
+- **Co-worker $39/year → $9.75 standard commission** before any refund/reversal adjustments;
+- **Operator $99/year → $24.75 standard commission** before any refund/reversal adjustments;
+- if a qualifying Co-worker customer upgrades to Operator within the approved 90-day upgrade window, the affiliate receives **25% of the qualifying incremental upgrade revenue**.
+
+A selected high-performing affiliate may be invited to a **30% rate** under a separate Commission Schedule.
+
+**Important:** these figures are the Marketing Overseer's recommended launch model and remain subject to owner approval, final Affiliate Program Terms, tracking implementation and legal/accounting review. Do not publish this page publicly until those approvals are complete.
+
 ## Why promote AgentOS
 
 - Clear product story: help people get more from the AI they already use.
@@ -31,19 +45,31 @@ Your job as an affiliate is not to oversell that promise. It is to explain where
 4. Place a clear affiliate disclosure close to the recommendation or link.
 5. Earn commission on qualifying purchases attributed to your link under the current program rules.
 
-## Commercial terms
+## Recommended commercial terms
 
-The following fields remain subject to final owner approval and legal review before public launch:
+Subject to owner approval and final legal review:
 
-- Commission rate: **TBD**
-- One-time or recurring: **TBD**
-- Recurring duration, if any: **TBD**
-- Payout threshold: **TBD**
-- Payout schedule: **TBD**
-- Upgrade attribution: **TBD**
-- Attribution window: **90 days — current working rule, subject to final program terms**
+- Standard commission: **25% of Qualifying Net Revenue during the customer's first 12 months**.
+- Current annual-plan interpretation: normally **25% of the first annual payment**.
+- High-performer rate: **30% by invitation**.
+- Attribution window: **90 days**.
+- Co-worker → Operator upgrade commission: **25% of qualifying incremental revenue where the upgrade occurs within 90 days of the original paid conversion**.
+- Annual renewal after the customer's first 12 months: **not commissionable at launch**.
+- Validation/hold: **30 days**.
+- Payout cadence: **monthly**.
+- Suggested minimum payout threshold: **AUD $50 or local/platform equivalent**, subject to owner/payment-provider approval.
 
-Do not publish a numeric commission rate until it is formally approved.
+The final published Commission Schedule and Affiliate Program Terms will control.
+
+## Why the commission is described this way
+
+AgentOS currently charges annually. Saying “25% recurring for 12 months” without explanation could imply multiple commission payments even though the current plan produces one annual subscription payment during that first year.
+
+The clearer wording is:
+
+> Earn 25% of qualifying net revenue from customers you refer during their first 12 months with AgentOS.
+
+Then explain the current annual billing treatment.
 
 ## What we want from affiliates
 
@@ -95,10 +121,16 @@ Only if the final program rules permit the method and any brand/trademark restri
 ### Can I email my audience?
 Only where you have the required consent and comply with applicable marketing laws and platform/provider rules.
 
+### Do I keep earning on renewals forever?
+No under the recommended launch model. Commission applies only during the referred customer's first 12 months. The program may change prospectively later if AgentOS economics support it.
+
+### What if someone starts on Co-worker and then upgrades?
+Under the recommended launch model, a qualifying upgrade to Operator within 90 days of the original paid conversion remains attributed to the same affiliate for commission on the qualifying incremental revenue.
+
 ## Trust statement
 
 Affiliate commission does not influence AgentOS technical routing, model selection, governance or assurance decisions. Marketing incentives remain separate from product execution decisions.
 
 ## Legal notice
 
-Participation is subject to the final AgentOS Affiliate Program Terms. This page is promotional program information, not the complete agreement. The final terms control if there is any inconsistency.
+Participation is subject to the final AgentOS Affiliate Program Terms and current Commission Schedule. This page is promotional program information, not the complete agreement. The final terms and schedule control if there is any inconsistency.
