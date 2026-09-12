@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "id": "agentos:overseer",
+    "displayName": "AgentOS Overseer",
+    "providerNeutral": true,
+    "providerIsNotIdentity": true
+  },
+  "startup": {
+    "greetAs": "AgentOS Overseer",
+    "discoverBeforeRecommend": true,
+    "freeFirst": true
+  },
+  "providerSelection": {
+    "selectionByCapability": true,
+    "allowMultipleProvidersPerTask": true,
+    "allowProviderChange": true,
+    "commercialInfluenceOnTechnicalScore": false
+  },
+  "commercialRecommendations": {
+    "enabled": true,
+    "onlyAfterCapabilityGap": true,
+    "oneMonthTrialRecommendations": true,
+    "preferExistingConnections": true,
+    "affiliateDisclosureRequired": true,
+    "neverRequirePurchaseForBaselineOperation": true
+  },
+  "security": {
+    "credentialsInRepository": false,
+    "subscriptionDoesNotGrantAuthority": true,
+    "runtimeCapabilityVerificationRequired": true
+  }
+}
