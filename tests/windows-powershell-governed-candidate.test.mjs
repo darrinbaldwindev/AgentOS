@@ -96,11 +96,8 @@ function harness({ authorityAllowed = true } = {}) {
   return { adapter, boundary, events, invoked: () => invoked };
 }
 
-test('exact admitted PowerShell intent passes host gate then existing governed boundary once', async () => {
-  const hostIdentity = { host_id: 'host-win-governed-1' };
-  const h = harness();
-  const task = admittedTask(hostIdentity.host_id);
-  const result = await executeWindowsPowerShellGovernedCandidate({
+async function attempt(h, task, hostIdentity, overrides = {}) {
+  return executeWindowsPowerShellGovernedCandidate({
     admittedTask: task,
     actorContext: { actor_id: 'agentos:overseer' },
     hostIdentity,
@@ -108,30 +105,29 @@ test('exact admitted PowerShell intent passes host gate then existing governed b
     hostProbe: hostProbe(),
     powerShellAdapter: h.adapter,
     executionBoundary: h.boundary,
+    ...overrides,
   });
+}
 
-  assert.equal(result.status, 'VERIFIED');
-  assert.equal(result.wake_trace_id, task.wake_trace_id);
-  assert.equal(result.pickup.pickup_eligible, true);
-  assert.equal(result.pickup.execution_authorized, false);
-  assert.equal(result.intent.cwd, task.execution.cwd);
-  assert.equal(result.governed.result.operation, 'repo.status');
-  assert.equal(result.governed.result.cwd, path.win32.resolve(task.execution.cwd));
-  assert.equal(h.invoked(), 1);
+test('eligible PowerShell pickup remains zero-invocation while runtime execution is not wired', async () => {
+  const hostIdentity = { host_id: 'host-win-governed-1' };
+  const h = harness();
+  const task = admittedTask(hostIdentity.host_id);
+  await assert.rejects(attempt(h, task, hostIdentity), (error) => {
+    assert.equal(error.code, 'POWERSHELL_EXECUTION_NOT_AUTHORIZED');
+    assert.equal(error.pickup.pickup_eligible, true);
+    assert.equal(error.pickup.execution_authorized, false);
+    assert.equal(error.pickup.disposition, 'POWERSHELL_RUNTIME_EXECUTION_NOT_WIRED');
+    return true;
+  });
+  assert.equal(h.invoked(), 0);
+  assert.deepEqual(h.events, []);
 });
 
 test('missing exact wake correlation blocks before host gate, governance and PowerShell invocation', async () => {
   const hostIdentity = { host_id: 'host-win-governed-missing-wake' };
   const h = harness();
-  await assert.rejects(executeWindowsPowerShellGovernedCandidate({
-    admittedTask: admittedTask(hostIdentity.host_id, { wake_trace_id: '' }),
-    actorContext: { actor_id: 'agentos:overseer' },
-    hostIdentity,
-    workspaceRoot: 'C:/agentos/AgentOS',
-    hostProbe: hostProbe(),
-    powerShellAdapter: h.adapter,
-    executionBoundary: h.boundary,
-  }), /admittedTask.wake_trace_id is required/);
+  await assert.rejects(attempt(h, admittedTask(hostIdentity.host_id, { wake_trace_id: '' }), hostIdentity), /admittedTask.wake_trace_id is required/);
   assert.equal(h.invoked(), 0);
   assert.deepEqual(h.events, []);
 });
@@ -152,20 +148,12 @@ test('host capability mismatch blocks before governed boundary and PowerShell in
   assert.deepEqual(h.events, []);
 });
 
-test('authority denial remains zero-invocation after host eligibility succeeds', async () => {
+test('runtime-disabled gate blocks before governed authority evaluation', async () => {
   const hostIdentity = { host_id: 'host-win-governed-3' };
   const h = harness({ authorityAllowed: false });
-  await assert.rejects(executeWindowsPowerShellGovernedCandidate({
-    admittedTask: admittedTask(hostIdentity.host_id),
-    actorContext: { actor_id: 'agentos:overseer' },
-    hostIdentity,
-    workspaceRoot: 'C:/agentos/AgentOS',
-    hostProbe: hostProbe(),
-    powerShellAdapter: h.adapter,
-    executionBoundary: h.boundary,
-  }), /AUTHORITY_DENIED/);
+  await assert.rejects(attempt(h, admittedTask(hostIdentity.host_id), hostIdentity), /POWERSHELL_EXECUTION_NOT_AUTHORIZED:POWERSHELL_RUNTIME_EXECUTION_NOT_WIRED/);
   assert.equal(h.invoked(), 0);
-  assert.deepEqual(h.events, ['assertValid', 'assertAllowed']);
+  assert.deepEqual(h.events, []);
 });
 
 test('admitted capability cannot be reused for a different PowerShell operation capability', async () => {
@@ -186,25 +174,15 @@ test('admitted capability cannot be reused for a different PowerShell operation 
   assert.equal(h.invoked(), 0);
 });
 
-test('runtime caller cannot substitute operation or cwd because invocation is derived only from admitted task', async () => {
+test('runtime caller cannot bypass disabled execution by substituting operation or cwd', async () => {
   const hostIdentity = { host_id: 'host-win-governed-5' };
   const h = harness();
   const task = admittedTask(hostIdentity.host_id);
-  const result = await executeWindowsPowerShellGovernedCandidate({
-    admittedTask: task,
-    actorContext: { actor_id: 'agentos:overseer' },
-    hostIdentity,
+  await assert.rejects(attempt(h, task, hostIdentity, {
     workspaceRoot: 'D:/outside',
-    hostProbe: hostProbe(),
-    powerShellAdapter: h.adapter,
-    executionBoundary: h.boundary,
     operation: 'test.run',
     cwd: 'D:/outside',
-  });
-  assert.equal(result.intent.operation, task.execution.operation);
-  assert.equal(result.intent.cwd, task.execution.cwd);
-  assert.equal(result.governed.result.operation, task.execution.operation);
-  assert.equal(result.governed.result.cwd, path.win32.resolve(task.execution.cwd));
-  assert.notEqual(result.governed.result.cwd, path.win32.resolve('D:/outside'));
-  assert.equal(h.invoked(), 1);
+  }), /POWERSHELL_EXECUTION_NOT_AUTHORIZED:POWERSHELL_RUNTIME_EXECUTION_NOT_WIRED/);
+  assert.equal(h.invoked(), 0);
+  assert.deepEqual(h.events, []);
 });
