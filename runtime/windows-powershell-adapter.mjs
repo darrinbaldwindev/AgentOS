@@ -43,6 +43,8 @@ function assertAllowedRoot(cwd, allowedRoots, pathResolver, pathModule) {
 
 async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) {
   const result = await execFile(executable, args, { cwd, windowsHide: true, timeout: timeoutMs, maxBuffer, encoding: 'utf8' });
+  // promisified execFile resolves only for a successful process exit. Non-zero
+  // process exits reject and are captured by execute() below with their code/output.
   return { stdout: result.stdout ?? '', stderr: result.stderr ?? '', exitCode: 0 };
 }
 
@@ -54,6 +56,7 @@ export function createWindowsPowerShellAdapter({
   executable = 'powershell.exe',
   timeoutMs = 120_000,
   maxBuffer = 1_048_576,
+  now = () => Date.now(),
 } = {}) {
   if (!Array.isArray(allowedRoots) || allowedRoots.length === 0) throw new TypeError('allowedRoots must be non-empty');
   if (typeof executor !== 'function') throw new TypeError('executor must be a function');
@@ -63,6 +66,7 @@ export function createWindowsPowerShellAdapter({
   }
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new TypeError('timeoutMs must be a positive integer');
   if (!Number.isInteger(maxBuffer) || maxBuffer < 1) throw new TypeError('maxBuffer must be a positive integer');
+  if (typeof now !== 'function') throw new TypeError('now must be a function');
 
   function describe(operation) {
     const spec = OPERATIONS[operation];
@@ -75,14 +79,56 @@ export function createWindowsPowerShellAdapter({
     if (!spec) throw new Error('POWERSHELL_OPERATION_NOT_ALLOWED');
     if (typeof cwd !== 'string' || !cwd) throw new TypeError('cwd is required');
     const safeCwd = assertAllowedRoot(cwd, allowedRoots, pathResolver, pathModule);
-    const startedAt = new Date().toISOString();
+    const startedMs = now();
+    if (!Number.isFinite(startedMs)) throw new Error('POWERSHELL_CLOCK_INVALID');
+    const startedAt = new Date(startedMs).toISOString();
     try {
       const result = await executor({ executable, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', spec.script], cwd: safeCwd, timeoutMs, maxBuffer });
+      const finishedMs = now();
+      if (!Number.isFinite(finishedMs) || finishedMs < startedMs) throw new Error('POWERSHELL_CLOCK_INVALID');
       const exitCode = Number.isInteger(result?.exitCode) ? result.exitCode : 0;
-      return Object.freeze({ operation, capability: spec.capability, cwd: safeCwd, elevated: false, interactive: false, started_at: startedAt, completed_at: new Date().toISOString(), exit_code: exitCode, stdout: String(result?.stdout ?? ''), stderr: String(result?.stderr ?? ''), success: exitCode === 0 });
+      const finishedAt = new Date(finishedMs).toISOString();
+      return Object.freeze({
+        operation,
+        capability: spec.capability,
+        cwd: safeCwd,
+        elevated: false,
+        interactive: false,
+        started_at: startedAt,
+        finished_at: finishedAt,
+        completed_at: finishedAt,
+        duration_ms: finishedMs - startedMs,
+        exit_code: exitCode,
+        stdout: String(result?.stdout ?? ''),
+        stderr: String(result?.stderr ?? ''),
+        timed_out: false,
+        truncated: false,
+        success: exitCode === 0,
+      });
     } catch (error) {
       const result = error ?? {};
-      return Object.freeze({ operation, capability: spec.capability, cwd: safeCwd, elevated: false, interactive: false, started_at: startedAt, completed_at: new Date().toISOString(), exit_code: Number.isInteger(result.code) ? result.code : null, stdout: String(result.stdout ?? ''), stderr: String(result.stderr ?? result.message ?? ''), success: false });
+      const finishedMsRaw = now();
+      const finishedMs = Number.isFinite(finishedMsRaw) && finishedMsRaw >= startedMs ? finishedMsRaw : startedMs;
+      const finishedAt = new Date(finishedMs).toISOString();
+      const timedOut = result.killed === true && result.signal != null;
+      const truncated = result.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER';
+      return Object.freeze({
+        operation,
+        capability: spec.capability,
+        cwd: safeCwd,
+        elevated: false,
+        interactive: false,
+        started_at: startedAt,
+        finished_at: finishedAt,
+        completed_at: finishedAt,
+        duration_ms: finishedMs - startedMs,
+        exit_code: Number.isInteger(result.code) ? result.code : null,
+        stdout: String(result.stdout ?? ''),
+        stderr: String(result.stderr ?? result.message ?? ''),
+        timed_out: timedOut,
+        truncated,
+        success: false,
+      });
     }
   }
 
