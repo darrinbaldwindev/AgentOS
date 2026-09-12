@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AgentOS Basic Chat</title><link rel="stylesheet" href="/chat.css"><script src="/chat.js" defer></script></head>
+<body><main><header><h1>AgentOS <span>Basic Chat</span></h1><p>Local · DRY_RUN · Autonomy disabled</p></header>
+<section aria-label="Mission"><strong id="status" role="status">Loading history…</strong><p id="mission">No mission yet</p><div><button data-action="pause">Pause after this turn</button><button data-action="stop">Stop after this turn</button><button data-action="resume">Resume chat</button></div><p class="note">Pause and stop prevent further sends. A current bounded turn finishes first.</p></section>
+<section id="history" aria-label="Conversation history" aria-live="polite"></section>
+<form id="chat"><label for="message">Message AgentOS</label><textarea id="message" maxlength="4000" rows="3" required placeholder="Enter a message for one bounded local check"></textarea><div><small>This first slice records your request and runs a deterministic local check.</small><button id="send" type="submit">Send</button></div></form><p id="error" role="alert"></p></main></body></html>
