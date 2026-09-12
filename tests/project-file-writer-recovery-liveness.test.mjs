@@ -204,8 +204,8 @@ test('external writer mutation during beforeRecoveryPublish rejects recovery and
   try {
     const p = persistenceHarness();
     const target = path.join(f.root, 'fixture.txt');
-    await writeFile(target, 'old
-    const args = { task, targetPath: target, content: 'new
+    await writeFile(target, 'old');
+    const args = { task, targetPath: target, content: 'new', expectedPreimageSha256: hash(Buffer.from('old')), idempotencyKey: 'idem-external-mutation' };
     const interrupted = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
@@ -215,11 +215,11 @@ test('external writer mutation during beforeRecoveryPublish rejects recovery and
     const resumed = await createProjectFileWriter({
       approvedRoots: [f.root],
       persistence: p.api,
-      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external
+      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external'); } },
       reconcilePreparedWrite: async () => ({ status: 'RESUME', evidence_id: 'recovery-fixture' }),
     });
     await assert.rejects(resumed.execute(args), (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true);
-    assert.equal(await readFile(target, 'utf8'), 'external
+    assert.equal(await readFile(target, 'utf8'), 'external');
     const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
     assert.equal(receipt, undefined);
   } finally { await f.cleanup(); }
