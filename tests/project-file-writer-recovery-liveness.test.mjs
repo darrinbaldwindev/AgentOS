@@ -220,5 +220,7 @@ test('external writer mutation during beforeRecoveryPublish rejects recovery and
     });
     await assert.rejects(resumed.execute(args), (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true);
     assert.equal(await readFile(target, 'utf8'), 'external
+    const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
+    assert.equal(receipt, undefined);
   } finally { await f.cleanup(); }
 });

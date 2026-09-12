@@ -210,6 +210,14 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', { prepared_id: preparedId, path: target.canonical, recovery_required: true });
       }
       if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
+      const recheckBeforeRecoveryPublish = await readState(target.canonical);
+      if (recheckBeforeRecoveryPublish.hash !== prepared.preimage_sha256) {
+        throw fail('PROJECT_FILE_EXTERNAL_MUTATION', {
+          prepared_id: preparedId,
+          path: target.canonical,
+          recovery_required: true,
+        });
+      }
       await fs.rename(tempPath, target.canonical);
       const after = await readState(target.canonical);
       if (!after.exists || after.hash !== posthash || !sameIdentity(after.identity, prepared.prepared_file_identity)) {
