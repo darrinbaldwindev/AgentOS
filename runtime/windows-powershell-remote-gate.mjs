@@ -1,6 +1,6 @@
 // AGENTOS-WINDOWS-WORKER-004
 // Composition-only bridge from real host capability evidence to the existing
-// canonical remote-pickup eligibility gate. This does NOT authorize execution.
+// canonical remote-pickup eligibility gate. Execution remains disabled by default.
 
 import { evaluateRemotePickupEligibility } from './remote-pickup-eligibility.mjs';
 import { createDefaultWindowsWorkerHostProbe } from './windows-worker-default-host-probe.mjs';
@@ -19,9 +19,13 @@ export async function evaluateWindowsPowerShellRemotePickup({
   hostIdentity,
   workspaceRoot,
   hostProbe,
+  runtimeExecutionEnabled = false,
 } = {}) {
   if (!taskRequiresPowerShell(admittedTask)) {
     throw new TypeError('admittedTask must require a shell.powershell capability');
+  }
+  if (typeof runtimeExecutionEnabled !== 'boolean') {
+    throw new TypeError('runtimeExecutionEnabled must be boolean');
   }
 
   const probe = hostProbe ?? createDefaultWindowsWorkerHostProbe({ workspaceRoot });
@@ -37,15 +41,17 @@ export async function evaluateWindowsPowerShellRemotePickup({
     hostCapabilities,
   });
 
-  // Deliberately fail closed even when host pickup eligibility is proven. The
-  // actual PowerShell runner is not connected to local-wake/scheduler yet.
-  const disposition = canonicalGate.eligible
-    ? 'POWERSHELL_RUNTIME_EXECUTION_NOT_WIRED'
-    : canonicalGate.disposition;
+  const executionAuthorized = canonicalGate.eligible && runtimeExecutionEnabled === true;
+  const disposition = !canonicalGate.eligible
+    ? canonicalGate.disposition
+    : executionAuthorized
+      ? 'ELIGIBLE_FOR_BOUNDED_POWERSHELL_EXECUTION'
+      : 'POWERSHELL_RUNTIME_EXECUTION_NOT_WIRED';
 
   return Object.freeze({
     pickup_eligible: canonicalGate.eligible,
-    execution_authorized: false,
+    execution_authorized: executionAuthorized,
+    runtime_execution_enabled: runtimeExecutionEnabled,
     disposition,
     host_capabilities: hostCapabilities,
     host_capability_evidence: capabilityEvidence,
