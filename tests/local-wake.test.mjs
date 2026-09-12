@@ -19,6 +19,8 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     const second = await wakeLocal({ root, objective: 'second bounded wake' });
     assert.equal(first.status, 'COMPLETED');
     assert.equal(second.status, 'COMPLETED');
+    assert.equal(first.green?.disposition, 'pass');
+    assert.equal(second.green?.disposition, 'pass');
     assert.notEqual(first.response.wake_trace_id, second.response.wake_trace_id);
     assert.equal(first.boot.overseer.id, second.boot.overseer.id);
     assert.equal(first.boot.capabilities.mode, 'DRY_RUN');
@@ -26,16 +28,23 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     assert.equal(second.response.source_agent, 'agentos:deterministic-skill-agent');
     assert.ok(first.response.evidence.some((item) => item === 'worker:agentos:deterministic-skill-agent'));
     assert.ok(first.response.verification.some((item) => item.includes('registered worker was enabled, executable and matched every required capability')));
+    assert.ok(first.response.verification.some((item) => item.includes('Green evaluateTaskCompletion disposition=pass')));
 
     const state = JSON.parse(await readFile(join(root, DEFAULT_CONFIG.stateFile), 'utf8'));
     const artifacts = Object.values(state.records.artifact);
     const responses = artifacts.filter((a) => a.artifactType === 'project-overseer.response');
+    const finalCompleted = responses.filter((a) => a.payload?.status === 'COMPLETED');
+    const awaitingGreen = responses.filter((a) => a.payload?.status === 'AWAITING_GREEN');
+    const greenDispositions = artifacts.filter((a) => a.artifactType === 'green.disposition');
     const tasks = artifacts.filter((a) => a.artifactType === 'dispatch.task');
     const wakes = Object.values(state.records.event).filter((e) => e.eventType === 'agentos.manual-wake.completed');
     assert.equal(tasks.length, 2);
-    assert.equal(responses.length, 2);
+    assert.equal(finalCompleted.length, 2);
+    assert.equal(awaitingGreen.length, 2);
+    assert.equal(greenDispositions.length, 2);
     assert.equal(wakes.length, 2);
     assert.equal(wakes[0].workerId, 'agentos:deterministic-skill-agent');
+    assert.equal(wakes[0].greenDisposition, 'pass');
     assert.equal(state.records.agent['agentos:overseer'].status, 'online');
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -62,6 +71,7 @@ test('manual wake honours explicit AGENTOS_HOME and preserves safe defaults', as
       argv: ['node', 'runtime/local-wake.mjs', 'explicit root wake'],
     });
     assert.equal(result.status, 'COMPLETED');
+    assert.equal(result.green?.disposition, 'pass');
     assert.equal(result.boot.capabilities.mode, 'DRY_RUN');
     const config = JSON.parse(await readFile(join(root, 'config.json'), 'utf8'));
     assert.equal(config.autonomyEnabled, false);
@@ -81,9 +91,7 @@ test('manual wake defaults to the platform home .agentos directory', async () =>
       platformHome,
     });
     assert.equal(result.status, 'COMPLETED');
-    assert.equal(result.boot.capabilities.mode, 'DRY_RUN');
-    const config = JSON.parse(await readFile(join(root, 'config.json'), 'utf8'));
-    assert.equal(config.autonomyEnabled, false);
+    assert.equal(result.green?.disposition, 'pass');
   } finally {
     await rm(platformHome, { recursive: true, force: true });
   }

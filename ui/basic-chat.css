@@ -1,0 +1,60 @@
+:root { font: 16px/1.5 system-ui, sans-serif; color: #e8edf6; background: #111722; }
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; }
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+}
+header { flex: 0 0 auto; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h1 span { font-weight: 400; color: #a5b5cb; }
+.sub, .note, small { color: #a5b5cb; }
+#status { font-weight: 600; margin: 8px 0; }
+.controls button { margin: 2px 4px 2px 0; }
+.history {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow: auto;
+  border: 1px solid #334157;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 12px 0;
+}
+article { border-bottom: 1px solid #334157; padding: 10px 0; }
+article p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
+.composer-area {
+  flex: 0 0 auto;
+  border: 1px solid #334157;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #151c28;
+}
+label { display: block; font-weight: 600; margin-bottom: 6px; }
+textarea {
+  width: 100%;
+  background: #1b2534;
+  color: #fff;
+  border: 1px solid #526784;
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+  resize: vertical;
+  min-height: 72px;
+}
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+button {
+  background: #29374c;
+  color: #fff;
+  border: 1px solid #526784;
+  border-radius: 6px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+#send { background: #225fbe; }
+#error { color: #ffb0ad; min-height: 1.2em; margin: 6px 0 0; }
+.note { font-size: 13px; }
