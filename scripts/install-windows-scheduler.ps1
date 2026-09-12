@@ -5,13 +5,22 @@
 [CmdletBinding()]
 param(
     [string]$AgentOSHome = (Join-Path $HOME '.agentos'),
-    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$RepoRoot = '',
     [int]$IntervalMinutes = 5,
     [switch]$Enable
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $scriptPath = $MyInvocation.MyCommand.Path
+    if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+        throw 'Unable to resolve scheduler installer script path.'
+    }
+    $scriptDirectory = Split-Path -Parent $scriptPath
+    $RepoRoot = Split-Path -Parent $scriptDirectory
+}
 
 if ($IntervalMinutes -lt 1) { throw 'IntervalMinutes must be >= 1.' }
 $node = (Get-Command node -ErrorAction Stop).Source
