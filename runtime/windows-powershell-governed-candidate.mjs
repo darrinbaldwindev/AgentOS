@@ -43,7 +43,9 @@ export async function executeWindowsPowerShellGovernedCandidate({
   hostProbe,
   powerShellAdapter,
   executionBoundary,
+  runtimeExecutionEnabled = false,
 } = {}) {
+  if (typeof runtimeExecutionEnabled !== 'boolean') throw new TypeError('runtimeExecutionEnabled must be boolean');
   if (!powerShellAdapter || typeof powerShellAdapter.describe !== 'function' || typeof powerShellAdapter.execute !== 'function') {
     throw new TypeError('powerShellAdapter describe/execute methods are required');
   }
@@ -66,6 +68,7 @@ export async function executeWindowsPowerShellGovernedCandidate({
     hostIdentity,
     workspaceRoot,
     hostProbe,
+    runtimeExecutionEnabled,
   });
   if (!pickup.pickup_eligible) {
     const error = new Error(`POWERSHELL_PICKUP_BLOCKED:${pickup.disposition}`);
@@ -74,11 +77,9 @@ export async function executeWindowsPowerShellGovernedCandidate({
     throw error;
   }
 
-  // Pickup eligibility proves only that the task/host/capability correlation is
-  // suitable for this worker. The remote PowerShell gate deliberately returns
-  // execution_authorized=false until runtime wiring is explicitly implemented.
-  // Treat that flag as authoritative so a fail-closed runtime-disabled state can
-  // never reach the governed boundary or adapter by accident.
+  // Pickup eligibility is not execution authority. The explicit runtime flag is
+  // default-false and must combine with canonical eligibility before this seam
+  // may reach the governed boundary. local-wake/scheduler do not set it yet.
   if (pickup.execution_authorized !== true) {
     const error = new Error(`POWERSHELL_EXECUTION_NOT_AUTHORIZED:${pickup.disposition}`);
     error.code = 'POWERSHELL_EXECUTION_NOT_AUTHORIZED';
@@ -94,11 +95,6 @@ export async function executeWindowsPowerShellGovernedCandidate({
     throw error;
   }
 
-  // Host eligibility is evidence, not authority. Authority/consent/policy/risk/
-  // budget/approval/receipt/verification remain exclusively in the existing
-  // governed execution boundary below once runtime execution is explicitly wired.
-  // Probe-time executable identity is passed into the adapter so PATH/tool drift
-  // between capability discovery and invocation fails closed before process spawn.
   const governed = await executionBoundary.execute({
     actorContext,
     task: admittedTask,
