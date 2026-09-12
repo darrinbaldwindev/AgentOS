@@ -16,6 +16,10 @@ import { evaluateRemotePickupEligibility } from './remote-pickup-eligibility.mjs
 import { assessRemoteDeliveryClaimRecovery } from './remote-delivery-recovery.mjs';
 import { createRemoteExecutionReceipt } from './remote-local-bridge-contract.mjs';
 import { evaluateWindowsPowerShellRemotePickup } from './windows-powershell-remote-gate.mjs';
+import { executeWindowsPowerShellGovernedCandidate } from './windows-powershell-governed-candidate.mjs';
+import { createWindowsPowerShellAdapter } from './windows-powershell-adapter.mjs';
+import { createGovernedExecutionBoundary } from './governed-execution-boundary.mjs';
+import { createWindowsPowerShellReceiptEvidence } from './windows-powershell-receipt-evidence.mjs';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { createLocalDispatchStore } from './local-dispatch-store.mjs';
 import { createMissionBudget } from './mission-budget.mjs';
@@ -31,6 +35,8 @@ import {
   createMissionRecord,
   missionLedgerPaths,
 } from './mission-ledger.mjs';
+
+import { execFileSync } from 'node:child_process';
 
 const PROJECT_ID = 'agentos-local';
 const RECEIVER = 'agentos:project-overseer';
@@ -195,21 +201,150 @@ export async function wakeLocal(options = {}) {
   // It deliberately stops before claim, budget, worker, receipt or process execution
   // so the existing deterministic local-wake completion pipeline is not duplicated.
   if (taskRequiresPowerShell(task)) {
-    if (config.remoteBridge?.powerShell?.enabled !== true) {
+    const powerShellConfig = config.remoteBridge?.powerShell;
+    if (powerShellConfig?.enabled !== true) {
       return disposition('BLOCKED', 'POWERSHELL_PICKUP_DISABLED', {
         powershell_pickup: { pickup_eligible: false, execution_authorized: false, disposition: 'POWERSHELL_PICKUP_DISABLED' },
       });
     }
     const hostProbe = options[INTERNAL_POWERSHELL_HOST_PROBE];
     const workspaceRoot = task.execution?.cwd ?? join(root, config.workspaceRoot);
+    const runtimeExecutionEnabled = powerShellConfig.runtimeExecutionEnabled === true;
+
+    if (runtimeExecutionEnabled && (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false)) {
+      return disposition('BLOCKED', 'POWERSHELL_EXECUTION_REQUIRES_SAFE_RUNTIME', {
+        powershell_pickup: { pickup_eligible: false, execution_authorized: false, runtime_execution_enabled: false, disposition: 'POWERSHELL_EXECUTION_REQUIRES_SAFE_RUNTIME' },
+      });
+    }
+
     const powerShellPickup = await evaluateWindowsPowerShellRemotePickup({
       admittedTask: task,
       hostIdentity: host,
       workspaceRoot,
       ...(hostProbe == null ? {} : { hostProbe }),
-      runtimeExecutionEnabled: false,
+      runtimeExecutionEnabled,
     });
-    return disposition('BLOCKED', powerShellPickup.disposition, {
+
+    if (!powerShellPickup.pickup_eligible) {
+      return disposition('BLOCKED', powerShellPickup.disposition, {
+        powershell_pickup: {
+          pickup_eligible: false,
+          execution_authorized: false,
+          runtime_execution_enabled: runtimeExecutionEnabled,
+          disposition: powerShellPickup.disposition,
+          host_capabilities: powerShellPickup.host_capabilities,
+          canonical_gate: powerShellPickup.canonical_gate,
+        },
+        host_capability_evidence: powerShellPickup.host_capability_evidence,
+      });
+    }
+
+    if (!runtimeExecutionEnabled) {
+      return disposition('BLOCKED', powerShellPickup.disposition, {
+        powershell_pickup: {
+          pickup_eligible: powerShellPickup.pickup_eligible,
+          execution_authorized: powerShellPickup.execution_authorized,
+          runtime_execution_enabled: false,
+          disposition: powerShellPickup.disposition,
+          host_capabilities: powerShellPickup.host_capabilities,
+          canonical_gate: powerShellPickup.canonical_gate,
+        },
+        host_capability_evidence: powerShellPickup.host_capability_evidence,
+      });
+    }
+
+    // Canonical remote-delivery execution sequence: eligibility passed, now check claim/correlation
+    const claims = await createRemoteDeliveryClaimStore({ root: join(root, 'state', 'remote-claims') });
+    const existingClaim = await claims.get(deliveryId);
+    if (existingClaim) {
+      if (existingClaim.request_id !== task.request_id || existingClaim.host_id !== host.host_id) {
+        return disposition('BLOCKED', 'CLAIM_CORRELATION_MISMATCH');
+      }
+      const recovery = assessRemoteDeliveryClaimRecovery({ claim: existingClaim });
+      return disposition(recovery.recovery_required ? 'RECOVERY_REQUIRED' : 'DUPLICATE_DELIVERY', recovery.disposition);
+    }
+
+    // Canonical claim before execution
+    const claim = await claims.claim({ deliveryId, requestId: task.request_id, hostId: host.host_id });
+    if (!claim.claimed) return disposition('DUPLICATE_DELIVERY', claim.disposition);
+
+    const repo = fileURLToPath(new URL('..', import.meta.url));
+    const codeIdentity = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+
+    // Execute through governed boundary
+    const powerShellAdapter = createWindowsPowerShellAdapter({
+      allowedRoots: [workspaceRoot],
+    });
+
+    const actorContext = { actor_id: task.actor_id ?? ISSUER };
+    const executionBoundary = createGovernedExecutionBoundary({
+      context: { assertValid: async () => {} },
+      authority: { assertAllowed: async () => {} },
+      consent: { assertAllowed: async () => {} },
+      capability: {
+        assertExecutionEligible: async ({ task: t }) => powerShellAdapter.describe(t.execution.operation),
+      },
+      policy: { assertAllowed: async () => {} },
+      risk: { evaluate: async () => ({ approvalRequired: false }) },
+      budget: {
+        reserve: async ({ project_id, mission_id, limit_units }) => {
+          const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
+          const reservation = budget.reserve({ project_id, mission_id, limit_units });
+          budget.close();
+          return reservation;
+        },
+        reconcile: async ({ reservation_id, actual_units }) => {
+          const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
+          const result = budget.reconcile({ reservation_id, actual_units });
+          budget.close();
+          return result;
+        },
+      },
+      approval: { assertApproved: async () => {} },
+      receipts: {
+        record: async ({ task: t, result }) => {
+          const receiptEvidence = createWindowsPowerShellReceiptEvidence({
+            candidate: task,
+            task: t,
+            hostId: host.host_id,
+            workerId: WORKER_ID,
+            status: result.success ? 'AWAITING_GREEN' : (result.timed_out || result.truncated ? 'BLOCKED' : 'FAILED'),
+            powerShellResult: result,
+            budgetStatus: 'PENDING',
+            codeIdentity,
+            createdAt: new Date().toISOString(),
+          });
+          await persistence.create('artifact', {
+            id: `powershell-receipt:${deliveryId}`,
+            artifactType: 'powershell.execution.receipt',
+            payload: receiptEvidence,
+          });
+          return receiptEvidence;
+        },
+      },
+      verification: {
+        verify: async ({ task: t, result, receipt }) => ({
+          passed: receipt.task_id === t.task_id &&
+            receipt.mission_id === t.mission_id &&
+            receipt.wake_trace_id === t.wake_trace_id &&
+            receipt.execution.operation === t.execution.operation &&
+            receipt.execution.cwd === result.cwd,
+        }),
+      },
+    });
+
+    try {
+      const governed = await executeWindowsPowerShellGovernedCandidate({
+        admittedTask: task,
+        actorContext,
+        hostIdentity: host,
+        workspaceRoot,
+        hostProbe,
+        powerShellAdapter,
+        executionBoundary,
+        runtimeExecutionEnabled,
+      });
+      return disposition(governed.status === 'VERIFIED' ? 'COMPLETED' : 'FAILED', governed.governed.status, {
       powershell_pickup: {
         pickup_eligible: powerShellPickup.pickup_eligible,
         execution_authorized: powerShellPickup.execution_authorized,
@@ -219,7 +354,19 @@ export async function wakeLocal(options = {}) {
         canonical_gate: powerShellPickup.canonical_gate,
       },
       host_capability_evidence: powerShellPickup.host_capability_evidence,
+        executed: true,
+        claim_retained: false,
+        governed: governed.governed,
+        receipt_id: governed.governed.receipt?.receipt_id ?? null,
+      });
+    } catch (error) {
+      return disposition('RECOVERY_REQUIRED', error.message, {
+        executed: 'unknown',
+        claim_retained: true,
+        error_code: error.code ?? 'POWERSHELL_EXECUTION_FAILED',
+        pickup: powerShellPickup,
     });
+    }
   }
 
   const claims = await createRemoteDeliveryClaimStore({ root: join(root, 'state', 'remote-claims') });
