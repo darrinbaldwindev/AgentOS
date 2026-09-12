@@ -10,6 +10,17 @@ function requiredString(value, name) {
   return value.trim();
 }
 
+function executionIdentity(task) {
+  if (!task || typeof task !== 'object' || Array.isArray(task)) throw new TypeError('admittedTask is required');
+  return Object.freeze({
+    delivery_id: requiredString(task.delivery_id, 'admittedTask.delivery_id'),
+    request_id: requiredString(task.request_id, 'admittedTask.request_id'),
+    mission_id: requiredString(task.mission_id, 'admittedTask.mission_id'),
+    task_id: requiredString(task.task_id, 'admittedTask.task_id'),
+    wake_trace_id: requiredString(task.wake_trace_id, 'admittedTask.wake_trace_id'),
+  });
+}
+
 function executionIntent(task) {
   const execution = task?.execution;
   if (!execution || typeof execution !== 'object' || Array.isArray(execution)) {
@@ -39,7 +50,10 @@ export async function executeWindowsPowerShellGovernedCandidate({
   if (!executionBoundary || typeof executionBoundary.execute !== 'function') {
     throw new TypeError('executionBoundary.execute is required');
   }
+  if (!hostIdentity || typeof hostIdentity !== 'object') throw new TypeError('hostIdentity is required');
+  const hostId = requiredString(hostIdentity.host_id, 'hostIdentity.host_id');
 
+  const identity = executionIdentity(admittedTask);
   const intent = executionIntent(admittedTask);
   const descriptor = powerShellAdapter.describe(intent.operation);
   const required = admittedTask?.required_capabilities ?? [];
@@ -75,11 +89,8 @@ export async function executeWindowsPowerShellGovernedCandidate({
 
   return Object.freeze({
     status: governed.status,
-    task_id: admittedTask.task_id,
-    mission_id: admittedTask.mission_id,
-    delivery_id: admittedTask.delivery_id,
-    request_id: admittedTask.request_id,
-    host_id: hostIdentity.host_id,
+    ...identity,
+    host_id: hostId,
     intent,
     pickup,
     governed,
