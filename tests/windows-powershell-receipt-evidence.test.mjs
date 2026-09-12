@@ -86,6 +86,7 @@ test('missing mission task or wake identity fails closed', () => {
 
 test('malformed execution evidence cannot be persisted as a PowerShell receipt', () => {
   assert.throws(() => make({ powerShellResult: result({ exit_code: '0' }) }), /exit_code must be an integer/);
+  assert.throws(() => make({ powerShellResult: result({ exit_code: null }) }), /may be null only for timeout\/truncation failure evidence/);
   assert.throws(() => make({ powerShellResult: result({ stdout: null }) }), /stdout\/stderr evidence must be strings/);
   assert.throws(() => make({ powerShellResult: result({ timed_out: 'false' }) }), /timeout\/truncation evidence must be boolean/);
 });
@@ -99,4 +100,40 @@ test('failed PowerShell execution remains an intermediate failed receipt with ca
   assert.equal(receipt.execution.exit_code, 1);
   assert.equal(receipt.execution.stderr, 'fatal\n');
   assert.equal(receipt.evidence.includes('powershell:stderr_bytes:6'), true);
+});
+
+test('timeout with no process exit code persists durable failed receipt evidence', () => {
+  const receipt = make({
+    status: 'FAILED',
+    powerShellResult: result({
+      exit_code: null,
+      stdout: 'partial\n',
+      stderr: 'timed out\n',
+      timed_out: true,
+    }),
+  });
+  assert.equal(receipt.status, 'FAILED');
+  assert.equal(receipt.execution.exit_code, null);
+  assert.equal(receipt.execution.timed_out, true);
+  assert.equal(receipt.execution.truncated, false);
+  assert.equal(receipt.evidence.includes('powershell:exit_code:none'), true);
+  assert.equal(receipt.evidence.includes('powershell:timed_out:true'), true);
+});
+
+test('max-buffer truncation with no process exit code persists durable blocked receipt evidence', () => {
+  const receipt = make({
+    status: 'BLOCKED',
+    powerShellResult: result({
+      exit_code: null,
+      stdout: 'bounded-output',
+      stderr: '',
+      truncated: true,
+    }),
+  });
+  assert.equal(receipt.status, 'BLOCKED');
+  assert.equal(receipt.execution.exit_code, null);
+  assert.equal(receipt.execution.timed_out, false);
+  assert.equal(receipt.execution.truncated, true);
+  assert.equal(receipt.evidence.includes('powershell:exit_code:none'), true);
+  assert.equal(receipt.evidence.includes('powershell:truncated:true'), true);
 });
