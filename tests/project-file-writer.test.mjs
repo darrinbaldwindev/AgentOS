@@ -391,3 +391,35 @@ test('external file creation during beforePublish when target originally absent 
     assert.equal(receipt, undefined);
   } finally { await f.cleanup(); }
 });
+
+test('external writer mutation during beforeRecoveryPublish is rejected and external content is preserved', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const target = path.join(f.root, 'fixture.txt');
+    await writeFile(target, 'old
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      hooks: { afterPublish: async () => { throw new Error('simulated crash after publish'); } },
+    });
+    const args = { task, targetPath: target, content: 'new
+    await assert.rejects(writer.execute(args));
+    assert.equal(await readFile(target, 'utf8'), 'new
+    const writerWithRecoveryHook = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external
+      reconcilePreparedWrite: async () => ({ status: 'RESUME', evidence_id: 'recovery-evidence-external' }),
+    });
+    await assert.rejects(
+      writerWithRecoveryHook.execute(args),
+      (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true
+    );
+    assert.equal(await readFile(target, 'utf8'), 'external
+    const prepared = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.prepared');
+    assert.ok(prepared);
+    const receipt = [...p.artifacts.values()].find((a) => a.artifact_kind === 'project.file.write.receipt');
+    assert.equal(receipt, undefined);
+  } finally { await f.cleanup(); }
+});

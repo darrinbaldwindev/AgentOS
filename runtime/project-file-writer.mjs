@@ -211,7 +211,9 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
       if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
       const recheckBeforeRecoveryPublish = await readState(target.canonical);
-      if (recheckBeforeRecoveryPublish.hash !== prepared.preimage_sha256) {
+      if (recheckBeforeRecoveryPublish.exists !== current.exists || 
+          recheckBeforeRecoveryPublish.hash !== current.hash || 
+          (recheckBeforeRecoveryPublish.exists && !sameIdentity(recheckBeforeRecoveryPublish.identity, current.identity))) {
         throw fail('PROJECT_FILE_EXTERNAL_MUTATION', {
           prepared_id: preparedId,
           path: target.canonical,
