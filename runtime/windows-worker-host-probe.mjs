@@ -31,6 +31,16 @@ export function deriveWindowsWorkerCapabilities(probeResult = {}) {
   return Object.freeze(capabilities);
 }
 
+function normalizeToolProbe(result) {
+  if (result === true) return Object.freeze({ available: true, path: null, version: null });
+  if (result === false || result == null) return Object.freeze({ available: false, path: null, version: null });
+  if (typeof result !== 'object' || Array.isArray(result)) return Object.freeze({ available: false, path: null, version: null });
+  const available = result.available === true;
+  const executablePath = available && typeof result.path === 'string' && result.path.trim() ? result.path.trim() : null;
+  const version = available && typeof result.version === 'string' && result.version.trim() ? result.version.trim() : null;
+  return Object.freeze({ available, path: executablePath, version });
+}
+
 export function createWindowsWorkerHostProbe({
   platform = process.platform,
   commandProbe,
@@ -41,11 +51,15 @@ export function createWindowsWorkerHostProbe({
 
   async function probe(agentId) {
     const toolResults = {};
+    const toolEvidence = {};
     for (const tool of REQUIRED_TOOLS) {
       try {
-        toolResults[tool] = (await commandProbe(tool)) === true;
+        const normalized = normalizeToolProbe(await commandProbe(tool));
+        toolResults[tool] = normalized.available;
+        toolEvidence[tool] = normalized;
       } catch {
         toolResults[tool] = false;
+        toolEvidence[tool] = Object.freeze({ available: false, path: null, version: null });
       }
     }
 
@@ -73,6 +87,7 @@ export function createWindowsWorkerHostProbe({
       eligible: missingRequired.length === 0,
       windows,
       tools: Object.freeze({ ...toolResults }),
+      tool_evidence: Object.freeze({ ...toolEvidence }),
       workspace: Object.freeze({ ...workspace }),
       missingRequired: Object.freeze(missingRequired),
     });
