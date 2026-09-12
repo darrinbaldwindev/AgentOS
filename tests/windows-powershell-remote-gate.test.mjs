@@ -17,7 +17,7 @@ function task(hostId, required = ['shell.powershell.dev.execute']) {
     pickup_state: 'QUEUED',
     required_capabilities: required,
     scope: ['local-runtime'],
-    constraints: ['non-production', 'bounded-command-catalogue'],
+    constraints: ['bounded-command-catalogue'],
     created_at: new Date().toISOString(),
   };
 }
