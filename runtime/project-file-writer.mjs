@@ -325,6 +325,14 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
 
       if (typeof hooks.beforePublish === 'function') await hooks.beforePublish({ target: target.canonical, temp, intent });
+      const recheckBeforePublish = await readState(target.canonical);
+      if (recheckBeforePublish.exists !== before.exists || recheckBeforePublish.hash !== before.hash || (recheckBeforePublish.exists && !sameIdentity(recheckBeforePublish.identity, before.identity))) {
+        throw fail('PROJECT_FILE_EXTERNAL_MUTATION', {
+          prepared_id: preparedId,
+          path: target.canonical,
+          recovery_required: true,
+        });
+      }
       await fs.rename(temp, target.canonical);
       published = true;
       if (typeof hooks.afterPublish === 'function') await hooks.afterPublish({ target: target.canonical, intent });

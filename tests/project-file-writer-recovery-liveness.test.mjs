@@ -198,3 +198,27 @@ test('ambiguous foreign lock remains fail-closed when reconciliation cannot prov
     );
   } finally { await f.cleanup(); }
 });
+
+test('external writer mutation during beforeRecoveryPublish rejects recovery and preserves external change', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const target = path.join(f.root, 'fixture.txt');
+    await writeFile(target, 'old
+    const args = { task, targetPath: target, content: 'new
+    const interrupted = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      hooks: { beforePublish: async () => { throw new Error('simulated interruption'); } },
+    });
+    await assert.rejects(interrupted.execute(args));
+    const resumed = await createProjectFileWriter({
+      approvedRoots: [f.root],
+      persistence: p.api,
+      hooks: { beforeRecoveryPublish: async () => { await writeFile(target, 'external
+      reconcilePreparedWrite: async () => ({ status: 'RESUME', evidence_id: 'recovery-fixture' }),
+    });
+    await assert.rejects(resumed.execute(args), (error) => error.code === 'PROJECT_FILE_EXTERNAL_MUTATION' && error.recovery_required === true);
+    assert.equal(await readFile(target, 'utf8'), 'external
+  } finally { await f.cleanup(); }
+});
