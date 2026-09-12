@@ -102,6 +102,39 @@ function buildScript(spec, resolvedTools) {
   return `& ${quotePowerShellLiteral(tool.path)} ${spec.toolArgs}`;
 }
 
+function identityPath(value) {
+  const normalized = process.platform === 'win32' ? path.win32.normalize(String(value)) : String(value);
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
+function assertExpectedExecutableIdentity(expectedExecutables, resolvedTools, requiredNames) {
+  if (expectedExecutables == null) return;
+  if (typeof expectedExecutables !== 'object' || Array.isArray(expectedExecutables)) {
+    throw new TypeError('expectedExecutables must be an object');
+  }
+  for (const name of requiredNames) {
+    const expected = expectedExecutables[name];
+    const actual = resolvedTools[name];
+    if (!expected || expected.available === false || typeof expected.path !== 'string' || !expected.path.trim()) {
+      const error = new Error(`POWERSHELL_EXECUTABLE_IDENTITY_REQUIRED:${name}`);
+      error.code = 'POWERSHELL_EXECUTABLE_IDENTITY_REQUIRED';
+      throw error;
+    }
+    if (!actual?.path || identityPath(expected.path) !== identityPath(actual.path)) {
+      const error = new Error(`POWERSHELL_EXECUTABLE_IDENTITY_MISMATCH:${name}`);
+      error.code = 'POWERSHELL_EXECUTABLE_IDENTITY_MISMATCH';
+      throw error;
+    }
+    const expectedVersion = expected.version == null ? null : String(expected.version);
+    const actualVersion = actual.version == null ? null : String(actual.version);
+    if (expectedVersion !== null && expectedVersion !== actualVersion) {
+      const error = new Error(`POWERSHELL_EXECUTABLE_VERSION_MISMATCH:${name}`);
+      error.code = 'POWERSHELL_EXECUTABLE_VERSION_MISMATCH';
+      throw error;
+    }
+  }
+}
+
 async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) {
   return await new Promise((resolve, reject) => {
     let timedOut = false;
@@ -170,7 +203,7 @@ export function createWindowsPowerShellAdapter({
     return Object.freeze({ operation, capability: spec.capability, elevated: false, interactive: false });
   }
 
-  async function execute({ operation, cwd } = {}) {
+  async function execute({ operation, cwd, expectedExecutables = null } = {}) {
     const spec = OPERATIONS[operation];
     if (!spec) throw new Error('POWERSHELL_OPERATION_NOT_ALLOWED');
     if (typeof cwd !== 'string' || !cwd) throw new TypeError('cwd is required');
@@ -189,6 +222,7 @@ export function createWindowsPowerShellAdapter({
         resolvedTools[spec.tool] = Object.freeze({ path: String(operationTool.path), version: operationTool.version == null ? null : String(operationTool.version) });
       }
       resolvedTools = Object.freeze({ ...resolvedTools });
+      assertExpectedExecutableIdentity(expectedExecutables, resolvedTools, ['powershell.exe', ...(spec.tool ? [spec.tool] : [])]);
       const script = buildScript(spec, resolvedTools);
       const result = await executor({ executable: resolvedTools['powershell.exe'].path, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', script], cwd: safeCwd, timeoutMs, maxBuffer });
       const finishedMs = now();
