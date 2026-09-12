@@ -7,10 +7,10 @@ import { realpathSync } from 'node:fs';
 import path from 'node:path';
 
 const OPERATIONS = Object.freeze({
-  'repo.status': { capability: 'shell.powershell.repo.read', script: 'git status --short --branch' },
-  'repo.diff': { capability: 'shell.powershell.repo.read', script: 'git diff --no-ext-diff' },
-  'test.run': { capability: 'shell.powershell.dev.execute', script: 'npm test' },
-  'audit.run': { capability: 'shell.powershell.dev.execute', script: 'npm audit --audit-level=high --omit=dev' },
+  'repo.status': { capability: 'shell.powershell.repo.read', tool: 'git.exe', toolArgs: 'status --short --branch' },
+  'repo.diff': { capability: 'shell.powershell.repo.read', tool: 'git.exe', toolArgs: 'diff --no-ext-diff' },
+  'test.run': { capability: 'shell.powershell.dev.execute', tool: 'npm.cmd', toolArgs: 'test' },
+  'audit.run': { capability: 'shell.powershell.dev.execute', tool: 'npm.cmd', toolArgs: 'audit --audit-level=high --omit=dev' },
   'process.list': { capability: 'shell.powershell.system.read', script: 'Get-Process | Select-Object -First 200 Id,ProcessName,CPU,WorkingSet64 | ConvertTo-Json -Compress' },
   'service.list': { capability: 'shell.powershell.system.read', script: 'Get-Service | Select-Object -First 200 Name,Status,StartType | ConvertTo-Json -Compress' },
 });
@@ -54,6 +54,52 @@ function terminateWindowsProcessTree(child) {
       return false;
     }
   }
+}
+
+function firstLine(value) {
+  return String(value ?? '').split(/\r?\n/u).map((line) => line.trim()).find(Boolean) ?? '';
+}
+
+function executableVersion(executablePath, tool) {
+  const common = { windowsHide: true, encoding: 'utf8', timeout: 5_000, stdio: ['ignore', 'pipe', 'pipe'] };
+  try {
+    if (tool === 'powershell.exe') {
+      return firstLine(execFileSync(executablePath, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.ToString()'], common));
+    }
+    return firstLine(execFileSync(executablePath, ['--version'], common));
+  } catch {
+    return null;
+  }
+}
+
+function defaultToolResolver(tool) {
+  if (process.platform !== 'win32') return Object.freeze({ path: tool, version: null });
+  try {
+    const located = firstLine(execFileSync('where.exe', [tool], {
+      windowsHide: true,
+      encoding: 'utf8',
+      timeout: 5_000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }));
+    if (!located) throw new Error('not found');
+    const executablePath = realpathSync.native(located);
+    return Object.freeze({ path: executablePath, version: executableVersion(executablePath, tool) });
+  } catch {
+    const error = new Error(`POWERSHELL_EXECUTABLE_RESOLUTION_FAILED:${tool}`);
+    error.code = 'POWERSHELL_EXECUTABLE_RESOLUTION_FAILED';
+    throw error;
+  }
+}
+
+function quotePowerShellLiteral(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+function buildScript(spec, resolvedTools) {
+  if (!spec.tool) return spec.script;
+  const tool = resolvedTools[spec.tool];
+  if (!tool?.path) throw new Error(`POWERSHELL_EXECUTABLE_RESOLUTION_FAILED:${spec.tool}`);
+  return `& ${quotePowerShellLiteral(tool.path)} ${spec.toolArgs}`;
 }
 
 async function defaultExecutor({ executable, args, cwd, timeoutMs, maxBuffer }) {
@@ -102,7 +148,7 @@ export function createWindowsPowerShellAdapter({
   executor = defaultExecutor,
   pathResolver = defaultPathResolver,
   pathModule = path,
-  executable = 'powershell.exe',
+  toolResolver = defaultToolResolver,
   timeoutMs = 120_000,
   maxBuffer = 1_048_576,
   now = () => Date.now(),
@@ -110,6 +156,7 @@ export function createWindowsPowerShellAdapter({
   if (!Array.isArray(allowedRoots) || allowedRoots.length === 0) throw new TypeError('allowedRoots must be non-empty');
   if (typeof executor !== 'function') throw new TypeError('executor must be a function');
   if (typeof pathResolver !== 'function') throw new TypeError('pathResolver must be a function');
+  if (typeof toolResolver !== 'function') throw new TypeError('toolResolver must be a function');
   if (!pathModule || typeof pathModule.resolve !== 'function' || typeof pathModule.relative !== 'function' || typeof pathModule.isAbsolute !== 'function') {
     throw new TypeError('pathModule must provide resolve, relative, and isAbsolute');
   }
@@ -131,8 +178,19 @@ export function createWindowsPowerShellAdapter({
     const startedMs = now();
     if (!Number.isFinite(startedMs)) throw new Error('POWERSHELL_CLOCK_INVALID');
     const startedAt = new Date(startedMs).toISOString();
+    let resolvedTools = {};
     try {
-      const result = await executor({ executable, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', spec.script], cwd: safeCwd, timeoutMs, maxBuffer });
+      const powershell = await toolResolver('powershell.exe');
+      if (!powershell?.path) throw new Error('POWERSHELL_EXECUTABLE_RESOLUTION_FAILED:powershell.exe');
+      resolvedTools = { 'powershell.exe': Object.freeze({ path: String(powershell.path), version: powershell.version == null ? null : String(powershell.version) }) };
+      if (spec.tool) {
+        const operationTool = await toolResolver(spec.tool);
+        if (!operationTool?.path) throw new Error(`POWERSHELL_EXECUTABLE_RESOLUTION_FAILED:${spec.tool}`);
+        resolvedTools[spec.tool] = Object.freeze({ path: String(operationTool.path), version: operationTool.version == null ? null : String(operationTool.version) });
+      }
+      resolvedTools = Object.freeze({ ...resolvedTools });
+      const script = buildScript(spec, resolvedTools);
+      const result = await executor({ executable: resolvedTools['powershell.exe'].path, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', script], cwd: safeCwd, timeoutMs, maxBuffer });
       const finishedMs = now();
       if (!Number.isFinite(finishedMs) || finishedMs < startedMs) throw new Error('POWERSHELL_CLOCK_INVALID');
       const exitCode = Number.isInteger(result?.exitCode) ? result.exitCode : 0;
@@ -152,6 +210,7 @@ export function createWindowsPowerShellAdapter({
         stderr: String(result?.stderr ?? ''),
         timed_out: false,
         truncated: false,
+        resolved_executables: resolvedTools,
         success: exitCode === 0,
       });
     } catch (error) {
@@ -176,6 +235,7 @@ export function createWindowsPowerShellAdapter({
         stderr: String(result.stderr ?? result.message ?? ''),
         timed_out: timedOut,
         truncated,
+        resolved_executables: Object.freeze({ ...resolvedTools }),
         success: false,
       });
     }
