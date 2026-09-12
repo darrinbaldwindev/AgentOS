@@ -15,6 +15,7 @@ import { loadOrCreateRemoteHostIdentity } from './remote-host-identity.mjs';
 import { evaluateRemotePickupEligibility } from './remote-pickup-eligibility.mjs';
 import { assessRemoteDeliveryClaimRecovery } from './remote-delivery-recovery.mjs';
 import { createRemoteExecutionReceipt } from './remote-local-bridge-contract.mjs';
+import { evaluateWindowsPowerShellRemotePickup } from './windows-powershell-remote-gate.mjs';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { createLocalDispatchStore } from './local-dispatch-store.mjs';
 import { createMissionBudget } from './mission-budget.mjs';
@@ -36,6 +37,7 @@ const RECEIVER = 'agentos:project-overseer';
 const ISSUER = 'agentos:overseer';
 const CAPABILITY = 'repository:read';
 const WORKER_ID = 'agentos:deterministic-skill-agent';
+const POWERSHELL_CAPABILITY_PREFIX = 'shell.powershell.';
 
 async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
@@ -141,15 +143,22 @@ export function buildGreenEvidencePacket({ task, workerResult, reservation, budg
   };
 }
 
+function taskRequiresPowerShell(task) {
+  return task?.execution?.adapter === 'windows-powershell' ||
+    (Array.isArray(task?.required_capabilities) && task.required_capabilities.some((capability) =>
+      typeof capability === 'string' && capability.startsWith(POWERSHELL_CAPABILITY_PREFIX)));
+}
+
 const INTERNAL_GREEN_EVALUATE = Symbol('agentos.internal.greenEvaluate');
+const INTERNAL_POWERSHELL_HOST_PROBE = Symbol('agentos.internal.powerShellHostProbe');
 
 /** Test-only seam. Do not use from production/chat callers. */
 export function __testOnlyWakeLocal(options = {}) {
-  const { greenEvaluate, ...rest } = options;
-  if (typeof greenEvaluate !== 'function') {
-    return wakeLocal(rest);
-  }
-  return wakeLocal({ ...rest, [INTERNAL_GREEN_EVALUATE]: greenEvaluate });
+  const { greenEvaluate, powerShellHostProbe, ...rest } = options;
+  const internal = { ...rest };
+  if (typeof greenEvaluate === 'function') internal[INTERNAL_GREEN_EVALUATE] = greenEvaluate;
+  if (powerShellHostProbe != null) internal[INTERNAL_POWERSHELL_HOST_PROBE] = powerShellHostProbe;
+  return wakeLocal(internal);
 }
 
 // Only delivery identity enters here. Authority-bearing task data is loaded from
@@ -181,6 +190,38 @@ export async function wakeLocal(options = {}) {
     }
     return { ...record, response };
   };
+
+  // First real local-wake integration slice for PowerShell is evidence-only.
+  // It deliberately stops before claim, budget, worker, receipt or process execution
+  // so the existing deterministic local-wake completion pipeline is not duplicated.
+  if (taskRequiresPowerShell(task)) {
+    if (config.remoteBridge?.powerShell?.enabled !== true) {
+      return disposition('BLOCKED', 'POWERSHELL_PICKUP_DISABLED', {
+        powershell_pickup: { pickup_eligible: false, execution_authorized: false, disposition: 'POWERSHELL_PICKUP_DISABLED' },
+      });
+    }
+    const hostProbe = options[INTERNAL_POWERSHELL_HOST_PROBE];
+    const workspaceRoot = task.execution?.cwd ?? join(root, config.workspaceRoot);
+    const powerShellPickup = await evaluateWindowsPowerShellRemotePickup({
+      admittedTask: task,
+      hostIdentity: host,
+      workspaceRoot,
+      ...(hostProbe == null ? {} : { hostProbe }),
+      runtimeExecutionEnabled: false,
+    });
+    return disposition('BLOCKED', powerShellPickup.disposition, {
+      powershell_pickup: {
+        pickup_eligible: powerShellPickup.pickup_eligible,
+        execution_authorized: powerShellPickup.execution_authorized,
+        runtime_execution_enabled: powerShellPickup.runtime_execution_enabled,
+        disposition: powerShellPickup.disposition,
+        host_capabilities: powerShellPickup.host_capabilities,
+        canonical_gate: powerShellPickup.canonical_gate,
+      },
+      host_capability_evidence: powerShellPickup.host_capability_evidence,
+    });
+  }
+
   const claims = await createRemoteDeliveryClaimStore({ root: join(root, 'state', 'remote-claims') });
   const existing = await claims.get(deliveryId);
   if (existing) {
