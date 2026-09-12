@@ -16,6 +16,14 @@ function integer(value, name) {
   return value;
 }
 
+function executionExitCode(powerShellResult) {
+  if (powerShellResult.exit_code === null) {
+    if (powerShellResult.timed_out === true || powerShellResult.truncated === true) return null;
+    throw new TypeError('powerShellResult.exit_code may be null only for timeout/truncation failure evidence');
+  }
+  return integer(powerShellResult.exit_code, 'powerShellResult.exit_code');
+}
+
 export function createWindowsPowerShellReceiptEvidence({
   candidate,
   task,
@@ -37,7 +45,6 @@ export function createWindowsPowerShellReceiptEvidence({
   const cwd = requiredString(powerShellResult.cwd, 'powerShellResult.cwd');
   const startedAt = requiredString(powerShellResult.started_at, 'powerShellResult.started_at');
   const finishedAt = requiredString(powerShellResult.finished_at, 'powerShellResult.finished_at');
-  const exitCode = integer(powerShellResult.exit_code, 'powerShellResult.exit_code');
   integer(powerShellResult.duration_ms, 'powerShellResult.duration_ms');
   if (typeof powerShellResult.stdout !== 'string' || typeof powerShellResult.stderr !== 'string') {
     throw new TypeError('PowerShell stdout/stderr evidence must be strings');
@@ -45,6 +52,7 @@ export function createWindowsPowerShellReceiptEvidence({
   if (typeof powerShellResult.timed_out !== 'boolean' || typeof powerShellResult.truncated !== 'boolean') {
     throw new TypeError('PowerShell timeout/truncation evidence must be boolean');
   }
+  const exitCode = executionExitCode(powerShellResult);
 
   if (task.delivery_id !== candidate?.delivery_id || task.request_id !== candidate?.request_id) {
     throw new Error('POWERSHELL_RECEIPT_DELIVERY_CORRELATION_MISMATCH');
@@ -56,7 +64,7 @@ export function createWindowsPowerShellReceiptEvidence({
   const evidence = [
     `powershell:operation:${operation}`,
     `powershell:cwd:${cwd}`,
-    `powershell:exit_code:${exitCode}`,
+    `powershell:exit_code:${exitCode === null ? 'none' : exitCode}`,
     `powershell:started_at:${startedAt}`,
     `powershell:finished_at:${finishedAt}`,
     `powershell:duration_ms:${powerShellResult.duration_ms}`,
