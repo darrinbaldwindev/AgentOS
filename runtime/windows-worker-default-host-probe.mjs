@@ -16,12 +16,19 @@ function firstLine(value) {
 
 function execFixed(execFileImpl, executable, args) {
   return new Promise((resolveResult) => {
-    execFileImpl(
-      executable,
-      args,
-      { windowsHide: true, timeout: COMMAND_TIMEOUT_MS, encoding: 'utf8' },
-      (error, stdout = '') => resolveResult({ ok: error == null, stdout: String(stdout ?? '') }),
-    );
+    try {
+      execFileImpl(
+        executable,
+        args,
+        { windowsHide: true, timeout: COMMAND_TIMEOUT_MS, encoding: 'utf8' },
+        (error, stdout = '') => resolveResult({ ok: error == null, stdout: String(stdout ?? '') }),
+      );
+    } catch {
+      // Some Windows command shims such as npm.cmd cannot be directly invoked
+      // by execFile without a shell. A failed supplemental version query must
+      // not erase already-proven path availability from where.exe + realpath.
+      resolveResult({ ok: false, stdout: '' });
+    }
   });
 }
 
