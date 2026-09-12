@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import { createGovernedExecutionBoundary } from '../runtime/governed-execution-boundary.mjs';
 import { createWindowsPowerShellAdapter } from '../runtime/windows-powershell-adapter.mjs';
 import { executeWindowsPowerShellGovernedCandidate } from '../runtime/windows-powershell-governed-candidate.mjs';
@@ -48,6 +49,7 @@ function harness({ authorityAllowed = true } = {}) {
   const adapter = createWindowsPowerShellAdapter({
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
+    pathModule: path.win32,
     executor: async () => {
       invoked += 1;
       events.push('powershell');
@@ -108,8 +110,9 @@ test('exact admitted PowerShell intent passes host gate then existing governed b
   assert.equal(result.status, 'VERIFIED');
   assert.equal(result.pickup.pickup_eligible, true);
   assert.equal(result.pickup.execution_authorized, false);
+  assert.equal(result.intent.cwd, task.execution.cwd);
   assert.equal(result.governed.result.operation, 'repo.status');
-  assert.equal(result.governed.result.cwd, 'C:/agentos/AgentOS');
+  assert.equal(result.governed.result.cwd, path.win32.resolve(task.execution.cwd));
   assert.equal(h.invoked(), 1);
 });
 
@@ -178,7 +181,10 @@ test('runtime caller cannot substitute operation or cwd because invocation is de
     operation: 'test.run',
     cwd: 'D:/outside',
   });
+  assert.equal(result.intent.operation, task.execution.operation);
+  assert.equal(result.intent.cwd, task.execution.cwd);
   assert.equal(result.governed.result.operation, task.execution.operation);
-  assert.equal(result.governed.result.cwd, task.execution.cwd);
+  assert.equal(result.governed.result.cwd, path.win32.resolve(task.execution.cwd));
+  assert.notEqual(result.governed.result.cwd, path.win32.resolve('D:/outside'));
   assert.equal(h.invoked(), 1);
 });
