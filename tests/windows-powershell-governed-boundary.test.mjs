@@ -62,3 +62,15 @@ test('admitted PowerShell execution produces receipted verified evidence', async
   assert.equal(result.verification.passed, true);
   assert.deepEqual(h.events, ['assertValid','assertAllowed','assertAllowed','assertExecutionEligible','assertAllowed','evaluate','reserve','powershell','receipt','verify','reconcile:1']);
 });
+
+test('explicit failed execution result is receipted but can never reach verification or VERIFIED', async () => {
+  const h = harness();
+  const failedResult = Object.freeze({ success: false, operation: 'test.run', exit_code: 1, stderr: 'failed' });
+  await assert.rejects(
+    h.boundary.execute({ actorContext: h.actorContext, task: h.task, actualUnits: 1, invoke: async () => failedResult }),
+    (error) => error?.code === 'EXECUTION_RESULT_FAILED' && error?.result === failedResult && error?.receipt?.execution === failedResult,
+  );
+  assert.equal(h.events.includes('receipt'), true);
+  assert.equal(h.events.includes('verify'), false);
+  assert.equal(h.events.includes('reconcile:1'), true);
+});
