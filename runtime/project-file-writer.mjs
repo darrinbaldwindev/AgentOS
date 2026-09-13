@@ -6,10 +6,12 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
+import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 
 const MAX_CONTENT_BYTES = 1_048_576;
 const LOCK_OWNER_FILE = 'owner.json';
+const WINDOWS_HANDLE_LOCK = process.platform === 'win32';
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -85,7 +87,7 @@ async function readState(target) {
 }
 
 async function readLockOwner(lock) {
-  try { return JSON.parse(await fs.readFile(path.join(lock, LOCK_OWNER_FILE), 'utf8')); }
+  try { return JSON.parse(await fs.readFile(WINDOWS_HANDLE_LOCK ? lock : path.join(lock, LOCK_OWNER_FILE), 'utf8')); }
   catch { return null; }
 }
 
@@ -100,7 +102,7 @@ function sameLockDirectory(left, right) {
 async function lockDirectoryIdentity(lock) {
   try {
     const stat = await fs.lstat(lock, { bigint: true });
-    if (!stat.isDirectory() || stat.isSymbolicLink()) return null;
+    if ((WINDOWS_HANDLE_LOCK ? !stat.isFile() : !stat.isDirectory()) || stat.isSymbolicLink()) return null;
     return { dev: String(stat.dev), ino: String(stat.ino) };
   } catch { return null; }
 }
@@ -251,8 +253,33 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     let lockOwned = false;
     let ownedLockIdentity = null;
+    let windowsLockHandle = null;
 
     async function retireLock(expectedOwner, expectedIdentity, reason) {
+      if (WINDOWS_HANDLE_LOCK) {
+        // The open Windows handle, not a pathname check, owns deletion. Close
+        // removes only this handle's file even if another writer replaced the
+        // canonical path between validation and release.
+        if (!windowsLockHandle) throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+        let currentOwner;
+        let currentIdentity;
+        try {
+          if (typeof hooks.beforeLockRetire === 'function') await hooks.beforeLockRetire({ lock, reason, expectedOwner });
+          currentOwner = await readLockOwner(lock);
+          currentIdentity = await lockDirectoryIdentity(lock);
+          if (typeof hooks.afterLockValidation === 'function') await hooks.afterLockValidation({ lock, reason, expectedOwner });
+        } finally {
+          await windowsLockHandle.close();
+          windowsLockHandle = null;
+        }
+        let successorExists = false;
+        try { await fs.lstat(lock); successorExists = true; }
+        catch (error) { if (error?.code !== 'ENOENT') throw error; }
+        if (!sameLockOwner(expectedOwner, currentOwner) || !sameLockDirectory(expectedIdentity, currentIdentity) || successorExists) {
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: currentOwner, recovery_required: true });
+        }
+        return;
+      }
       const currentOwner = await readLockOwner(lock);
       const currentIdentity = await lockDirectoryIdentity(lock);
       if (!sameLockOwner(expectedOwner, currentOwner) || !sameLockDirectory(expectedIdentity, currentIdentity)) {
@@ -280,6 +307,32 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     }
 
     async function establishLock() {
+      if (WINDOWS_HANDLE_LOCK) {
+        const flags = fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_RDWR | fsConstants.UV_FS_O_TEMPORARY;
+        try {
+          windowsLockHandle = await fs.open(lock, flags, 0o600);
+          await windowsLockHandle.writeFile(JSON.stringify(lockOwner));
+          await windowsLockHandle.sync();
+          const stat = await windowsLockHandle.stat({ bigint: true });
+          ownedLockIdentity = { dev: String(stat.dev), ino: String(stat.ino) };
+          lockOwned = true;
+          return;
+        } catch (error) {
+          if (windowsLockHandle) {
+            await windowsLockHandle.close();
+            windowsLockHandle = null;
+          }
+          if (error?.code !== 'EEXIST') throw error;
+          const observedOwner = await readLockOwner(lock);
+          if (observedOwner?.pid === process.pid) {
+            throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: observedOwner, retryable: true, recovery_required: false });
+          }
+          // A genuine crash closes a temporary handle automatically. An
+          // extant path is ambiguous (including legacy directory locks), so
+          // never delete or take it over by name.
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
+        }
+      }
       try {
         await fs.mkdir(lock);
         await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify(lockOwner), { flag: 'wx', mode: 0o600 });
