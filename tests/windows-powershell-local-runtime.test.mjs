@@ -37,7 +37,14 @@ function createClaims() {
     async claim({ deliveryId, requestId, hostId }) {
       const existing = records.get(deliveryId);
       if (existing) return { claimed: false, disposition: 'DUPLICATE_DELIVERY', record: existing };
-      const record = { delivery_id: deliveryId, request_id: requestId, host_id: hostId, claimed_at: new Date().toISOString(), status: 'CLAIMED' };
+      const record = {
+        schema_version: 1,
+        delivery_id: deliveryId,
+        request_id: requestId,
+        host_id: hostId,
+        claimed_at: new Date().toISOString(),
+        state: 'CLAIMED',
+      };
       records.set(deliveryId, record);
       return { claimed: true, disposition: 'CLAIMED', record };
     },
@@ -120,7 +127,7 @@ function fixture({ runtimeExecutionEnabled = false } = {}) {
   return { runtime, claims, getAdapterCalls: () => adapterCalls, getReserveCalls: () => reserveCalls };
 }
 
-test('disabled claimed runtime retains one claim and reaches neither budget nor PowerShell', async () => {
+test('disabled claimed runtime reaches neither claim, budget nor PowerShell', async () => {
   const { runtime, claims, getAdapterCalls, getReserveCalls } = fixture();
   await assert.rejects(runtime.worker.execute(task()), /POWERSHELL_EXECUTION_NOT_AUTHORIZED/);
   assert.equal(claims.size(), 0);
