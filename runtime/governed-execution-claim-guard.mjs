@@ -23,14 +23,26 @@ function codedError(code, details = null) {
   return error;
 }
 
+function exactIdentityMismatch(claim, task) {
+  return (claim.mission_id != null && claim.mission_id !== task.mission_id) ||
+    (claim.task_id != null && claim.task_id !== task.task_id) ||
+    (claim.wake_trace_id != null && claim.wake_trace_id !== task.wake_trace_id);
+}
+
 function classifyExistingClaim({ claim, task, hostId, assessRecovery, recoveryOptions }) {
-  if (claim.request_id !== task.request_id || claim.host_id !== hostId) {
+  if (claim.request_id !== task.request_id || claim.host_id !== hostId || exactIdentityMismatch(claim, task)) {
     throw codedError('GOVERNED_EXECUTION_CLAIM_CORRELATION_MISMATCH', {
       delivery_id: task.delivery_id,
       expected_request_id: task.request_id,
       actual_request_id: claim.request_id,
       expected_host_id: hostId,
       actual_host_id: claim.host_id,
+      expected_mission_id: task.mission_id ?? null,
+      actual_mission_id: claim.mission_id ?? null,
+      expected_task_id: task.task_id ?? null,
+      actual_task_id: claim.task_id ?? null,
+      expected_wake_trace_id: task.wake_trace_id ?? null,
+      actual_wake_trace_id: claim.wake_trace_id ?? null,
     });
   }
   const recovery = assessRecovery({ claim, ...(recoveryOptions ?? {}) });
@@ -79,6 +91,9 @@ export function createGovernedExecutionClaimGuard({
         deliveryId,
         requestId,
         hostId: normalizedHostId,
+        missionId: task.mission_id ?? null,
+        taskId: task.task_id ?? null,
+        wakeTraceId: task.wake_trace_id ?? null,
       });
       if (claimResult.claimed !== true) {
         if (claimResult.disposition === 'CLAIM_CORRELATION_MISMATCH') {
