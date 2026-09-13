@@ -72,8 +72,26 @@ function hostProbe() {
   };
 }
 
+function successfulExecutionResult() {
+  return {
+    success: true,
+    operation: 'repo.status',
+    cwd: 'C:\\agentos\\AgentOS',
+    exit_code: 0,
+    started_at: '2026-09-13T11:30:00.000Z',
+    finished_at: '2026-09-13T11:30:01.000Z',
+    duration_ms: 1000,
+    stdout: 'clean',
+    stderr: '',
+    timed_out: false,
+    truncated: false,
+    resolved_executables: {},
+  };
+}
+
 function fixture({
   runtimeExecutionEnabled = false,
+  executePowerShell = async () => successfulExecutionResult(),
   recordReceipt = async () => ({ persisted: true }),
   runVerifier = async () => ({ passed: true, evidence: ['fixture:verified'] }),
 } = {}) {
@@ -89,22 +107,9 @@ function fixture({
       if (operation !== 'repo.status') throw new Error('unknown operation');
       return { capability: 'shell.powershell.repo.read', elevated: false, interactive: false };
     },
-    async execute() {
+    async execute(request) {
       adapterCalls += 1;
-      return {
-        success: true,
-        operation: 'repo.status',
-        cwd: 'C:\\agentos\\AgentOS',
-        exit_code: 0,
-        started_at: '2026-09-13T11:30:00.000Z',
-        finished_at: '2026-09-13T11:30:01.000Z',
-        duration_ms: 1000,
-        stdout: 'clean',
-        stderr: '',
-        timed_out: false,
-        truncated: false,
-        resolved_executables: {},
-      };
+      return executePowerShell(request);
     },
   };
   const runtime = createWindowsPowerShellClaimedLocalRuntime({
@@ -175,6 +180,25 @@ test('enabled claimed runtime invokes once and a replay cannot invoke twice', as
   await assert.rejects(runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
   assert.equal(getReserveCalls(), 1);
   assert.equal(getAdapterCalls(), 1);
+});
+
+test('post-invoke exception retains claim, reconciles charged budget and blocks blind replay', async () => {
+  const state = fixture({
+    runtimeExecutionEnabled: true,
+    executePowerShell: async () => { throw new Error('CRASH_AFTER_SIDE_EFFECT_BOUNDARY'); },
+  });
+  await assert.rejects(state.runtime.worker.execute(task()), /CRASH_AFTER_SIDE_EFFECT_BOUNDARY/);
+  assert.equal(state.claims.size(), 1);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getReserveCalls(), 1);
+  assert.equal(state.getReconcileCalls(), 1);
+  assert.equal(state.getReceiptCalls(), 0);
+  assert.equal(state.getVerifierCalls(), 0);
+
+  await assert.rejects(state.runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getReserveCalls(), 1);
+  assert.equal(state.getReconcileCalls(), 1);
 });
 
 test('receipt persistence failure after PowerShell side effect retains claim and blocks blind replay', async () => {
