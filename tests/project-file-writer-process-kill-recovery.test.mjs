@@ -41,9 +41,6 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     const idempotencyKey = 'idem-process-kill';
     const expectedPreimageSha256 = sha256(Buffer.from('old\n'));
     const keyHash = sha256(idempotencyKey);
-    const posthash = sha256(Buffer.from(content));
-    const intent = { ...task, path: target, expected_preimage_sha256: expectedPreimageSha256, postimage_sha256: posthash };
-    const intentHash = sha256(JSON.stringify(intent));
 
     const childSource = `
       import { createProjectFileWriter } from ${JSON.stringify(pathToFileURL(path.resolve('runtime/project-file-writer.mjs')).href)};
@@ -82,20 +79,22 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     const preparedId = `project_file_write_prepared_${keyHash.slice(0, 32)}`;
     const prepared = await persistence.get('artifact', preparedId);
     assert.ok(prepared);
+    const intentHash = prepared.intent_hash;
+    const canonicalTarget = prepared.path;
 
     const issuedAt = new Date().toISOString();
     if (owner) {
-      await persistence.create('artifact', correlatedAuthority('authority-lock', 'decision-lock', intentHash, target));
+      await persistence.create('artifact', correlatedAuthority('authority-lock', 'decision-lock', intentHash, canonicalTarget));
       await persistence.create('artifact', {
         id: 'decision-lock', artifact_kind: 'project.file.write.recovery-decision', status: 'ABANDONED', decision_kind: 'ABANDONED_LOCK',
-        issued_at: issuedAt, authority_artifact_id: 'authority-lock', ...task, target_path: target, intent_hash: intentHash,
+        issued_at: issuedAt, authority_artifact_id: 'authority-lock', ...task, target_path: canonicalTarget, intent_hash: intentHash,
         idempotency_key_sha256: keyHash, lock_id: owner.lock_id,
       });
     }
-    await persistence.create('artifact', correlatedAuthority('authority-prepared', 'decision-prepared', intentHash, target));
+    await persistence.create('artifact', correlatedAuthority('authority-prepared', 'decision-prepared', intentHash, canonicalTarget));
     await persistence.create('artifact', {
       id: 'decision-prepared', artifact_kind: 'project.file.write.recovery-decision', status: 'RESUME', decision_kind: 'PREPARED_WRITE',
-      issued_at: issuedAt, authority_artifact_id: 'authority-prepared', ...task, target_path: target, intent_hash: intentHash,
+      issued_at: issuedAt, authority_artifact_id: 'authority-prepared', ...task, target_path: canonicalTarget, intent_hash: intentHash,
       idempotency_key_sha256: keyHash, prepared_id: preparedId,
     });
 
