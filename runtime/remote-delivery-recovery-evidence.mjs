@@ -16,10 +16,18 @@ function requireText(value, name) {
   return value.trim();
 }
 
+function matchesClaimIdentity(receipt, claim, field) {
+  const claimed = claim[field];
+  return claimed === undefined || claimed === null || claimed === '' || receipt[field] === claimed;
+}
+
 function correlated(receipt, claim) {
   return receipt.delivery_id === claim.delivery_id &&
     receipt.request_id === claim.request_id &&
-    receipt.host_id === claim.host_id;
+    receipt.host_id === claim.host_id &&
+    matchesClaimIdentity(receipt, claim, 'mission_id') &&
+    matchesClaimIdentity(receipt, claim, 'task_id') &&
+    matchesClaimIdentity(receipt, claim, 'wake_trace_id');
 }
 
 export function reconcileRemoteDeliveryRecoveryEvidence({ claim, receipts = [] } = {}) {
