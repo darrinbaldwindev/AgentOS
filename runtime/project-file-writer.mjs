@@ -115,6 +115,9 @@ function validatePreparedTempPath(target, temp) {
 }
 
 export async function createProjectFileWriter({ approvedRoots, persistence, maxContentBytes = MAX_CONTENT_BYTES, hooks = {}, reconcileAbandonedLock = null, reconcilePreparedWrite = null } = {}) {
+  if (WINDOWS_HANDLE_LOCK && !Number.isInteger(fsConstants.UV_FS_O_TEMPORARY)) {
+    throw fail('PROJECT_FILE_LOCK_PRIMITIVE_UNAVAILABLE', { recovery_required: true });
+  }
   if (!Array.isArray(approvedRoots) || approvedRoots.length === 0) throw new TypeError('approvedRoots must be non-empty');
   if (!persistence || typeof persistence.get !== 'function' || typeof persistence.create !== 'function') {
     throw new TypeError('persistence.get and persistence.create are required');
