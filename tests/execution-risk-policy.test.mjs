@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createExecutionRiskPolicy, EXECUTION_RISK_LEVELS } from '../runtime/execution-risk-policy.mjs';
+import {
+  classifyWindowsPowerShellOperationRisk,
+  createExecutionRiskPolicy,
+  EXECUTION_RISK_LEVELS,
+  WINDOWS_POWERSHELL_OPERATION_RISK,
+} from '../runtime/execution-risk-policy.mjs';
 
 const actorContext = Object.freeze({ actor_id: 'agentos:overseer' });
 const task = Object.freeze({ project_id: 'agentos-local', mission_id: 'mission:1', task_id: 'task:1' });
@@ -26,6 +31,75 @@ test('risk policy delegates classification and returns normalized decision', asy
     reason: 'bounded reversible operator action',
     evidence: ['policy:test'],
   });
+});
+
+test('PowerShell operation risk mapping covers the complete bounded catalogue', () => {
+  assert.deepEqual(Object.keys(WINDOWS_POWERSHELL_OPERATION_RISK).sort(), [
+    'audit.run',
+    'process.list',
+    'repo.diff',
+    'repo.status',
+    'service.list',
+    'test.run',
+  ]);
+
+  for (const operation of ['repo.status', 'repo.diff', 'process.list', 'service.list']) {
+    assert.deepEqual(classifyWindowsPowerShellOperationRisk({
+      task: { execution: { adapter: 'windows-powershell', operation } },
+    }), {
+      level: 'A0',
+      approvalRequired: false,
+      reason: WINDOWS_POWERSHELL_OPERATION_RISK[operation].reason,
+      evidence: [
+        'policy:agentos-security-control-plane',
+        'adapter:windows-powershell',
+        `operation:${operation}`,
+      ],
+    });
+  }
+
+  for (const operation of ['test.run', 'audit.run']) {
+    const decision = classifyWindowsPowerShellOperationRisk({
+      task: { execution: { adapter: 'windows-powershell', operation } },
+    });
+    assert.equal(decision.level, 'A2');
+    assert.equal(decision.approvalRequired, false);
+  }
+});
+
+test('PowerShell operation risk mapping fails closed for wrong adapters and unknown operations', () => {
+  assert.throws(
+    () => classifyWindowsPowerShellOperationRisk({
+      task: { execution: { adapter: 'other-shell', operation: 'repo.status' } },
+    }),
+    (error) => error?.code === 'EXECUTION_RISK_ADAPTER_MISMATCH',
+  );
+
+  assert.throws(
+    () => classifyWindowsPowerShellOperationRisk({
+      task: { execution: { adapter: 'windows-powershell', operation: 'shell.arbitrary' } },
+    }),
+    (error) => error?.code === 'EXECUTION_RISK_OPERATION_UNKNOWN',
+  );
+});
+
+test('PowerShell mapping composes through the canonical risk contract', async () => {
+  const policy = createExecutionRiskPolicy({ classify: classifyWindowsPowerShellOperationRisk });
+  const decision = await policy.evaluate({
+    actorContext,
+    task: {
+      ...task,
+      execution: { adapter: 'windows-powershell', operation: 'test.run' },
+    },
+    capabilityEvaluation,
+  });
+  assert.equal(decision.level, 'A2');
+  assert.equal(decision.approvalRequired, false);
+  assert.deepEqual(decision.evidence, [
+    'policy:agentos-security-control-plane',
+    'adapter:windows-powershell',
+    'operation:test.run',
+  ]);
 });
 
 test('unknown or missing classification fails closed', async () => {
