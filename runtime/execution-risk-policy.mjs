@@ -1,10 +1,44 @@
 // AGENTOS-P0-RISK-001
 // Provider-neutral execution risk contract for the existing AgentOS policy/security layer.
-// This module validates and enforces risk decisions; it does NOT classify tools/tasks
-// on its own and does not create a second policy, authority, consent or approval system.
+// This module validates and enforces risk decisions and owns deterministic mappings
+// for bounded execution adapters where the policy is explicit. It does not create a
+// second policy, authority, consent or approval system.
 
 export const EXECUTION_RISK_LEVELS = Object.freeze(['A0', 'A1', 'A2', 'A3', 'A4']);
 const LEVEL_SET = new Set(EXECUTION_RISK_LEVELS);
+
+export const WINDOWS_POWERSHELL_OPERATION_RISK = Object.freeze({
+  'repo.status': Object.freeze({
+    level: 'A0',
+    approvalRequired: false,
+    reason: 'read-only repository status inspection',
+  }),
+  'repo.diff': Object.freeze({
+    level: 'A0',
+    approvalRequired: false,
+    reason: 'read-only repository diff inspection',
+  }),
+  'process.list': Object.freeze({
+    level: 'A0',
+    approvalRequired: false,
+    reason: 'read-only process inspection',
+  }),
+  'service.list': Object.freeze({
+    level: 'A0',
+    approvalRequired: false,
+    reason: 'read-only service inspection',
+  }),
+  'test.run': Object.freeze({
+    level: 'A2',
+    approvalRequired: false,
+    reason: 'bounded non-elevated operational test execution',
+  }),
+  'audit.run': Object.freeze({
+    level: 'A2',
+    approvalRequired: false,
+    reason: 'bounded non-elevated operational audit execution',
+  }),
+});
 
 function requireObject(value, name) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError(`${name} is required`);
@@ -40,6 +74,30 @@ function normalizeDecision(decision) {
     approvalRequired: decision.approvalRequired,
     reason,
     evidence: Object.freeze(Array.isArray(decision.evidence) ? [...decision.evidence] : []),
+  });
+}
+
+export function classifyWindowsPowerShellOperationRisk({ task } = {}) {
+  requireObject(task, 'task');
+  const execution = requireObject(task.execution, 'task.execution');
+  const adapter = requireText(execution.adapter, 'task.execution.adapter');
+  if (adapter !== 'windows-powershell') {
+    throw codedError('EXECUTION_RISK_ADAPTER_MISMATCH', { adapter });
+  }
+
+  const operation = requireText(execution.operation, 'task.execution.operation');
+  const mapped = WINDOWS_POWERSHELL_OPERATION_RISK[operation];
+  if (!mapped) {
+    throw codedError('EXECUTION_RISK_OPERATION_UNKNOWN', { adapter, operation });
+  }
+
+  return Object.freeze({
+    ...mapped,
+    evidence: Object.freeze([
+      'policy:agentos-security-control-plane',
+      `adapter:${adapter}`,
+      `operation:${operation}`,
+    ]),
   });
 }
 
