@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -503,8 +505,53 @@ test('abandoned lock replaced during takeover is preserved and never treated as 
       writer.execute({ task, targetPath: target, content: 'not published', idempotencyKey: 'replacement-takeover' }),
       (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
     );
-    assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), replacement);
+    assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), process.platform === 'win32' ? abandoned : replacement);
     await assert.rejects(readFile(target), (error) => error.code === 'ENOENT');
+  } finally { await f.cleanup(); }
+});
+
+test('Windows three-writer race cannot displace successor after predecessor validation', { skip: process.platform !== 'win32' }, async () => {
+  const f = await fixture();
+  let successorHandle;
+  try {
+    const target = path.join(f.root, 'three-writer.txt');
+    const lock = `${target}.agentos-write-lock`;
+    const successor = { lock_id: 'writer-b', intent_hash: 'intent-b', worker_id: 'worker-b', pid: process.pid };
+    let thirdWriterBlocked = false;
+    const flags = fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_RDWR | fsConstants.UV_FS_O_TEMPORARY;
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root], persistence: persistenceHarness().api,
+      hooks: { afterLockValidation: async ({ reason }) => {
+        if (reason !== 'release') return;
+        await rename(lock, `${lock}.predecessor`);
+        successorHandle = await open(lock, flags, 0o600);
+        await successorHandle.writeFile(JSON.stringify(successor));
+        await successorHandle.sync();
+        try { const third = await open(lock, flags, 0o600); await third.close(); }
+        catch (error) { thirdWriterBlocked = error?.code === 'EEXIST'; }
+      } },
+    });
+    await assert.rejects(
+      writer.execute({ task, targetPath: target, content: 'predecessor result', idempotencyKey: 'three-writer' }),
+      (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
+    );
+    assert.equal(thirdWriterBlocked, true);
+    assert.deepEqual(JSON.parse(await readFile(lock, 'utf8')), successor);
+  } finally {
+    if (successorHandle) await successorHandle.close();
+    await f.cleanup();
+  }
+});
+
+test('Windows delete-on-close lock is removed when holder process exits abruptly', { skip: process.platform !== 'win32' }, async () => {
+  const f = await fixture();
+  try {
+    const lock = path.join(f.root, 'crash.agentos-write-lock');
+    const script = `const fs=require('fs'); const p=process.argv[1]; const c=fs.constants; const h=fs.openSync(p,c.O_CREAT|c.O_EXCL|c.O_RDWR|c.UV_FS_O_TEMPORARY,0o600); fs.writeSync(h,'owned'); process.stdout.write(String(fs.existsSync(p))); process.exit(42);`;
+    const child = spawnSync(process.execPath, ['-e', script, lock], { encoding: 'utf8' });
+    assert.equal(child.status, 42);
+    assert.equal(child.stdout, 'true');
+    await assert.rejects(readFile(lock), (error) => error.code === 'ENOENT');
   } finally { await f.cleanup(); }
 });
 
