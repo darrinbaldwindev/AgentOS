@@ -67,7 +67,14 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
 
     assert.equal(await readFile(target, 'utf8'), 'old\n');
     const lock = `${target}.agentos-write-lock`;
-    const owner = JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8'));
+    // Windows deletes a temporary lock file when the killed process closes its
+    // last handle. The POSIX directory lock remains for governed takeover.
+    const owner = process.platform === 'win32'
+      ? null
+      : JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8'));
+    if (process.platform === 'win32') {
+      await assert.rejects(readFile(lock), (error) => error.code === 'ENOENT');
+    }
     const tempNames = (await readdir(root)).filter((name) => name.startsWith('.fixture.txt.agentos-') && name.endsWith('.tmp'));
     assert.equal(tempNames.length, 1);
 
@@ -77,12 +84,14 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     assert.ok(prepared);
 
     const issuedAt = new Date().toISOString();
-    await persistence.create('artifact', correlatedAuthority('authority-lock', 'decision-lock', intentHash, target));
-    await persistence.create('artifact', {
-      id: 'decision-lock', artifact_kind: 'project.file.write.recovery-decision', status: 'ABANDONED', decision_kind: 'ABANDONED_LOCK',
-      issued_at: issuedAt, authority_artifact_id: 'authority-lock', ...task, target_path: target, intent_hash: intentHash,
-      idempotency_key_sha256: keyHash, lock_id: owner.lock_id,
-    });
+    if (owner) {
+      await persistence.create('artifact', correlatedAuthority('authority-lock', 'decision-lock', intentHash, target));
+      await persistence.create('artifact', {
+        id: 'decision-lock', artifact_kind: 'project.file.write.recovery-decision', status: 'ABANDONED', decision_kind: 'ABANDONED_LOCK',
+        issued_at: issuedAt, authority_artifact_id: 'authority-lock', ...task, target_path: target, intent_hash: intentHash,
+        idempotency_key_sha256: keyHash, lock_id: owner.lock_id,
+      });
+    }
     await persistence.create('artifact', correlatedAuthority('authority-prepared', 'decision-prepared', intentHash, target));
     await persistence.create('artifact', {
       id: 'decision-prepared', artifact_kind: 'project.file.write.recovery-decision', status: 'RESUME', decision_kind: 'PREPARED_WRITE',
@@ -93,7 +102,7 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     const governance = createProjectFileRecoveryGovernance({ persistence });
     const writer = await createProjectFileWriter({
       approvedRoots: [root], persistence,
-      reconcileAbandonedLock: governance.abandonedLock({ evidenceId: 'decision-lock', intentHash, idempotencyKeySha256: keyHash }),
+      ...(owner ? { reconcileAbandonedLock: governance.abandonedLock({ evidenceId: 'decision-lock', intentHash, idempotencyKeySha256: keyHash }) } : {}),
       reconcilePreparedWrite: governance.prepared({ evidenceId: 'decision-prepared', intentHash, idempotencyKeySha256: keyHash }),
     });
     const args = { task, targetPath: target, content, expectedPreimageSha256, idempotencyKey };
@@ -109,3 +118,4 @@ test('abrupt child-process death leaves recoverable state and restart publishes 
     await rm(root, { recursive: true, force: true });
   }
 });
+
