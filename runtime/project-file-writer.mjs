@@ -93,6 +93,18 @@ function sameLockOwner(left, right) {
   return Boolean(left && right && left.lock_id === right.lock_id && left.intent_hash === right.intent_hash && left.worker_id === right.worker_id);
 }
 
+function sameLockDirectory(left, right) {
+  return Boolean(left && right && left.dev === right.dev && left.ino === right.ino);
+}
+
+async function lockDirectoryIdentity(lock) {
+  try {
+    const stat = await fs.lstat(lock, { bigint: true });
+    if (!stat.isDirectory() || stat.isSymbolicLink()) return null;
+    return { dev: String(stat.dev), ino: String(stat.ino) };
+  } catch { return null; }
+}
+
 function validatePreparedTempPath(target, temp) {
   if (typeof temp !== 'string') return false;
   if (path.dirname(temp) !== path.dirname(target)) return false;
@@ -238,21 +250,51 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
 
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     let lockOwned = false;
+    let ownedLockIdentity = null;
+
+    async function retireLock(expectedOwner, expectedIdentity, reason) {
+      const currentOwner = await readLockOwner(lock);
+      const currentIdentity = await lockDirectoryIdentity(lock);
+      if (!sameLockOwner(expectedOwner, currentOwner) || !sameLockDirectory(expectedIdentity, currentIdentity)) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: currentOwner, recovery_required: true });
+      }
+      if (typeof hooks.beforeLockRetire === 'function') await hooks.beforeLockRetire({ lock, reason, expectedOwner });
+      const retired = `${lock}.retired-${randomUUID()}`;
+      try { await fs.rename(lock, retired); }
+      catch (error) { throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, cause: error, recovery_required: true }); }
+      const movedOwner = await readLockOwner(retired);
+      const movedIdentity = await lockDirectoryIdentity(retired);
+      if (!sameLockOwner(expectedOwner, movedOwner) || !sameLockDirectory(expectedIdentity, movedIdentity)) {
+        try { await fs.rename(retired, lock); }
+        catch { /* Preserve the moved lock as recovery evidence; never delete it. */ }
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: movedOwner, retired, recovery_required: true });
+      }
+      await fs.rm(retired, { recursive: true });
+    }
+
+    async function assertOwnLock() {
+      if (!sameLockOwner(lockOwner, await readLockOwner(lock)) ||
+          !sameLockDirectory(ownedLockIdentity, await lockDirectoryIdentity(lock))) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+      }
+    }
+
     async function establishLock() {
       try {
         await fs.mkdir(lock);
-        lockOwned = true;
         await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify(lockOwner), { flag: 'wx', mode: 0o600 });
+        ownedLockIdentity = await lockDirectoryIdentity(lock);
+        if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+        }
+        lockOwned = true;
         return;
       } catch (error) {
-        if (lockOwned) {
-          await fs.rm(lock, { recursive: true, force: true }).catch(() => undefined);
-          lockOwned = false;
-        }
         if (error?.code !== 'EEXIST') throw error;
       }
 
       const observedOwner = await readLockOwner(lock);
+      const observedIdentity = await lockDirectoryIdentity(lock);
       if (observedOwner?.pid === process.pid) {
         throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: observedOwner, retryable: true, recovery_required: false });
       }
@@ -267,27 +309,32 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
       }
       const recheckedOwner = await readLockOwner(lock);
-      if (!sameLockOwner(observedOwner, recheckedOwner)) {
+      if (!sameLockOwner(observedOwner, recheckedOwner) || !sameLockDirectory(observedIdentity, await lockDirectoryIdentity(lock))) {
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: recheckedOwner, recovery_required: true });
       }
-      await fs.rm(lock, { recursive: true, force: true });
+      await retireLock(observedOwner, observedIdentity, 'takeover');
       try {
         await fs.mkdir(lock);
       } catch (error) {
         if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: await readLockOwner(lock), retryable: true, recovery_required: false });
         throw error;
       }
-      lockOwned = true;
       await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify({ ...lockOwner, recovered_abandoned_lock_evidence_id: decision.evidence_id }), { flag: 'wx', mode: 0o600 });
+      ownedLockIdentity = await lockDirectoryIdentity(lock);
+      if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
+        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+      }
+      lockOwned = true;
     }
 
     await establishLock();
-    if (typeof hooks.afterLockAcquired === 'function') await hooks.afterLockAcquired({ target: target.canonical, lock, intent, lockOwner });
 
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
     let preparedPersisted = false;
     try {
+      if (typeof hooks.afterLockAcquired === 'function') await hooks.afterLockAcquired({ target: target.canonical, lock, intent, lockOwner });
+      await assertOwnLock();
       const lockedReceipt = await receiptIfPresent();
       if (lockedReceipt) return lockedReceipt;
       const lockedRecovery = await recoverPreparedIfPresent({ allowPublish: true });
@@ -335,6 +382,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
 
       if (typeof hooks.beforePublish === 'function') await hooks.beforePublish({ target: target.canonical, temp, intent });
+      await assertOwnLock();
       const recheckBeforePublish = await readState(target.canonical);
       if (recheckBeforePublish.exists !== before.exists || recheckBeforePublish.hash !== before.hash || (recheckBeforePublish.exists && !sameIdentity(recheckBeforePublish.identity, before.identity))) {
         throw fail('PROJECT_FILE_EXTERNAL_MUTATION', {
@@ -360,9 +408,10 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       throw error;
     } finally {
       if (!preparedPersisted || published) await fs.rm(temp, { force: true }).catch(() => undefined);
-      if (lockOwned) await fs.rm(lock, { recursive: true, force: true }).catch(() => undefined);
+      if (lockOwned) await retireLock(lockOwner, ownedLockIdentity, 'release');
     }
   }
 
   return Object.freeze({ execute, capability: 'project.file.write', approvedRoots: Object.freeze([...roots]) });
 }
+
