@@ -16,6 +16,8 @@ function task() {
     task_id: 'task:runtime:1',
     wake_trace_id: 'wake:runtime:1',
     issuer: 'agentos:overseer',
+    admitted_by: 'agentos:overseer',
+    authority_admitted: true,
     authority: { granted_capabilities: ['shell.powershell.repo.read'] },
     required_capabilities: ['shell.powershell.repo.read'],
     environment: 'DRY_RUN',
