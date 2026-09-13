@@ -225,9 +225,16 @@ export function createWindowsPowerShellAdapter({
       assertExpectedExecutableIdentity(expectedExecutables, resolvedTools, ['powershell.exe', ...(spec.tool ? [spec.tool] : [])]);
       const script = buildScript(spec, resolvedTools);
       const result = await executor({ executable: resolvedTools['powershell.exe'].path, args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-Command', script], cwd: safeCwd, timeoutMs, maxBuffer });
+      if (!Number.isInteger(result?.exitCode)) {
+        const error = new Error('POWERSHELL_EXECUTOR_EXIT_CODE_INVALID');
+        error.code = 'POWERSHELL_EXECUTOR_EXIT_CODE_INVALID';
+        error.stdout = String(result?.stdout ?? '');
+        error.stderr = String(result?.stderr ?? '');
+        throw error;
+      }
       const finishedMs = now();
       if (!Number.isFinite(finishedMs) || finishedMs < startedMs) throw new Error('POWERSHELL_CLOCK_INVALID');
-      const exitCode = Number.isInteger(result?.exitCode) ? result.exitCode : 0;
+      const exitCode = result.exitCode;
       const finishedAt = new Date(finishedMs).toISOString();
       return Object.freeze({
         operation,
