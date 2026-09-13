@@ -8,6 +8,7 @@ function fixture(overrides = {}) {
   const adapter = createWindowsPowerShellAdapter({
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
+    toolResolver: async (tool) => ({ path: tool, version: null }),
     executor: async (request) => {
       calls.push(request);
       return { stdout: 'ok', stderr: '', exitCode: 0 };
