@@ -70,6 +70,13 @@ export function createGovernedExecutionBoundary({
         error.verification = verificationResult ?? null;
         throw error;
       }
+      if (verificationResult.assurance_complete === true || verificationResult.completion_eligible === true) {
+        const error = new Error('EXECUTION_VERIFICATION_SCOPE_ESCALATION');
+        error.code = 'EXECUTION_VERIFICATION_SCOPE_ESCALATION';
+        error.receipt = receipt;
+        error.verification = verificationResult;
+        throw error;
+      }
       const budgetResult = await budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: actualUnits });
       reconciled = true;
       return Object.freeze({
