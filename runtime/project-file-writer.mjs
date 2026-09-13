@@ -228,8 +228,8 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
       if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
       const recheckBeforeRecoveryPublish = await readState(target.canonical);
-      if (recheckBeforeRecoveryPublish.exists !== current.exists || 
-          recheckBeforeRecoveryPublish.hash !== current.hash || 
+      if (recheckBeforeRecoveryPublish.exists !== current.exists ||
+          recheckBeforeRecoveryPublish.hash !== current.hash ||
           (recheckBeforeRecoveryPublish.exists && !sameIdentity(recheckBeforeRecoveryPublish.identity, current.identity))) {
         throw fail('PROJECT_FILE_EXTERNAL_MUTATION', {
           prepared_id: preparedId,
@@ -251,12 +251,36 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     if (priorRecovery) return priorRecovery;
 
     const lock = `${target.canonical}.agentos-write-lock`;
+    const lockNamespaceGuard = `${lock}.namespace-guard`;
     const lockOwner = Object.freeze({ lock_id: randomUUID(), pid: process.pid, ...correlation, target_path: target.canonical, intent_hash: intentHash, idempotency_key_sha256: keyHash, acquired_at: new Date().toISOString() });
 
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     let lockOwned = false;
     let ownedLockIdentity = null;
     let windowsLockHandle = null;
+
+    async function acquireLockNamespaceGuard(reason) {
+      if (WINDOWS_HANDLE_LOCK) return null;
+      let handle;
+      try {
+        handle = await fs.open(lockNamespaceGuard, 'wx', 0o600);
+        await handle.writeFile(JSON.stringify({ lock_id: lockOwner.lock_id, worker_id: lockOwner.worker_id, reason, acquired_at: new Date().toISOString() }));
+        await handle.sync();
+        return handle;
+      } catch (error) {
+        if (handle) await handle.close().catch(() => undefined);
+        if (error?.code === 'EEXIST') {
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, guard: lockNamespaceGuard, recovery_required: true });
+        }
+        throw error;
+      }
+    }
+
+    async function releaseLockNamespaceGuard(handle) {
+      if (!handle) return;
+      await handle.close();
+      await fs.rm(lockNamespaceGuard, { force: true });
+    }
 
     async function retireLock(expectedOwner, expectedIdentity, reason) {
       if (WINDOWS_HANDLE_LOCK) {
@@ -283,23 +307,30 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         }
         return;
       }
-      const currentOwner = await readLockOwner(lock);
-      const currentIdentity = await lockDirectoryIdentity(lock);
-      if (!sameLockOwner(expectedOwner, currentOwner) || !sameLockDirectory(expectedIdentity, currentIdentity)) {
-        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: currentOwner, recovery_required: true });
+
+      const guard = await acquireLockNamespaceGuard(`retire:${reason}`);
+      try {
+        const currentOwner = await readLockOwner(lock);
+        const currentIdentity = await lockDirectoryIdentity(lock);
+        if (!sameLockOwner(expectedOwner, currentOwner) || !sameLockDirectory(expectedIdentity, currentIdentity)) {
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: currentOwner, recovery_required: true });
+        }
+        if (typeof hooks.beforeLockRetire === 'function') await hooks.beforeLockRetire({ lock, reason, expectedOwner });
+        if (typeof hooks.afterLockValidation === 'function') await hooks.afterLockValidation({ lock, reason, expectedOwner });
+        const retired = `${lock}.retired-${randomUUID()}`;
+        try { await fs.rename(lock, retired); }
+        catch (error) { throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, cause: error, recovery_required: true }); }
+        const movedOwner = await readLockOwner(retired);
+        const movedIdentity = await lockDirectoryIdentity(retired);
+        if (!sameLockOwner(expectedOwner, movedOwner) || !sameLockDirectory(expectedIdentity, movedIdentity)) {
+          try { await fs.rename(retired, lock); }
+          catch { /* Preserve the moved lock as recovery evidence; never delete it. */ }
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: movedOwner, retired, recovery_required: true });
+        }
+        await fs.rm(retired, { recursive: true });
+      } finally {
+        await releaseLockNamespaceGuard(guard);
       }
-      if (typeof hooks.beforeLockRetire === 'function') await hooks.beforeLockRetire({ lock, reason, expectedOwner });
-      const retired = `${lock}.retired-${randomUUID()}`;
-      try { await fs.rename(lock, retired); }
-      catch (error) { throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, cause: error, recovery_required: true }); }
-      const movedOwner = await readLockOwner(retired);
-      const movedIdentity = await lockDirectoryIdentity(retired);
-      if (!sameLockOwner(expectedOwner, movedOwner) || !sameLockDirectory(expectedIdentity, movedIdentity)) {
-        try { await fs.rename(retired, lock); }
-        catch { /* Preserve the moved lock as recovery evidence; never delete it. */ }
-        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: movedOwner, retired, recovery_required: true });
-      }
-      await fs.rm(retired, { recursive: true });
     }
 
     async function assertOwnLock() {
@@ -336,18 +367,26 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
           throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: observedOwner, recovery_required: true });
         }
       }
+
+      let created = false;
+      const guard = await acquireLockNamespaceGuard('acquire');
       try {
-        await fs.mkdir(lock);
-        await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify(lockOwner), { flag: 'wx', mode: 0o600 });
-        ownedLockIdentity = await lockDirectoryIdentity(lock);
-        if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
-          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+        try {
+          await fs.mkdir(lock);
+          await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify(lockOwner), { flag: 'wx', mode: 0o600 });
+          ownedLockIdentity = await lockDirectoryIdentity(lock);
+          if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
+            throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+          }
+          lockOwned = true;
+          created = true;
+        } catch (error) {
+          if (error?.code !== 'EEXIST') throw error;
         }
-        lockOwned = true;
-        return;
-      } catch (error) {
-        if (error?.code !== 'EEXIST') throw error;
+      } finally {
+        await releaseLockNamespaceGuard(guard);
       }
+      if (created) return;
 
       const observedOwner = await readLockOwner(lock);
       const observedIdentity = await lockDirectoryIdentity(lock);
@@ -369,18 +408,24 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, owner: recheckedOwner, recovery_required: true });
       }
       await retireLock(observedOwner, observedIdentity, 'takeover');
+
+      const takeoverGuard = await acquireLockNamespaceGuard('takeover-acquire');
       try {
-        await fs.mkdir(lock);
-      } catch (error) {
-        if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: await readLockOwner(lock), retryable: true, recovery_required: false });
-        throw error;
+        try {
+          await fs.mkdir(lock);
+        } catch (error) {
+          if (error?.code === 'EEXIST') throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, owner: await readLockOwner(lock), retryable: true, recovery_required: false });
+          throw error;
+        }
+        await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify({ ...lockOwner, recovered_abandoned_lock_evidence_id: decision.evidence_id }), { flag: 'wx', mode: 0o600 });
+        ownedLockIdentity = await lockDirectoryIdentity(lock);
+        if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
+          throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
+        }
+        lockOwned = true;
+      } finally {
+        await releaseLockNamespaceGuard(takeoverGuard);
       }
-      await fs.writeFile(path.join(lock, LOCK_OWNER_FILE), JSON.stringify({ ...lockOwner, recovered_abandoned_lock_evidence_id: decision.evidence_id }), { flag: 'wx', mode: 0o600 });
-      ownedLockIdentity = await lockDirectoryIdentity(lock);
-      if (!ownedLockIdentity || !sameLockOwner(lockOwner, await readLockOwner(lock))) {
-        throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
-      }
-      lockOwned = true;
     }
 
     await establishLock();
@@ -470,4 +515,3 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
 
   return Object.freeze({ execute, capability: 'project.file.write', approvedRoots: Object.freeze([...roots]) });
 }
-
