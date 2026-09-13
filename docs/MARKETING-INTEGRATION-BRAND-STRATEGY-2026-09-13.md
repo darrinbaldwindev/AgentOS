@@ -310,3 +310,24 @@ Official sources checked:
 - Slack message retrieval and scopes: https://api.slack.com/messaging/retrieving
 
 Recommended first shipping set remains a **target**, not a capability claim: OpenAI, Anthropic, Gemini, Ollama, GitHub, Microsoft 365, Google Workspace, Slack, Notion, Shopify, n8n and MCP. The next step is a read-only adapter contract and least-privilege authentication proof for GitHub, then Microsoft 365, Google Workspace and Slack. Model adapters and the remaining targets need their own current interface, entitlement and terms verification before the set is frozen. No logo, integration, listing or partner claim follows from this research alone.
+
+## Provisional Operator first-wave scorecard — 2026-09-13
+
+Planning scores are judgement, not proof of API access or implementation. Scale: 1 (weak/complex) to 5 (strong/simple). Columns: T technical utility, U customer frequency, B brand trust, F interface feasibility, D distribution, M maintainability, E entitlement fit, S security/approval simplicity, C commercial opportunity. C is secondary. Candidate order below prioritises T/U/F/E/S over C; current-interface verification remains required for targets not covered above.
+
+| Priority | Candidate | Layer | T | U | B | F | D | M | E | S | C | First bounded slice |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | GitHub | Native | 5 | 5 | 5 | 5 | 4 | 4 | 5 | 3 | 3 | Selected-repo read-only inspection |
+| 2 | Ollama | Native model | 5 | 4 | 3 | 5 | 2 | 4 | 5 | 4 | 2 | Local model discovery/inference |
+| 3 | OpenAI | Native model | 5 | 5 | 5 | 5 | 3 | 4 | 4 | 3 | 3 | User-key text inference |
+| 4 | Anthropic | Native model | 5 | 5 | 5 | 5 | 3 | 4 | 4 | 3 | 3 | User-key text inference |
+| 5 | Gemini | Native model | 5 | 5 | 5 | 5 | 3 | 4 | 4 | 3 | 3 | User-key text inference |
+| 6 | Microsoft 365 / Graph | Native | 5 | 5 | 5 | 4 | 5 | 3 | 3 | 2 | 4 | Delegated read-only identity/mail or files |
+| 7 | Google Workspace | Native | 5 | 5 | 5 | 4 | 5 | 3 | 3 | 2 | 4 | One read-only service; avoid broad Gmail scope |
+| 8 | Slack | Native | 4 | 4 | 5 | 4 | 4 | 4 | 4 | 3 | 3 | Public-channel discovery only |
+| 9 | Notion | Native | 4 | 4 | 4 | 4 | 3 | 4 | 4 | 3 | 3 | Search/read selected pages |
+| 10 | Shopify | Native | 5 | 3 | 5 | 4 | 5 | 3 | 3 | 2 | 4 | Read-only catalogue/fulfilment status |
+| 11 | n8n | Long-tail worker | 4 | 3 | 3 | 4 | 3 | 3 | 3 | 2 | 3 | Invoke one explicitly approved workflow |
+| 12 | MCP | Long-tail fabric | 5 | 4 | 3 | 4 | 2 | 2 | 4 | 2 | 3 | Curated read-only tool registration |
+
+This is a proposed release envelope, not twelve shipped connectors. BYO account/key keeps the $99/year Operator tier useful without promising bundled API spend. Hosted execution, managed usage or cloud state should be priced separately only if their recurring costs and terms are verified. Green/PRS, authority, receipts and approval invariants remain common to every tier.
