@@ -195,7 +195,7 @@ test('receipt persistence failure after PowerShell side effect retains claim and
   assert.equal(state.getReceiptCalls(), 1);
 });
 
-test('verification failure after receipted side effect retains claim and cannot become verified or replay', async () => {
+test('verification failure after receipted side effect reconciles budget, retains claim and cannot replay', async () => {
   const state = fixture({
     runtimeExecutionEnabled: true,
     runVerifier: async () => ({ passed: false, evidence: ['fixture:forced-negative'] }),
@@ -206,9 +206,10 @@ test('verification failure after receipted side effect retains claim and cannot 
   assert.equal(state.getReserveCalls(), 1);
   assert.equal(state.getReceiptCalls(), 1);
   assert.equal(state.getVerifierCalls(), 1);
-  assert.equal(state.getReconcileCalls(), 0);
+  assert.equal(state.getReconcileCalls(), 1);
 
   await assert.rejects(state.runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
   assert.equal(state.getAdapterCalls(), 1);
   assert.equal(state.getVerifierCalls(), 1);
+  assert.equal(state.getReconcileCalls(), 1);
 });
