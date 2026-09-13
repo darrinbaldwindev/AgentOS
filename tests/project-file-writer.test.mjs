@@ -457,6 +457,29 @@ test('old writer cannot remove replacement live lock during release', async () =
   } finally { await f.cleanup(); }
 });
 
+test('replacement immediately after acquisition blocks mutation and survives predecessor cleanup', async () => {
+  const f = await fixture();
+  try {
+    const target = path.join(f.root, 'acquired-replacement.txt');
+    const lock = `${target}.agentos-write-lock`;
+    const replacement = { lock_id: 'new-owner', intent_hash: 'new-intent', worker_id: 'new-worker', pid: process.pid };
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root], persistence: persistenceHarness().api,
+      hooks: { afterLockAcquired: async () => {
+        await rename(lock, `${lock}.old`);
+        await mkdir(lock);
+        await writeFile(path.join(lock, 'owner.json'), JSON.stringify(replacement));
+      } },
+    });
+    await assert.rejects(
+      writer.execute({ task, targetPath: target, content: 'must not publish', idempotencyKey: 'acquired-replacement' }),
+      (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
+    );
+    assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), replacement);
+    await assert.rejects(readFile(target), (error) => error.code === 'ENOENT');
+  } finally { await f.cleanup(); }
+});
+
 test('abandoned lock replaced during takeover is preserved and never treated as stale', async () => {
   const f = await fixture();
   try {
