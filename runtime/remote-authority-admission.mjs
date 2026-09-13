@@ -54,10 +54,10 @@ export function createRemoteAuthorityAdmissionProducer({
 
     const grant = await authoritySource.resolveGrant({ candidate, actorContext, requestedCapabilities: Object.freeze([...requested]) });
     if (!grant || grant.status !== 'GRANTED') throw new Error('REMOTE_AUTHORITY_GRANT_REQUIRED');
-    const grantActorId = requiredString(grant.actor_id, 'grant.actor_id');
-    const grantIssuer = requiredString(grant.issuer, 'grant.issuer');
-    const grantProjectId = requiredString(grant.project_id, 'grant.project_id');
-    if (grantActorId !== actorId || grantIssuer !== issuer || grantProjectId !== projectId) {
+    const grantActorId = typeof grant.actor_id === 'string' ? grant.actor_id.trim() : '';
+    const grantIssuer = typeof grant.issuer === 'string' ? grant.issuer.trim() : '';
+    const grantProjectId = typeof grant.project_id === 'string' ? grant.project_id.trim() : '';
+    if (!grantActorId || !grantIssuer || !grantProjectId || grantActorId !== actorId || grantIssuer !== issuer || grantProjectId !== projectId) {
       throw new Error('REMOTE_AUTHORITY_GRANT_PROVENANCE_MISMATCH');
     }
     const granted = stringArray(grant.granted_capabilities, 'grant.granted_capabilities');
