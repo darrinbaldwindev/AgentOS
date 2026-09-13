@@ -34,6 +34,16 @@ const candidate = Object.freeze({
   constraints: ['DRY_RUN only'],
 });
 
+const validGrant = Object.freeze({
+  status: 'GRANTED',
+  actor_id: 'owner-1',
+  issuer: 'agentos:overseer',
+  project_id: 'agentos-local',
+  granted_capabilities: ['shell.powershell.dev.execute'],
+  evidence_id: 'authority-evidence-1',
+  mission_id: 'mission-1',
+});
+
 function producer(p, overrides = {}) {
   let ids = 0;
   return createRemoteAuthorityAdmissionProducer({
@@ -42,19 +52,12 @@ function producer(p, overrides = {}) {
     allowedCapabilities: ['shell.powershell.dev.execute'],
     now: () => new Date('2026-09-13T12:00:00.000Z'),
     idFactory: () => `id-${++ids}`,
-    authoritySource: {
-      resolveGrant: async () => ({
-        status: 'GRANTED',
-        granted_capabilities: ['shell.powershell.dev.execute'],
-        evidence_id: 'authority-evidence-1',
-        mission_id: 'mission-1',
-      }),
-    },
+    authoritySource: { resolveGrant: async () => validGrant },
     ...overrides,
   });
 }
 
-test('derives authority-bearing task fields from local grant evidence and atomically persists request marker plus dispatch task', async () => {
+test('derives authority-bearing task fields from locally bound grant evidence and atomically persists request marker plus dispatch task', async () => {
   const p = persistenceHarness();
   const result = await producer(p).admit({
     candidate,
@@ -81,11 +84,28 @@ test('rejects an unauthenticated or mismatched actor context before authority re
   assert.equal(resolutions, 0);
 });
 
+test('rejects grant evidence bound to a different actor, issuer, or project without persisting a task', async () => {
+  for (const [field, value] of [
+    ['actor_id', 'other-owner'],
+    ['issuer', 'agentos:other-issuer'],
+    ['project_id', 'other-project'],
+  ]) {
+    const p = persistenceHarness();
+    const grant = { ...validGrant, [field]: value };
+    const admission = producer(p, { authoritySource: { resolveGrant: async () => grant } });
+    await assert.rejects(
+      admission.admit({ candidate, actorContext, targetHostId: 'host-1' }),
+      (error) => error.message === 'REMOTE_AUTHORITY_GRANT_PROVENANCE_MISMATCH',
+    );
+    assert.equal(Object.keys(p.records.artifact).length, 0);
+  }
+});
+
 test('rejects missing, incomplete, and out-of-policy local grants without persisting a task', async () => {
   for (const grant of [
     { status: 'DENIED' },
-    { status: 'GRANTED', granted_capabilities: [], evidence_id: 'e', mission_id: 'm' },
-    { status: 'GRANTED', granted_capabilities: ['shell.powershell.dev.execute', 'shell.unrestricted'], evidence_id: 'e', mission_id: 'm' },
+    { ...validGrant, granted_capabilities: [] },
+    { ...validGrant, granted_capabilities: ['shell.powershell.dev.execute', 'shell.unrestricted'] },
   ]) {
     const p = persistenceHarness();
     const admission = producer(p, { authoritySource: { resolveGrant: async () => grant } });
