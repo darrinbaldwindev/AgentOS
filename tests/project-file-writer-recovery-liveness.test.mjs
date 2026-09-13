@@ -172,7 +172,14 @@ test('abandoned lock is removed only with explicit governed reconciliation evide
         return { status: 'ABANDONED', evidence_id: 'green-lock-recovery-fixture-001' };
       },
     });
-    const result = await writer.execute({ task, targetPath: target, content: 'recovered\n', idempotencyKey: 'idem-abandoned-recovery' });
+    const args = { task, targetPath: target, content: 'recovered\n', idempotencyKey: 'idem-abandoned-recovery' };
+    if (process.platform === 'win32') {
+      await assert.rejects(writer.execute(args), (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED' && error.recovery_required === true);
+      assert.equal(reconciled, false);
+      await assert.rejects(readFile(target), (error) => error.code === 'ENOENT');
+      return;
+    }
+    const result = await writer.execute(args);
     assert.equal(reconciled, true);
     assert.equal(result.success, true);
     assert.equal(await readFile(target, 'utf8'), 'recovered\n');
@@ -224,3 +231,4 @@ test('external writer mutation during beforeRecoveryPublish rejects recovery and
     assert.equal(receipt, undefined);
   } finally { await f.cleanup(); }
 });
+
