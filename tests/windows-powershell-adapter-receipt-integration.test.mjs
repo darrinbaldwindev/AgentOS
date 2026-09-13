@@ -105,3 +105,20 @@ test('adapter max-buffer failure is explicit truncation evidence rather than suc
   assert.equal(result.truncated, true);
   assert.equal(result.stdout, 'bounded-partial');
 });
+
+test('resolved executor result without integer exit code fails closed instead of normalizing to success', async () => {
+  const adapter = createWindowsPowerShellAdapter({
+    allowedRoots: ['C:/agentos'],
+    pathResolver: (input) => input,
+    pathModule: path.win32,
+    now: deterministicClock(4_000, 4_020),
+    executor: async () => ({ stdout: 'ambiguous', stderr: '' }),
+  });
+  const result = await adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' });
+  assert.equal(result.success, false);
+  assert.equal(result.exit_code, null);
+  assert.equal(result.timed_out, false);
+  assert.equal(result.truncated, false);
+  assert.equal(result.stdout, 'ambiguous');
+  assert.match(result.stderr, /POWERSHELL_EXECUTOR_EXIT_CODE_INVALID/);
+});
