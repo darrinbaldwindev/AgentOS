@@ -28,14 +28,27 @@ Purpose: close the smallest pre-execution governance gap without adding a second
 6. budget reservation occurs only after admission and reconciles on success;
 7. attempted execution failure still reconciles consumed budget.
 
+## Exact-head CI
+
+Draft PR #108 was opened at head `8fc99ee5522967673365194311e1f4ab48e7744a` and triggered exact-head GitHub Actions.
+
+- AgentOS Tests #830: **SUCCESS**.
+- Project Overseer Wake #342: **SUCCESS**.
+
+A later documentation-only commit records this evidence, so the implementation/test tree certified by those runs remains `8fc99ee5522967673365194311e1f4ab48e7744a`.
+
+## Reconciliation check
+
+PR #95 independently demonstrates that JavaScript truthiness can create false authority grants and hardens the existing autonomy helper to require explicit booleans. This preflight slice does not replace that autonomy helper. Its own admission checks use exact string modes, explicit array membership and the existing dispatch authority policy. Future hot-path integration must preserve #95's strict Boolean semantics where autonomy authority is composed.
+
 ## Boundaries
 
-This slice is intentionally not yet wired into `runtime/local-wake.mjs` because the strongest local-wake/Green/persistence path lives on active draft lineages and blindly editing current main would duplicate or conflict with those repairs. The next step is exact-head CI plus reconciliation against the strongest #84/#87/#91/#94/#95 lineages before integrating the preflight into a canonical execution path.
+This slice is intentionally not yet wired into `runtime/local-wake.mjs` because the strongest local-wake/Green/persistence path lives on active draft lineages and blindly editing current main would duplicate or conflict with those repairs. The next step is reconciliation against the strongest #84/#87/#91/#94/#95 lineages before integrating the preflight into a canonical execution path.
 
 No provider, OAuth, MCP, filesystem, shell, browser, scheduler, dispatch, credential, deployment or production-autonomy capability was activated. No merge, approval, ready transition or rebase is authorized by this work.
 
 ## Acceptance evidence required before integration
 
-- GitHub Actions must execute the repository test suite on this exact branch head.
+- Exact implementation-head CI: satisfied on `8fc99ee...`.
 - Independent review should confirm this module composes existing authority/policy primitives rather than becoming a competing policy engine.
 - Integration into local wake must preserve Green-before-COMPLETED and durable receipt semantics from the stronger draft lineage.
