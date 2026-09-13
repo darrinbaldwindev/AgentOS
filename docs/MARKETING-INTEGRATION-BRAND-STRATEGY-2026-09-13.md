@@ -70,17 +70,20 @@ Recommended specialist-worker and automation integrations:
 - n8n
 - Lovable
 - Base44
-- Vercel
+- Bolt.new
+- Vercel / v0
 - Replit
 - Cursor
 - Factory
 - Warp
 - Gumloop
 - Jam
+- Zapier
+- Make
 - MCP as a strategic tool/connector interoperability layer
 - ACP as a strategic worker/agent interoperability layer
 
-Lovable and Base44 should be treated as specialist app/product-building workers and integration surfaces, not as canonical AgentOS mission, scheduler, authority, memory, Green or PRS systems.
+Lovable, Base44, Bolt and v0/Vercel should be treated as specialist app/product-building workers and integration surfaces, not as canonical AgentOS mission, scheduler, authority, memory, Green or PRS systems.
 
 ### Business, communications and commerce
 
@@ -96,11 +99,74 @@ High-value recognizable targets:
 - WordPress / WooCommerce
 - Stripe
 - HubSpot
-- Salesforce
+- Salesforce / Agentforce
+- Intercom / Fin
 - Twilio
+- Airtable
 - Zapier / Make as long-tail automation bridges where appropriate
 
 Meta should be treated as separate scoped capabilities rather than one vague connector. Outbound messages, publishing and ad-spend changes require stricter approval/authority than read-only reporting.
+
+### Creative, design and documents
+
+Brand-heavy capability targets that complement AgentOS particularly well:
+
+- Canva — branded content, presentations and social assets
+- Figma — product/design work and editable design handoff
+- Adobe / Adobe Express / Acrobat — creative/document/PDF capability
+- DocuSign — signature and approval workflows
+
+### Accounting and small-business operations
+
+Useful specialist systems where AgentOS should orchestrate rather than recreate domain logic:
+
+- Xero
+- QuickBooks
+
+Financial/accounting integrations require strict read/write scope separation, user authority, audit evidence and no implied professional accounting advice.
+
+## Ranked next-wave branded shortlist
+
+The following candidates should be investigated after the current core integration set. Ranking is strategic, not an implementation claim.
+
+### Tier A — strongest combination of brand value + AgentOS utility
+
+1. **Canva** — creative/content/presentation capability with very high mainstream brand recognition.
+2. **Figma** — design/product capability with strong developer/product credibility and an agent-friendly integration direction.
+3. **Zapier** — long-tail connector leverage; potentially lets AgentOS reach thousands of apps without building native adapters for all of them.
+4. **Vercel / v0** — branded app-building/deployment worker that complements Lovable/Base44 without becoming AgentOS authority.
+5. **Salesforce / Agentforce** — major enterprise CRM/agent surface with strong enterprise trust value.
+6. **HubSpot** — strong SMB/marketing/sales brand and useful customer workflow surface.
+7. **Stripe** — major payments/subscription/commerce brand; high utility but higher approval/risk burden.
+8. **Intercom / Fin** — specialist customer-support agent capability suitable for bounded delegation.
+9. **Twilio** — communications infrastructure for SMS, voice and messaging channels.
+10. **Airtable** — approachable structured-data/operations layer for small-business workflows.
+
+### Tier B — valuable specialist/brand additions
+
+11. **Bolt.new** — specialist full-stack app-building worker alongside Lovable/Base44/v0.
+12. **Adobe / Adobe Express / Acrobat** — strong document/creative brand, useful particularly for PDFs and marketing assets.
+13. **DocuSign** — high-recognition approval/signature workflow integration.
+14. **Xero** — important small-business accounting surface, especially relevant in Australia.
+15. **QuickBooks** — major small-business accounting surface, especially relevant internationally.
+
+These rankings should be rescored as current API/MCP support, licensing, regional access, OAuth scope burden and marketplace conditions are verified.
+
+## Integration architecture tiers
+
+AgentOS should communicate integrations in three layers:
+
+### 1. Native flagship integrations
+
+Polished direct AgentOS experiences for frequently used, high-recognition services. Likely examples include Google, Microsoft, Meta, GitHub, Shopify, Slack, Canva, Figma, Notion, Salesforce, HubSpot and Stripe.
+
+### 2. Specialist AgentOS workers
+
+External products AgentOS can delegate bounded jobs to under AgentOS authority, policy, receipts and assurance. Examples include Lovable, Base44, Bolt, v0/Vercel, Manus, Intercom Fin, Replit, Cursor and Factory.
+
+### 3. Long-tail integration fabric
+
+MCP, ACP, Zapier, n8n, Make and generic API adapters provide access to the broader ecosystem without requiring AgentOS to maintain a native adapter for every service.
 
 ## Brand-leverage principle
 
@@ -112,8 +178,19 @@ This creates legitimate marketing value when the integration is real:
 - "Works with Microsoft 365"
 - "Integrates with Shopify"
 - "Use AgentOS with Slack"
+- "Create with Canva and Figma through AgentOS"
 
 However, AgentOS must not imply endorsement, certification, official partnership or co-branding rights unless the relevant vendor relationship actually exists and trademark/API rules permit the wording.
+
+A future marketing presentation may group recognizable verified integrations under a message such as:
+
+> **AgentOS brings the AI and apps you already use into one governed workspace.**
+
+And, once technically supportable:
+
+> **Plus thousands more through MCP and automation connectors.**
+
+These are marketing directions only until the underlying integration evidence exists.
 
 ## Marketplace and directory strategy
 
@@ -124,6 +201,8 @@ For selected integrations, AgentOS should pursue formal marketplace/app-director
 - Slack Marketplace
 - Shopify App Store
 - Meta developer/app ecosystem surfaces where applicable
+- Salesforce AppExchange where appropriate
+- HubSpot App Marketplace where appropriate
 - other vendor marketplaces/directories where real distribution value exists
 
 A verified marketplace listing provides more credibility and distribution value than merely displaying a vendor logo.
@@ -169,7 +248,7 @@ Recommended first-wave target set:
 - Meta communications/marketing capabilities
 - Shopify
 
-This list may exceed the initial shipping count; implementation order should be based on real adapter maturity, user value and safe test evidence.
+The ranked next-wave candidates above should then be investigated in order of real user value, current interface maturity and evidence quality rather than logo value alone.
 
 ## Claims discipline
 
@@ -203,9 +282,10 @@ The AgentOS Overseer remains the governed coordinator. External capabilities rem
 
 ## Next actions
 
-1. Add Lovable, Base44, Meta, Vercel, Shopify, Google Workspace, Microsoft 365/Graph and Slack to the formal ecosystem/integration shortlist if absent.
-2. Score the shortlist using the nine criteria in this document.
-3. Identify which 10–15 integrations are realistic for the first Operator release.
-4. Identify marketplace/app-directory application requirements for the highest-brand-value targets.
-5. Preserve an explicit distinction between integration capability and official partner status.
-6. Do not activate credentials, spend, production publishing or partner applications without the required owner authority.
+1. Keep the formal ecosystem registry aligned with this document.
+2. Score the complete shortlist using the nine criteria in this document.
+3. Verify current API/MCP/OAuth/licensing/marketplace facts for Tier A candidates first.
+4. Identify which 10–15 integrations are realistic for the first Operator release.
+5. Identify marketplace/app-directory application requirements for the highest-brand-value targets.
+6. Preserve an explicit distinction between integration capability and official partner status.
+7. Do not activate credentials, spend, production publishing or partner applications without the required owner authority.
