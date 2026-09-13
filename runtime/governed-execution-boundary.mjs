@@ -72,7 +72,18 @@ export function createGovernedExecutionBoundary({
       }
       const budgetResult = await budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: actualUnits });
       reconciled = true;
-      return Object.freeze({ status: 'VERIFIED', result, receipt, verification: verificationResult, budget: budgetResult, risk: riskDecision, capability: capabilityEvaluation });
+      return Object.freeze({
+        status: 'VERIFIED',
+        verification_scope: 'execution-boundary',
+        assurance_complete: false,
+        completion_eligible: false,
+        result,
+        receipt,
+        verification: verificationResult,
+        budget: budgetResult,
+        risk: riskDecision,
+        capability: capabilityEvaluation,
+      });
     } catch (error) {
       if (!reconciled && reservation?.reservation_id) {
         try {
