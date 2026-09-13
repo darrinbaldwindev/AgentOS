@@ -55,6 +55,13 @@ export function createGovernedExecutionBoundary({
       const result = await invoke({ actorContext, task, capabilityEvaluation, riskDecision, reservation });
       const receipt = await receipts.record({ actorContext, task, result, reservation, riskDecision });
       if (!receipt) throw new Error('EXECUTION_RECEIPT_REQUIRED');
+      if (result && typeof result === 'object' && result.success === false) {
+        const error = new Error('EXECUTION_RESULT_FAILED');
+        error.code = 'EXECUTION_RESULT_FAILED';
+        error.result = result;
+        error.receipt = receipt;
+        throw error;
+      }
       const verificationResult = await verification.verify({ actorContext, task, result, receipt });
       if (!verificationResult?.passed) {
         const error = new Error('EXECUTION_VERIFICATION_FAILED');
