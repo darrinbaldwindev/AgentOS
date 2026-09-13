@@ -289,3 +289,24 @@ The AgentOS Overseer remains the governed coordinator. External capabilities rem
 5. Identify marketplace/app-directory application requirements for the highest-brand-value targets.
 6. Preserve an explicit distinction between integration capability and official partner status.
 7. Do not activate credentials, spend, production publishing or partner applications without the required owner authority.
+
+## First-wave interface verification checkpoint — 2026-09-13
+
+This is a technical discovery checkpoint, not an implementation or partnership claim. All four remain **candidates**. AgentOS should ship a read-only, user-connected slice before requesting write scopes or a public marketplace listing.
+
+| Rank for first adapter work | Candidate | Verified official surface | Narrow initial permission | AgentOS role and approval boundary | Distribution gate |
+| --- | --- | --- | --- | --- | --- |
+| 1 | GitHub | GitHub App with repository-scoped, fine-grained permissions; installation token model | Repository Contents **read** on selected repositories; add Issues/PR permissions only for specific actions | Native repository inspection; any commit, comment, issue or PR mutation requires separate AgentOS approval and receipt | GitHub App installation first; marketplace status unverified |
+| 2 | Microsoft 365 / Graph | Microsoft Graph delegated OAuth permissions on behalf of a signed-in user | `User.Read` for identity, then `Mail.Read` or `Files.Read` only when that feature is enabled | Native read-only mail/file workspace; sends, writes and app-only tenant access are separate high-risk capabilities | App registration, consent and possible admin review; marketplace status unverified |
+| 3 | Google Workspace | Google OAuth 2.0, service APIs and Workspace Marketplace | Start with a single narrow service. Gmail `gmail.readonly` is **restricted**, so prefer a less sensitive initial Calendar/Drive use case after scope review; do not silently request Gmail-wide access | Native productivity surface; outbound mail/document mutation needs explicit approval, receipts and scope-specific consent | Public Marketplace listing requires functioning app, OAuth setup and Google review |
+| 4 | Slack | Slack OAuth app and Web API; optional Events API | `channels:read` for public-channel discovery; add `channels:history` only if message reading is needed | Native team context; posting, DMs and workflow actions are separately approved writes | Workspace installation first; marketplace/listing requirements still to verify |
+
+Official sources checked:
+- GitHub Apps versus OAuth permission granularity: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps
+- Microsoft Graph permission reference: https://learn.microsoft.com/en-us/graph/permissions-reference
+- Microsoft Graph delegated/app-only authorization: https://learn.microsoft.com/en-us/graph/auth/auth-concepts
+- Gmail scope classes and restricted-scope verification: https://developers.google.com/workspace/gmail/api/auth/scopes
+- Google Workspace Marketplace publication/review: https://developers.google.com/workspace/marketplace/how-to-publish
+- Slack message retrieval and scopes: https://api.slack.com/messaging/retrieving
+
+Recommended first shipping set remains a **target**, not a capability claim: OpenAI, Anthropic, Gemini, Ollama, GitHub, Microsoft 365, Google Workspace, Slack, Notion, Shopify, n8n and MCP. The next step is a read-only adapter contract and least-privilege authentication proof for GitHub, then Microsoft 365, Google Workspace and Slack. Model adapters and the remaining targets need their own current interface, entitlement and terms verification before the set is frozen. No logo, integration, listing or partner claim follows from this research alone.
