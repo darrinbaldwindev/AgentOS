@@ -229,7 +229,7 @@ export function createWindowsPowerShellAdapter({
         const error = new Error('POWERSHELL_EXECUTOR_EXIT_CODE_INVALID');
         error.code = 'POWERSHELL_EXECUTOR_EXIT_CODE_INVALID';
         error.stdout = String(result?.stdout ?? '');
-        error.stderr = String(result?.stderr ?? '');
+        error.stderr = String(result?.stderr || error.message);
         throw error;
       }
       const finishedMs = now();
