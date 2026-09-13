@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createGovernedExecutionBoundary } from '../runtime/governed-execution-boundary.mjs';
+import { createGovernedExecutionClaimGuard } from '../runtime/governed-execution-claim-guard.mjs';
+import { createRemoteDeliveryClaimStore } from '../runtime/remote-delivery-claim-store.mjs';
 import { createWorkerConsentGate, WORKER_CONSENT_STATES } from '../runtime/worker-consent-gate.mjs';
-import { createExecutionRiskPolicy } from '../runtime/execution-risk-policy.mjs';
+import { classifyWindowsPowerShellOperationRisk, createExecutionRiskPolicy } from '../runtime/execution-risk-policy.mjs';
 import { createMissionBudget } from '../runtime/mission-budget.mjs';
 import { createToolPolicy } from '../runtime/tool-policy.mjs';
 import { createHumanGate } from '../runtime/overseer-human-gate.mjs';
@@ -68,7 +70,7 @@ async function buildBoundary({
   capabilityEligible = true,
   executionAuthorized = true,
   operation = 'test.run',
-  riskLevel = 'A2',
+  riskLevel = null,
   approvalRequired = false,
   approveHuman = false,
   recordReceipt = async () => ({ persisted: true }),
@@ -81,6 +83,15 @@ async function buildBoundary({
     humanGate.request({ missionId: 'mission:ps:1', reason: 'fixture A4 approval' });
     humanGate.resolve({ missionId: 'mission:ps:1', decision: 'approved' });
   }
+
+  const riskClassifier = riskLevel == null
+    ? classifyWindowsPowerShellOperationRisk
+    : async () => ({
+      level: riskLevel,
+      approvalRequired,
+      reason: `fixture risk ${riskLevel}`,
+      evidence: ['fixture:risk'],
+    });
 
   const boundary = createGovernedExecutionBoundary({
     context: createCanonicalContextGate({ canonicalContext: { missions: [{ id: 'mission:ps:1' }], decisions: [] } }),
@@ -113,16 +124,7 @@ async function buildBoundary({
       },
     }),
     policy: createCanonicalToolPolicyGate({ toolPolicy: createToolPolicy({ allow: ['test.run'] }) }),
-    risk: createExecutionRiskPolicy({
-      async classify() {
-        return {
-          level: riskLevel,
-          approvalRequired,
-          reason: `fixture risk ${riskLevel}`,
-          evidence: ['fixture:risk'],
-        };
-      },
-    }),
+    risk: createExecutionRiskPolicy({ classify: riskClassifier }),
     budget,
     approval: createCanonicalHumanApprovalGate({ humanGate }),
     receipts: createCanonicalPowerShellReceiptGate({
@@ -146,6 +148,17 @@ async function buildBoundary({
     budget,
     dir,
     task: candidate({ execution: { adapter: 'windows-powershell', operation, cwd: 'C:/agentos/AgentOS' } }),
+    async createClaimGuard() {
+      const claims = await createRemoteDeliveryClaimStore({ root: join(dir, 'claims') });
+      return {
+        claims,
+        guarded: createGovernedExecutionClaimGuard({
+          boundary,
+          claims,
+          hostId: 'host:fixture:win',
+        }),
+      };
+    },
     async cleanup() {
       budget.close();
       await rm(dir, { recursive: true, force: true });
@@ -167,6 +180,11 @@ test('full canonical composition verifies bounded PowerShell result with exact c
         assert.equal(task.wake_trace_id, 'wake:ps:1');
         assert.equal(capabilityEvaluation.execution_authorized, true);
         assert.equal(riskDecision.level, 'A2');
+        assert.deepEqual(riskDecision.evidence, [
+          'policy:agentos-security-control-plane',
+          'adapter:windows-powershell',
+          'operation:test.run',
+        ]);
         assert.equal(reservation.status, 'RESERVED');
         return executionResult();
       },
@@ -181,6 +199,69 @@ test('full canonical composition verifies bounded PowerShell result with exact c
     assert.equal(outcome.verification.passed, true);
     assert.equal(outcome.verification.verifier_id, 'verifier:fixture:independent');
     assert.equal(outcome.budget.status, 'RECONCILED');
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('claim guard blocks duplicate PowerShell delivery after one verified invocation', async () => {
+  const fixture = await buildBoundary();
+  let invokeCalls = 0;
+  try {
+    const { guarded } = await fixture.createClaimGuard();
+    const first = await guarded.execute({
+      actorContext,
+      task: fixture.task,
+      actualUnits: 1,
+      async invoke() { invokeCalls += 1; return executionResult(); },
+    });
+    assert.equal(first.status, 'VERIFIED');
+    assert.equal(invokeCalls, 1);
+
+    await assert.rejects(
+      guarded.execute({
+        actorContext,
+        task: fixture.task,
+        actualUnits: 1,
+        async invoke() { invokeCalls += 1; return executionResult(); },
+      }),
+      (error) => error?.code === 'GOVERNED_EXECUTION_DUPLICATE_DELIVERY',
+    );
+    assert.equal(invokeCalls, 1);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('receipt-loss after PowerShell side effect retains claim and blocks blind replay', async () => {
+  const fixture = await buildBoundary({ recordReceipt: async () => null });
+  let invokeCalls = 0;
+  try {
+    const { guarded, claims } = await fixture.createClaimGuard();
+    await assert.rejects(
+      guarded.execute({
+        actorContext,
+        task: fixture.task,
+        actualUnits: 1,
+        async invoke() { invokeCalls += 1; return executionResult(); },
+      }),
+      (error) => error?.code === 'EXECUTION_RECEIPT_PERSISTENCE_REQUIRED'
+        && error?.claim_retained === true
+        && error?.replay_safe_to_invoke === false,
+    );
+    assert.equal(invokeCalls, 1);
+    assert.equal((await claims.get(fixture.task.delivery_id))?.state, 'CLAIMED');
+
+    await assert.rejects(
+      guarded.execute({
+        actorContext,
+        task: fixture.task,
+        actualUnits: 1,
+        async invoke() { invokeCalls += 1; return executionResult(); },
+      }),
+      (error) => error?.code === 'GOVERNED_EXECUTION_DUPLICATE_DELIVERY',
+    );
+    assert.equal(invokeCalls, 1);
   } finally {
     await fixture.cleanup();
   }
