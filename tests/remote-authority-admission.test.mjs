@@ -101,6 +101,20 @@ test('rejects grant evidence bound to a different actor, issuer, or project with
   }
 });
 
+test('rejects grant evidence missing actor, issuer, or project provenance without persisting a task', async () => {
+  for (const field of ['actor_id', 'issuer', 'project_id']) {
+    const p = persistenceHarness();
+    const grant = { ...validGrant };
+    delete grant[field];
+    const admission = producer(p, { authoritySource: { resolveGrant: async () => grant } });
+    await assert.rejects(
+      admission.admit({ candidate, actorContext, targetHostId: 'host-1' }),
+      (error) => error.message === 'REMOTE_AUTHORITY_GRANT_PROVENANCE_MISMATCH',
+    );
+    assert.equal(Object.keys(p.records.artifact).length, 0);
+  }
+});
+
 test('rejects missing, incomplete, and out-of-policy local grants without persisting a task', async () => {
   for (const grant of [
     { status: 'DENIED' },
