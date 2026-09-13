@@ -52,7 +52,12 @@ function executionResult(overrides = {}) {
     stderr: '',
     timed_out: false,
     truncated: false,
-    resolved_executables: { pwsh: 'C:\\Program Files\\PowerShell\\7\\pwsh.exe' },
+    resolved_executables: {
+      pwsh: {
+        path: 'C:\\Program Files\\PowerShell\\7\\pwsh.exe',
+        version: '7.5.2',
+      },
+    },
     ...overrides,
   };
 }
