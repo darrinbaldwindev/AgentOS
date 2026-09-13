@@ -12,21 +12,36 @@ function requiredString(value, name) {
   return value.trim();
 }
 
+function optionalString(value, name) {
+  if (value == null) return null;
+  return requiredString(value, name);
+}
+
 function deliveryKey(deliveryId) {
   return createHash('sha256').update(deliveryId).digest('hex');
+}
+
+function exactIdentityMismatch(existing, requested) {
+  for (const field of ['mission_id', 'task_id', 'wake_trace_id']) {
+    if (existing[field] != null && requested[field] != null && existing[field] !== requested[field]) return true;
+  }
+  return false;
 }
 
 export async function createRemoteDeliveryClaimStore({ root, now = () => new Date() } = {}) {
   const storeRoot = resolve(requiredString(root, 'root'));
   await fs.mkdir(storeRoot, { recursive: true });
 
-  async function claim({ deliveryId, requestId, hostId } = {}) {
+  async function claim({ deliveryId, requestId, hostId, missionId = null, taskId = null, wakeTraceId = null } = {}) {
     const normalizedDeliveryId = requiredString(deliveryId, 'deliveryId');
     const record = Object.freeze({
       schema_version: 1,
       delivery_id: normalizedDeliveryId,
       request_id: requiredString(requestId, 'requestId'),
       host_id: requiredString(hostId, 'hostId'),
+      ...(missionId == null ? {} : { mission_id: optionalString(missionId, 'missionId') }),
+      ...(taskId == null ? {} : { task_id: optionalString(taskId, 'taskId') }),
+      ...(wakeTraceId == null ? {} : { wake_trace_id: optionalString(wakeTraceId, 'wakeTraceId') }),
       claimed_at: now().toISOString(),
       state: 'CLAIMED',
     });
@@ -50,7 +65,7 @@ export async function createRemoteDeliveryClaimStore({ root, now = () => new Dat
           existing.delivery_id !== normalizedDeliveryId || !Number.isFinite(Date.parse(existing.claimed_at))) {
         throw new Error('REMOTE_CLAIM_INVALID_REQUIRES_RECOVERY');
       }
-      if (existing.request_id !== record.request_id || existing.host_id !== record.host_id) {
+      if (existing.request_id !== record.request_id || existing.host_id !== record.host_id || exactIdentityMismatch(existing, record)) {
         return Object.freeze({ claimed: false, disposition: 'CLAIM_CORRELATION_MISMATCH', record: existing, path });
       }
       return Object.freeze({ claimed: false, disposition: 'DUPLICATE_DELIVERY', record: existing, path });
