@@ -7,6 +7,9 @@ function claim(overrides = {}) {
     delivery_id: 'delivery:1',
     request_id: 'request:1',
     host_id: 'host:1',
+    mission_id: 'mission:1',
+    task_id: 'task:1',
+    wake_trace_id: 'wake:1',
     claimed_at: '2026-09-13T02:00:00.000Z',
     state: 'CLAIMED',
     ...overrides,
@@ -37,12 +40,26 @@ test('missing receipt keeps recovery required and forbids replay', () => {
   assert.equal(out.replay_allowed, false);
 });
 
-test('same delivery with conflicting request or host fails closed', () => {
-  for (const conflicting of [receipt({ request_id: 'request:other' }), receipt({ host_id: 'host:other' })]) {
+test('same delivery with conflicting request, host, mission, task or wake identity fails closed', () => {
+  for (const conflicting of [
+    receipt({ request_id: 'request:other' }),
+    receipt({ host_id: 'host:other' }),
+    receipt({ mission_id: 'mission:other' }),
+    receipt({ task_id: 'task:other' }),
+    receipt({ wake_trace_id: 'wake:other' }),
+  ]) {
     const out = reconcileRemoteDeliveryRecoveryEvidence({ claim: claim(), receipts: [conflicting] });
     assert.equal(out.disposition, 'RECOVERY_CORRELATION_CONFLICT');
     assert.equal(out.replay_allowed, false);
   }
+});
+
+test('legacy claim without mission/task/wake remains readable but never authorizes replay', () => {
+  const legacy = claim({ mission_id: undefined, task_id: undefined, wake_trace_id: undefined });
+  const out = reconcileRemoteDeliveryRecoveryEvidence({ claim: legacy, receipts: [receipt()] });
+  assert.equal(out.disposition, 'CORRELATED_DURABLE_RECEIPT_PRESENT');
+  assert.equal(out.recovery_required, true);
+  assert.equal(out.replay_allowed, false);
 });
 
 test('multiple correlated receipts are ambiguous and never authorize replay', () => {
@@ -83,7 +100,7 @@ test('invalid receipt status or incomplete receipt fails closed', () => {
     /REMOTE_RECEIPT_STATUS_INVALID/,
   );
   assert.throws(
-    () => reconcileRemoteDeliveryRecoveryEvidence({ claim: claim(), receipts: [receipt({ wake_trace_id: '' })] }),
+    () => reconcileRemoteDeliveryRecoveryEvidence({ claim: claim({ wake_trace_id: undefined }), receipts: [receipt({ wake_trace_id: '' })] }),
     /receipt.wake_trace_id is required/,
   );
 });
