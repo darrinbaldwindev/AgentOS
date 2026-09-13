@@ -72,10 +72,17 @@ function hostProbe() {
   };
 }
 
-function fixture({ runtimeExecutionEnabled = false } = {}) {
+function fixture({
+  runtimeExecutionEnabled = false,
+  recordReceipt = async () => ({ persisted: true }),
+  runVerifier = async () => ({ passed: true, evidence: ['fixture:verified'] }),
+} = {}) {
   const claims = createClaims();
   let adapterCalls = 0;
   let reserveCalls = 0;
+  let reconcileCalls = 0;
+  let receiptCalls = 0;
+  let verifierCalls = 0;
   const powerShellAdapter = {
     operations: ['repo.status'],
     describe(operation) {
@@ -114,17 +121,34 @@ function fixture({ runtimeExecutionEnabled = false } = {}) {
     riskPolicy: { async evaluate() { return { level: 'A0', approvalRequired: false, reason: 'read only', evidence: [] }; } },
     budget: {
       async reserve() { reserveCalls += 1; return { reservation_id: 'reservation:claimed:1', status: 'RESERVED' }; },
-      async reconcile({ reservation_id, actual_units }) { return { reservation_id, actual_units, status: 'RECONCILED' }; },
+      async reconcile({ reservation_id, actual_units }) {
+        reconcileCalls += 1;
+        return { reservation_id, actual_units, status: 'RECONCILED' };
+      },
     },
     humanGate: { get() { return null; } },
     codeIdentity: 'fixture:exact-head',
     createdAt: '2026-09-13T11:30:00.000Z',
-    async recordReceipt() { return { persisted: true }; },
+    async recordReceipt(receipt) {
+      receiptCalls += 1;
+      return recordReceipt(receipt);
+    },
     async resolveBudgetStatus() { return 'RECONCILED'; },
     verificationRouter: { async selectVerifier() { return { id: 'verifier:fixture' }; } },
-    async runVerifier() { return { passed: true, evidence: ['fixture:verified'] }; },
+    async runVerifier(input) {
+      verifierCalls += 1;
+      return runVerifier(input);
+    },
   });
-  return { runtime, claims, getAdapterCalls: () => adapterCalls, getReserveCalls: () => reserveCalls };
+  return {
+    runtime,
+    claims,
+    getAdapterCalls: () => adapterCalls,
+    getReserveCalls: () => reserveCalls,
+    getReconcileCalls: () => reconcileCalls,
+    getReceiptCalls: () => receiptCalls,
+    getVerifierCalls: () => verifierCalls,
+  };
 }
 
 test('disabled claimed runtime reaches neither claim, budget nor PowerShell', async () => {
@@ -151,4 +175,40 @@ test('enabled claimed runtime invokes once and a replay cannot invoke twice', as
   await assert.rejects(runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
   assert.equal(getReserveCalls(), 1);
   assert.equal(getAdapterCalls(), 1);
+});
+
+test('receipt persistence failure after PowerShell side effect retains claim and blocks blind replay', async () => {
+  const state = fixture({
+    runtimeExecutionEnabled: true,
+    recordReceipt: async () => { throw new Error('RECEIPT_PERSISTENCE_FAILED'); },
+  });
+  await assert.rejects(state.runtime.worker.execute(task()), /RECEIPT_PERSISTENCE_FAILED/);
+  assert.equal(state.claims.size(), 1);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getReserveCalls(), 1);
+  assert.equal(state.getReceiptCalls(), 1);
+  assert.equal(state.getVerifierCalls(), 0);
+
+  await assert.rejects(state.runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getReserveCalls(), 1);
+  assert.equal(state.getReceiptCalls(), 1);
+});
+
+test('verification failure after receipted side effect retains claim and cannot become verified or replay', async () => {
+  const state = fixture({
+    runtimeExecutionEnabled: true,
+    runVerifier: async () => ({ passed: false, evidence: ['fixture:forced-negative'] }),
+  });
+  await assert.rejects(state.runtime.worker.execute(task()), /VERIFICATION_FAILED/);
+  assert.equal(state.claims.size(), 1);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getReserveCalls(), 1);
+  assert.equal(state.getReceiptCalls(), 1);
+  assert.equal(state.getVerifierCalls(), 1);
+  assert.equal(state.getReconcileCalls(), 0);
+
+  await assert.rejects(state.runtime.worker.execute(task()), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
+  assert.equal(state.getAdapterCalls(), 1);
+  assert.equal(state.getVerifierCalls(), 1);
 });
