@@ -331,3 +331,7 @@ Planning scores are judgement, not proof of API access or implementation. Scale:
 | 12 | MCP | Long-tail fabric | 5 | 4 | 3 | 4 | 2 | 2 | 4 | 2 | 3 | Curated read-only tool registration |
 
 This is a proposed release envelope, not twelve shipped connectors. BYO account/key keeps the $99/year Operator tier useful without promising bundled API spend. Hosted execution, managed usage or cloud state should be priced separately only if their recurring costs and terms are verified. Green/PRS, authority, receipts and approval invariants remain common to every tier.
+
+## n8n commercial boundary — checked 2026-09-13
+
+n8n's own licensing FAQ distinguishes consulting on customer-owned instances from hosting customers' workflows/credentials in AgentOS's instance and embedding n8n as a product feature. The FAQ says the latter models generally require Enterprise or Embed commercial licensing. Therefore the $99/year Operator package should initially treat n8n as an **optional connection to a user's own n8n instance/account**, with AgentOS invoking a specifically approved workflow under AgentOS authority and receipts. Do not bundle an AgentOS-hosted multi-tenant n8n backend or market n8n as an included hosted service under the current pricing without a separately verified commercial agreement. Official source: https://support.n8n.io/article/can-i-use-your-license-for-my-use-case . Exact license applicability to a proposed architecture remains legal/commercial UNKNOWN and must be checked before launch.
