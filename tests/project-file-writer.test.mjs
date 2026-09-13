@@ -423,3 +423,86 @@ test('external writer mutation during beforeRecoveryPublish is rejected and exte
     assert.equal(receipt, undefined);
   } finally { await f.cleanup(); }
 });
+
+test('normal lock release removes only its own lock', async () => {
+  const f = await fixture();
+  try {
+    const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: persistenceHarness().api });
+    const target = path.join(f.root, 'normal.txt');
+    await writer.execute({ task, targetPath: target, content: 'ok', idempotencyKey: 'normal-release' });
+    await assert.rejects(readFile(path.join(`${target}.agentos-write-lock`, 'owner.json')), (error) => error.code === 'ENOENT');
+  } finally { await f.cleanup(); }
+});
+
+test('old writer cannot remove replacement live lock during release', async () => {
+  const f = await fixture();
+  try {
+    const target = path.join(f.root, 'replacement.txt');
+    const lock = `${target}.agentos-write-lock`;
+    const replacement = { lock_id: 'replacement-live', intent_hash: 'replacement-intent', worker_id: 'replacement-worker', pid: process.pid };
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root], persistence: persistenceHarness().api,
+      hooks: { beforeLockRetire: async ({ reason }) => {
+        if (reason !== 'release') return;
+        await rename(lock, `${lock}.old`);
+        await mkdir(lock);
+        await writeFile(path.join(lock, 'owner.json'), JSON.stringify(replacement));
+      } },
+    });
+    await assert.rejects(
+      writer.execute({ task, targetPath: target, content: 'old result', idempotencyKey: 'replacement-release' }),
+      (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
+    );
+    assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), replacement);
+  } finally { await f.cleanup(); }
+});
+
+test('abandoned lock replaced during takeover is preserved and never treated as stale', async () => {
+  const f = await fixture();
+  try {
+    const target = path.join(f.root, 'takeover.txt');
+    const lock = `${target}.agentos-write-lock`;
+    const abandoned = { lock_id: 'abandoned', intent_hash: 'old-intent', worker_id: 'old-worker', pid: 999999 };
+    const replacement = { lock_id: 'replacement-live', intent_hash: 'new-intent', worker_id: 'new-worker', pid: process.pid };
+    await mkdir(lock);
+    await writeFile(path.join(lock, 'owner.json'), JSON.stringify(abandoned));
+    const writer = await createProjectFileWriter({
+      approvedRoots: [f.root], persistence: persistenceHarness().api,
+      reconcileAbandonedLock: async () => ({ status: 'ABANDONED', evidence_id: 'abandoned-evidence' }),
+      hooks: { beforeLockRetire: async ({ reason }) => {
+        if (reason !== 'takeover') return;
+        await rename(lock, `${lock}.old`);
+        await mkdir(lock);
+        await writeFile(path.join(lock, 'owner.json'), JSON.stringify(replacement));
+      } },
+    });
+    await assert.rejects(
+      writer.execute({ task, targetPath: target, content: 'not published', idempotencyKey: 'replacement-takeover' }),
+      (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
+    );
+    assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), replacement);
+    await assert.rejects(readFile(target), (error) => error.code === 'ENOENT');
+  } finally { await f.cleanup(); }
+});
+
+test('missing or malformed owner metadata requires recovery without mutation', async () => {
+  for (const owner of [null, '{broken']) {
+    const f = await fixture();
+    try {
+      const target = path.join(f.root, 'metadata.txt');
+      const lock = `${target}.agentos-write-lock`;
+      await mkdir(lock);
+      if (owner !== null) await writeFile(path.join(lock, 'owner.json'), owner);
+      const writer = await createProjectFileWriter({
+        approvedRoots: [f.root], persistence: persistenceHarness().api,
+        reconcileAbandonedLock: async () => ({ status: 'ABANDONED', evidence_id: 'untrusted-evidence' }),
+      });
+      await assert.rejects(
+        writer.execute({ task, targetPath: target, content: 'blocked', idempotencyKey: `metadata-${owner}` }),
+        (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
+      );
+      await assert.rejects(readFile(target), (error) => error.code === 'ENOENT');
+    } finally { await f.cleanup(); }
+  }
+});
+
