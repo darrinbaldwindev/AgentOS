@@ -44,6 +44,7 @@ export function createRemoteAuthorityAdmissionProducer({
     }
     const actorId = requiredString(actorContext.actor_id, 'actorContext.actor_id');
     const issuer = requiredString(actorContext.issuer, 'actorContext.issuer');
+    const projectId = requiredString(candidate.project_id, 'candidate.project_id');
     if (actorId !== candidate.actor_id || issuer !== candidate.issuer) throw new Error('REMOTE_ACTOR_CONTEXT_MISMATCH');
     if (!issuerSet.has(issuer)) throw new Error('REMOTE_ISSUER_NOT_TRUSTED');
 
@@ -53,6 +54,12 @@ export function createRemoteAuthorityAdmissionProducer({
 
     const grant = await authoritySource.resolveGrant({ candidate, actorContext, requestedCapabilities: Object.freeze([...requested]) });
     if (!grant || grant.status !== 'GRANTED') throw new Error('REMOTE_AUTHORITY_GRANT_REQUIRED');
+    const grantActorId = requiredString(grant.actor_id, 'grant.actor_id');
+    const grantIssuer = requiredString(grant.issuer, 'grant.issuer');
+    const grantProjectId = requiredString(grant.project_id, 'grant.project_id');
+    if (grantActorId !== actorId || grantIssuer !== issuer || grantProjectId !== projectId) {
+      throw new Error('REMOTE_AUTHORITY_GRANT_PROVENANCE_MISMATCH');
+    }
     const granted = stringArray(grant.granted_capabilities, 'grant.granted_capabilities');
     const evidenceId = requiredString(grant.evidence_id, 'grant.evidence_id');
     if (!requested.every((capability) => granted.includes(capability))) throw new Error('REMOTE_AUTHORITY_GRANT_INCOMPLETE');
@@ -66,7 +73,7 @@ export function createRemoteAuthorityAdmissionProducer({
 
     const task = {
       schema_version: 1,
-      project_id: requiredString(candidate.project_id, 'candidate.project_id'),
+      project_id: projectId,
       mission_id: missionId,
       task_id: taskId,
       delivery_id: requiredString(candidate.delivery_id, 'candidate.delivery_id'),
