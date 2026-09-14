@@ -164,3 +164,48 @@ test('duplicate durable receipt cannot replace original authority evidence prove
     assert.equal(stored.payload.task_id, 'task:1');
   });
 });
+
+test('evidence packet projects only reconstructable receipt provenance fields', async () => {
+  await withAdapter(async ({ adapter }) => {
+    await adapter.record({ receipt: receipt({ authority_evidence_id: 'authority-evidence:grant:exact-1', secret: 'must-not-project' }) });
+    const packet = await adapter.evidencePacketForDelivery('delivery:1');
+    assert.deepEqual(packet, {
+      receipt_id: 'remote-receipt:delivery:1',
+      delivery_id: 'delivery:1',
+      request_id: 'request:1',
+      mission_id: 'mission:1',
+      task_id: 'task:1',
+      wake_trace_id: 'wake:1',
+      host_id: 'host:1',
+      worker_id: 'agentos:windows-powershell-worker',
+      status: 'AWAITING_GREEN',
+      code_identity: 'code:head',
+      authority_evidence_id: 'authority-evidence:grant:exact-1',
+    });
+    assert.equal('secret' in packet, false);
+    assert.equal(Object.isFrozen(packet), true);
+  });
+});
+
+test('evidence packet fails closed when no exact durable receipt exists', async () => {
+  await withAdapter(async ({ adapter }) => {
+    await assert.rejects(
+      adapter.evidencePacketForDelivery('delivery:missing'),
+      /REMOTE_RECEIPT_EVIDENCE_EXACTLY_ONE_REQUIRED/,
+    );
+  });
+});
+
+test('evidence packet rejects malformed durable correlation instead of projecting false success', async () => {
+  await withAdapter(async ({ adapter, persistence }) => {
+    await persistence.create('artifact', {
+      id: 'remote-receipt:delivery:1',
+      artifactType: 'remote.execution.receipt',
+      payload: receipt({ mission_id: '' }),
+    });
+    await assert.rejects(
+      adapter.evidencePacketForDelivery('delivery:1'),
+      /receipt.mission_id is required/,
+    );
+  });
+});
