@@ -24,9 +24,9 @@ function codedError(code, details = null) {
 }
 
 function exactIdentityMismatch(claim, task) {
-  return (claim.mission_id != null && claim.mission_id !== task.mission_id) ||
-    (claim.task_id != null && claim.task_id !== task.task_id) ||
-    (claim.wake_trace_id != null && claim.wake_trace_id !== task.wake_trace_id);
+  return (claim.mission_id ?? null) !== (task.mission_id ?? null) ||
+    (claim.task_id ?? null) !== (task.task_id ?? null) ||
+    (claim.wake_trace_id ?? null) !== (task.wake_trace_id ?? null);
 }
 
 function classifyExistingClaim({ claim, task, hostId, assessRecovery, recoveryOptions }) {
