@@ -223,3 +223,41 @@ test('evidence packet rejects malformed durable correlation instead of projectin
     );
   });
 });
+
+test('correlation-bound evidence packet returns the exact expected mission task and wake lineage', async () => {
+  await withAdapter(async ({ adapter }) => {
+    await adapter.record({ receipt: receipt() });
+    const packet = await adapter.evidencePacketForCorrelation({
+      deliveryId: 'delivery:1',
+      missionId: 'mission:1',
+      taskId: 'task:1',
+      wakeTraceId: 'wake:1',
+    });
+    assert.equal(packet.delivery_id, 'delivery:1');
+    assert.equal(packet.mission_id, 'mission:1');
+    assert.equal(packet.task_id, 'task:1');
+    assert.equal(packet.wake_trace_id, 'wake:1');
+  });
+});
+
+test('correlation-bound evidence packet rejects cross-mission task or wake borrowing', async () => {
+  await withAdapter(async ({ adapter }) => {
+    await adapter.record({ receipt: receipt() });
+    for (const overrides of [
+      { missionId: 'mission:other' },
+      { taskId: 'task:other' },
+      { wakeTraceId: 'wake:other' },
+    ]) {
+      await assert.rejects(
+        adapter.evidencePacketForCorrelation({
+          deliveryId: 'delivery:1',
+          missionId: 'mission:1',
+          taskId: 'task:1',
+          wakeTraceId: 'wake:1',
+          ...overrides,
+        }),
+        /REMOTE_RECEIPT_EVIDENCE_CORRELATION_MISMATCH/,
+      );
+    }
+  });
+});
