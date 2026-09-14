@@ -3,49 +3,101 @@
 ## Project / control
 - Repository: `darrinbaldwindev/AgentOS`
 - Canonical portfolio mission: `darrinbaldwindev/Overseer#49`
+- Canonical execution procedure: `darrinbaldwindev/Overseer/.overseer/doctrine/PORTFOLIO-BATCH-ENGINE.md`
+- Project profile: `darrinbaldwindev/Overseer/.overseer/profiles/PROJECT-BATCH-PROFILES.md#AgentOS`
+- Security matrix: `darrinbaldwindev/Overseer/.overseer/security/AGENTOS-SECURITY-GATE-MATRIX.md`
 - Active implementation PR: `AgentOS#104` — `agent/overseer/windows-worker-bridge`
-- Purpose: bounded Level 2 execution manifest for fresh-scan -> execute -> verify -> rescan -> replenish cycles.
-- Doctrine: `darrinbaldwindev/Overseer/.overseer/doctrine/VERTICAL-BATCH-EXECUTION.md`
+- Purpose: bounded Level 2 execution manifest. Repository/runtime/CI evidence always outranks this file.
 
 ## Fresh-scan checkpoint
-- Reconciled: 2026-09-14 18:08+10:00 (Brisbane)
-- Pre-batch PR head: `9f53df16ae37ee6a86e66d2a808ca7f62f203d76`
-- PR state: OPEN / DRAFT / UNMERGED.
-- Exact-head AgentOS Tests workflow `34816222109` concluded `success` on attempt 2.
-  - Windows / Node 26 job `103900650178`: test suite PASS, npm audit PASS.
-  - Ubuntu / Node 22 job `103900651331`: test suite PASS, npm audit PASS.
-- Existing independent assurance remains controlling: project-file mutation is not overall GREEN; continuous kernel-enforced ownership across verification -> publish/recovery -> durable success receipt remains unresolved.
-- Canonical authenticated transport / grant-source admission remains unresolved; no duplicate authority source may be invented.
+- Reconciled: 2026-09-15 02:04+10:00 (Brisbane).
+- Pre-cycle PR head: `bbfee5221652c9bf0551ce5b31eb0b1cf6e78af1`.
+- A-AG-04 implementation/test head: `5e3d7c2ac6f515dceda832ef09b3087f20fb1d7b`.
+- PR state at scan: OPEN / DRAFT / UNMERGED / runtime-disabled.
+- Exact-head AgentOS Tests `34865951625`: SUCCESS.
+  - Ubuntu / Node 22: test suite PASS, npm audit PASS.
+  - Windows / Node 26: test suite PASS, npm audit PASS.
+- A-AG-04 adds no new persistence or authority system. It proves the existing remote execution receipt artifact preserves exact `authority_evidence_id` across persistence restart/reload and that a duplicate durable receipt cannot replace the original authority provenance.
+- SG-08 continuous ownership remains BLOCKED. SG-01/02 authenticated actor + canonical grant binding remain BLOCKED. Functional CI does not promote either security gate.
 
 ## Governance boundaries
-This batch does **not** authorize merge, approve, mark-ready, rebase, deploy, credential changes, production writes, unrestricted PowerShell, production runtime enablement, purchases, external contact, bypass of Green/PRS, or creation of duplicate scheduler/queue/registry/mission-ledger/authority/persistence/governance systems.
+This batch does **not** authorize merge, approve, mark-ready, rebase, deploy, credential/security-policy changes, production writes, unrestricted PowerShell, runtime enablement, purchases/spend, external contact/publication, physical owner-host action, bypass of Green/PRS, or creation of duplicate scheduler/queue/registry/mission-ledger/authority/persistence/governance systems.
 
-Evidence controls completion. Worker claims are leads only. Green and PRS must remain independent of the execution instance.
+Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification, security assurance and PRS assurance remain separate.
 
 ## Current vertical batch
 
-| ID | Priority | State | Work item | Completion evidence |
-|---|---:|---|---|---|
-| A-OWN-01 | P0 | BLOCKED | Establish a continuous kernel-enforced project-file ownership fence held through final verification, publish/prepared recovery, and durable success-receipt persistence. | Adversarial exact-head tests must prove successor displacement/stale-owner publication cannot succeed; crash release/recovery proven; independent Green PASS required before promotion. |
-| A-REC-02 | P0 | PENDING | After A-OWN-01 changes, run homogeneous recovery cases: crash before publish, crash after publish before receipt, crash during prepared recovery, stale-lock/successor takeover. | Exact-head deterministic tests plus durable mutation/recovery receipts; no false COMPLETED state. |
-| A-IDEM-03 | P0 | PENDING | Exercise duplicate/replay protection across admitted task, claim, execution, result write and terminal receipt. | Duplicate delivery causes zero second mutation/adapter execution; exact task/mission/worker/result correlation retained. |
-| A-CONC-04 | P0 | PENDING | Exercise shared-state concurrent-writer cases against the ownership primitive without creating a parallel lock/ledger. | Competing writer cannot publish under stale ownership; deterministic winner/loser evidence; recovery remains resumable. |
-| A-AUTH-05 | P0 | BLOCKED | Bind remote admission to an existing canonical authenticated actor + grant source and preserve required capabilities through local-wake execution. | Evidence of real canonical source and fail-closed denial tests; no hard-coded substitute identity/grant source. |
-| A-CI-06 | P0 | VERIFIED | Close exact-head cross-platform test/audit evidence for `9f53df16...`. | Workflow `34816222109` success; Windows/Node26 `103900650178` PASS; Ubuntu/Node22 `103900651331` PASS. Narrow CI verification only; not Green/PRS. |
-| A-GREEN-07 | P0 | BLOCKED | Independent exact-head Green assurance for mutation/recovery semantics. | Only eligible after a real ownership-primitive change and relevant exact-head adversarial PASS evidence. |
-| A-PRS-08 | P0 | BLOCKED | Independent PRS false-GREEN assurance: missing receipt, mutation-without-receipt, receipt-without-mutation, partial write, crash boundaries, stale lock, replay, concurrent writers, result-write failure, stale evidence, approval bypass, worker self-verification. | Independent PRS evidence on exact eligible head; no worker self-certification. |
-| A-WIN-09 | P0 | HOLD | Physical Windows owner-laptop Level 2 acceptance. | Exact task/mission/wake/host/result correlation, bounded project-file mutation, tests, receipts, recovery and assurance on physical Windows. Runtime-changing head must be tested; predecessor evidence does not promote current head. |
+### A-AG-01 — continuous project-file ownership fence
+- state: BLOCKED
+- risk_class: S2
+- security_gates: SG-03, SG-08, SG-09, SG-10, SG-11, SG-14, SG-18, SG-19
+- objective: one crash-releasing kernel-enforced fence held continuously from final verification through publish/prepared recovery and durable success receipt.
+- blocker: existing exact lineage still lacks independent evidence that ownership remains continuously valid through that whole sequence.
+- next: keep single-threaded; do not parallelize or create a second lock/ledger.
 
-## Execution order
-1. Preserve the current fail-closed runtime and exact-head CI evidence.
-2. Consume A-OWN-01 first when a canonical kernel-enforced ownership implementation becomes available; do not patch around it with check-then-act ownership.
-3. Immediately expand into A-REC-02, A-IDEM-03 and A-CONC-04 as a homogeneous adversarial batch once the ownership gate is materially changed.
-4. Work A-AUTH-05 independently when an existing canonical authenticated actor/grant resolver can be evidenced.
-5. Request/consume independent Green, then PRS, only after exact-head implementation evidence exists.
-6. Perform physical Windows acceptance only on the exact runtime-changing head that is intended to advance.
+### A-AG-02 — authenticated actor + canonical grant binding
+- state: BLOCKED
+- risk_class: S2
+- security_gates: SG-01, SG-02, SG-03, SG-04, SG-09, SG-10, SG-11, SG-18, SG-19
+- objective: bind an existing authenticated actor source and canonical grant resolver.
+- blocker: current admission producer consumes caller-supplied authenticated actor context and injected grant evidence; no bindable canonical transport/grant source is yet evidenced.
+- next: architecture discovery only until a real existing source is identified. No self-grant or duplicate authority registry.
 
-## Replenishment rules
-- Every `cont`, `continue`, `continue autonomously`, or `continue autonomously vertically` triggers: fresh scan -> reconcile this file -> execute fullest safe useful batch -> verify -> second fresh scan -> replenish this same file -> durable checkpoint.
-- If another agent/schedule moves PR #104 or this batch file, re-read and reconcile; never overwrite fresher verified evidence.
-- A blocked P0 must remain blocked while independent eligible work continues.
-- Do not call overall AgentOS Level 2 GREEN until independent Green + PRS + required physical Windows acceptance support that exact state.
+### A-AG-03 — Basic Chat lifecycle/readiness
+- state: VERIFIED (functional exact-head scope only)
+- security_disposition: PENDING_SG18
+- exact prior evidence: PR #111 `429b6d5bc14b2790f1a9bace09b76e699cb88b8c`, Tests `34859721665` SUCCESS.
+- next: independent Green false-readiness/evidence-leakage sample on the exact eligible lineage.
+
+### A-AG-04 — authority-evidence receipt persistence/reload
+- state: VERIFIED_EXACT_HEAD (functional)
+- exact head: `5e3d7c2ac6f515dceda832ef09b3087f20fb1d7b`
+- exact CI: AgentOS Tests `34865951625` SUCCESS, Ubuntu + Windows.
+- risk_class: S2
+- security_gates: SG-02, SG-09, SG-10, SG-11, SG-14, SG-18
+- authority_required: scoped non-production branch tests only.
+- negative_tests: persistence restart/reload retains exact authority evidence; duplicate durable receipt cannot replace original provenance; existing upstream binder denies missing/blank admitted authority evidence.
+- receipt_evidence: exact `authority_evidence_id` + delivery/request/task/mission durable receipt lineage.
+- green_required: yes
+- prs_required: conditional
+- owner_boundary: merge/deploy/runtime enablement
+- security_disposition: PENDING_SG18
+
+### A-AG-05 — receipt replay/correlation adjacency
+- state: PENDING
+- risk_class: S2
+- security_gates: SG-09, SG-10, SG-11, SG-14, SG-18
+- objective: homogeneous deterministic replay/correlation regressions around the now-stable receipt primitive.
+- acceptance: duplicate result/receipt, stale receipt and cross-task/cross-mission mismatch fail closed without replacing canonical provenance.
+- dependency: A-AG-04 exact-head stability.
+- safe action boundary: tests only unless a minimal reproduced defect requires a narrow fix.
+- green_required: yes
+- prs_required: conditional
+- owner_boundary: merge/deploy
+- security_disposition: PENDING
+
+### A-AG-06 — local-wake correlation preservation
+- state: VERIFIED (bounded prior scope)
+- exact prior evidence: `a69562dfe19696b79474c1a3f01a10d67b8d8e90`, runs `34849679000` and `34849679095` SUCCESS.
+- security_disposition: PENDING_SG18 before promotion.
+
+### A-AG-07 — physical Windows acceptance packet
+- state: BLOCKED / OWNER_REQUIRED
+- dependencies: SG-08 closure, SG-01/02 closure, exact-head Green/PRS where required, explicit owner physical-host authority.
+- no physical Windows action is authorized by this batch.
+
+## PRS / Green assurance
+- stale-owner false-GREEN baseline remains historical evidence only; it does not transfer to successor heads.
+- successor ownership challenge remains BLOCKED on A-AG-01 + exact-head Green.
+- admission false-GREEN challenge remains BLOCKED on A-AG-02 + exact-head Green.
+- Basic Chat false-readiness/evidence-leakage sample is eligible only for the exact stable PR #111 lineage; this execution context does not impersonate Green or PRS.
+
+## Execution order / replenishment
+1. Keep A-AG-01 single-threaded and BLOCKED until a real ownership primitive is available.
+2. Keep A-AG-02 BLOCKED until a real canonical authenticated actor/grant source is evidenced.
+3. Consume A-AG-05 homogeneous receipt replay/correlation regressions only while A-AG-04 remains exact-head stable.
+4. Route stable eligible lineages to independent Green; PRS follows only where required and only on identical evidence lineage.
+5. Keep physical Windows acceptance owner-gated and downstream of software/security prerequisites.
+6. Continue adjacent safe Level 2 work if a blocked primitive cannot move; never manufacture progress by widening authority.
+
+No overall AgentOS GREEN is implied by this batch.
