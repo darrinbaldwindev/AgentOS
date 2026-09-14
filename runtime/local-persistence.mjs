@@ -28,12 +28,25 @@ export async function createLocalPersistence({ filePath }) {
     }
     return state;
   }
+  async function lockContention(error) {
+    if (error?.code === 'EEXIST') return true;
+    // Windows can report EPERM for mkdir while another handle owns or is
+    // retiring the lock directory. Treat it as contention only when the lock
+    // is still observable; if it disappeared in the race, retry acquisition.
+    if (process.platform !== 'win32' || error?.code !== 'EPERM') return false;
+    try {
+      return (await fs.stat(lock)).isDirectory();
+    } catch (statError) {
+      if (statError?.code === 'ENOENT') return true;
+      throw statError;
+    }
+  }
   async function mutate(fn) {
     let acquired = false;
     for (let attempt = 0; attempt < 200; attempt++) {
       try { await fs.mkdir(lock); acquired = true; break; }
       catch (e) {
-        if (e.code !== 'EEXIST') throw e;
+        if (!(await lockContention(e))) throw e;
         await new Promise((done) => setTimeout(done, 5));
       }
     }
