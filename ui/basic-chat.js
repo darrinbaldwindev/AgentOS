@@ -2,6 +2,23 @@ const $ = (id) => document.getElementById(id);
 let sending = false;
 let state = { ready: false, history: [], status: 'Loading…' };
 
+const STATUS_LABELS = Object.freeze({
+  READY: 'Ready',
+  WORKING: 'Working',
+  VERIFYING: 'Checking the result',
+  COMPLETE: 'Finished — completion check passed',
+  BLOCKED: 'Needs attention — work was not marked complete',
+  PAUSED: 'Paused — no new actions will start',
+  NEEDS_ATTENTION: 'Needs attention',
+});
+
+function statusLabel() {
+  if (sending) return 'Working';
+  if (state.stopped) return 'Stop requested — no new actions will start; the current action may still finish';
+  if (state.paused) return 'Paused — no new actions will start';
+  return STATUS_LABELS[state.status] ?? 'Unable to confirm status';
+}
+
 async function api(path, body) {
   const res = await fetch(path, {
     method: 'POST',
@@ -30,7 +47,7 @@ function render() {
     }
     hist.scrollTop = hist.scrollHeight;
   }
-  $('status').textContent = `Status: ${state.status || 'READY'}${state.paused ? ' · PAUSED' : ''}${state.stopped ? ' · STOPPED' : ''}`;
+  $('status').textContent = `Status: ${statusLabel()}`;
   const composer = document.querySelector('.composer-area');
   const form = $('chat');
   const message = $('message');
@@ -47,12 +64,12 @@ function render() {
   message.disabled = blocked;
   if (blocked && !sending) {
     message.placeholder = state.stopped
-      ? 'Stopped — resume is unavailable until host restart clears stop'
+      ? 'Stop requested — restart the local host before sending new work'
       : state.paused
         ? 'Paused — Resume to send again'
-        : 'Not ready';
+        : 'AgentOS is not ready for new work';
   } else if (!sending) {
-    message.placeholder = 'One bounded local check…';
+    message.placeholder = 'Describe what you want AgentOS to do…';
   }
 }
 
@@ -67,7 +84,6 @@ $('chat').addEventListener('submit', async (event) => {
   if (sending || state.paused || state.stopped) return;
   sending = true;
   $('error').textContent = '';
-  $('status').textContent = 'Status: WORKING';
   render();
   try {
     state = await api('/api/send', { text: $('message').value });
