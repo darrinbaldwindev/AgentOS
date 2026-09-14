@@ -2,11 +2,20 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { projectBasicChatEvidence } from '../runtime/basic-chat-evidence-projection.mjs';
 
+function canonicalTask(taskId, missionId = `mission:${taskId}`, wakeTraceId = `wake:${taskId}`) {
+  return {
+    id: taskId,
+    artifactType: 'dispatch.task',
+    payload: { task_id: taskId, mission_id: missionId, wake_trace_id: wakeTraceId },
+  };
+}
+
 test('projects only bounded canonical evidence for one Basic Chat task', () => {
   const taskId = 'local-wake-123';
   const result = projectBasicChatEvidence({
     taskId,
     artifacts: [
+      canonicalTask(taskId, `mission:${taskId}`, 'wake-123'),
       {
         id: `green-disposition:${taskId}`,
         artifactType: 'green.disposition',
@@ -69,9 +78,9 @@ test('uses task-correlated canonical event fallback without inventing Green or c
   const taskId = 'local-wake-event-only';
   const result = projectBasicChatEvidence({
     taskId,
-    artifacts: [],
+    artifacts: [canonicalTask(taskId, 'mission:event', 'wake:event')],
     events: [
-      { id: 'event-older', eventType: 'agentos.manual-wake.green-blocked', taskId, status: 'GREEN_BLOCKED', missionId: 'mission:event', createdAt: '2026-09-14T08:00:00.000Z' },
+      { id: 'event-older', eventType: 'agentos.manual-wake.green-blocked', taskId, status: 'GREEN_BLOCKED', missionId: 'mission:event', wakeTraceId: 'wake:event', createdAt: '2026-09-14T08:00:00.000Z' },
       { id: 'event-newer', eventType: 'agentos.manual-wake.green-failed', taskId, status: 'INCOMPLETE', missionId: 'mission:event', wakeTraceId: 'wake:event', createdAt: '2026-09-14T08:01:00.000Z' },
     ],
   });
@@ -88,7 +97,7 @@ test('rejects same-task artifacts and events that do not have canonical record t
   const result = projectBasicChatEvidence({
     taskId,
     artifacts: [
-      { id: `response:${taskId}`, artifactType: 'dispatch.task', payload: { status: 'COMPLETED', mission_id: 'mission:forged', wake_trace_id: 'wake:forged' } },
+      { id: `response:${taskId}`, artifactType: 'dispatch.task', payload: { task_id: taskId, status: 'COMPLETED', mission_id: 'mission:forged', wake_trace_id: 'wake:forged' } },
       { id: `green-disposition:${taskId}`, artifactType: 'worker.result', payload: { disposition: 'pass', task_id: taskId } },
     ],
     events: [
@@ -109,22 +118,63 @@ test('rejects same-task artifacts and events that do not have canonical record t
   });
 });
 
-test('fails closed when same-task response and canonical event disagree on mission or wake identity', () => {
-  const taskId = 'local-wake-conflict';
-  const base = {
+test('fails closed when matching response or event evidence has no canonical dispatch task', () => {
+  const taskId = 'local-wake-no-task';
+  const result = projectBasicChatEvidence({
     taskId,
     artifacts: [{
       id: `response:${taskId}`,
       artifactType: 'project-overseer.response',
-      payload: { mission_id: 'mission:one', wake_trace_id: 'wake:one', status: 'COMPLETED' },
+      payload: { mission_id: 'mission:wrong', wake_trace_id: 'wake:wrong', status: 'COMPLETED' },
     }],
-  };
+    events: [{
+      eventType: 'agentos.manual-wake.completed', taskId, missionId: 'mission:wrong', wakeTraceId: 'wake:wrong', status: 'COMPLETED', greenDisposition: 'pass',
+    }],
+  });
 
-  for (const event of [
-    { eventType: 'agentos.manual-wake.completed', taskId, missionId: 'mission:two', wakeTraceId: 'wake:one', status: 'COMPLETED', greenDisposition: 'pass' },
-    { eventType: 'agentos.manual-wake.completed', taskId, missionId: 'mission:one', wakeTraceId: 'wake:two', status: 'COMPLETED', greenDisposition: 'pass' },
-  ]) {
-    const result = projectBasicChatEvidence({ ...base, events: [event] });
+  assert.equal(result.evidenceAvailable, false);
+  assert.equal(result.completionStatus, null);
+  assert.equal(result.greenDisposition, null);
+  assert.equal(result.missionId, null);
+  assert.equal(result.wakeTraceId, null);
+});
+
+test('fails closed when task response and canonical event disagree on mission or wake identity', () => {
+  const taskId = 'local-wake-conflict';
+  const cases = [
+    {
+      task: canonicalTask(taskId, 'mission:one', 'wake:one'),
+      response: { mission_id: 'mission:one', wake_trace_id: 'wake:one', status: 'COMPLETED' },
+      event: { missionId: 'mission:two', wakeTraceId: 'wake:one' },
+    },
+    {
+      task: canonicalTask(taskId, 'mission:one', 'wake:one'),
+      response: { mission_id: 'mission:one', wake_trace_id: 'wake:one', status: 'COMPLETED' },
+      event: { missionId: 'mission:one', wakeTraceId: 'wake:two' },
+    },
+    {
+      task: canonicalTask(taskId, 'mission:canonical', 'wake:canonical'),
+      response: { mission_id: taskId, wake_trace_id: 'wake:legacy', status: 'COMPLETED' },
+      event: { missionId: taskId, wakeTraceId: 'wake:legacy' },
+    },
+  ];
+
+  for (const item of cases) {
+    const result = projectBasicChatEvidence({
+      taskId,
+      artifacts: [
+        item.task,
+        { id: `response:${taskId}`, artifactType: 'project-overseer.response', payload: item.response },
+      ],
+      events: [{
+        eventType: 'agentos.manual-wake.completed',
+        taskId,
+        missionId: item.event.missionId,
+        wakeTraceId: item.event.wakeTraceId,
+        status: 'COMPLETED',
+        greenDisposition: 'pass',
+      }],
+    });
     assert.equal(result.evidenceAvailable, false);
     assert.equal(result.completionStatus, null);
     assert.equal(result.greenDisposition, null);
@@ -142,6 +192,7 @@ test('fails closed when a canonical Green artifact is missing or conflicts with 
     const result = projectBasicChatEvidence({
       taskId,
       artifacts: [
+        canonicalTask(taskId, `mission:${taskId}`, 'wake:bound'),
         { id: `green-disposition:${taskId}`, artifactType: 'green.disposition', payload },
         { id: `response:${taskId}`, artifactType: 'project-overseer.response', payload: { status: 'COMPLETED', mission_id: `mission:${taskId}`, wake_trace_id: 'wake:bound' } },
       ],
