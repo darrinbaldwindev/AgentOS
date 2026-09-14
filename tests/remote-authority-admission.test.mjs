@@ -139,3 +139,42 @@ test('same request or same delivery cannot be admitted twice', async () => {
   await assert.rejects(admission.admit({ candidate: sameDeliveryNewRequest, actorContext, targetHostId: 'host-1' }), (error) => error.message === 'REMOTE_ADMISSION_REPLAY_OR_CONFLICT');
   assert.equal(Object.keys(p.records.artifact).length, 2);
 });
+
+test('rejects absent canonical grant evidence without persisting request or task artifacts', async () => {
+  const p = persistenceHarness();
+  const admission = producer(p, { authoritySource: { resolveGrant: async () => null } });
+  await assert.rejects(
+    admission.admit({ candidate, actorContext, targetHostId: 'host-1' }),
+    (error) => error.message === 'REMOTE_AUTHORITY_GRANT_REQUIRED',
+  );
+  assert.equal(Object.keys(p.records.artifact).length, 0);
+});
+
+test('preserves exact delivery request task mission wake and authority evidence correlation in durable admission artifacts', async () => {
+  const p = persistenceHarness();
+  const result = await producer(p).admit({ candidate, actorContext, targetHostId: 'host-1' });
+  const taskArtifact = p.records.artifact[result.artifact_id];
+  const markerArtifact = p.records.artifact[result.request_marker_id];
+
+  assert.equal(result.task.delivery_id, candidate.delivery_id);
+  assert.equal(result.task.request_id, candidate.request_id);
+  assert.equal(result.task.mission_id, validGrant.mission_id);
+  assert.match(result.task.task_id, /^task:remote:/);
+  assert.match(result.task.wake_trace_id, /^wake:remote:/);
+  assert.equal(result.task.authority_evidence_id, validGrant.evidence_id);
+
+  assert.equal(taskArtifact.payload.delivery_id, result.task.delivery_id);
+  assert.equal(taskArtifact.payload.request_id, result.task.request_id);
+  assert.equal(taskArtifact.payload.task_id, result.task.task_id);
+  assert.equal(taskArtifact.payload.mission_id, result.task.mission_id);
+  assert.equal(taskArtifact.payload.wake_trace_id, result.task.wake_trace_id);
+  assert.equal(taskArtifact.payload.authority_evidence_id, result.task.authority_evidence_id);
+
+  assert.deepEqual(markerArtifact.payload, {
+    request_id: result.task.request_id,
+    delivery_id: result.task.delivery_id,
+    task_id: result.task.task_id,
+    mission_id: result.task.mission_id,
+    authority_evidence_id: result.task.authority_evidence_id,
+  });
+});
