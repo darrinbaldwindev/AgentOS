@@ -25,6 +25,9 @@ export function createRemoteExecutionReceiptPersistence({ persistence } = {}) {
       const deliveryId = requireText(receipt.delivery_id, 'receipt.delivery_id');
       requireText(receipt.request_id, 'receipt.request_id');
       requireText(receipt.host_id, 'receipt.host_id');
+      requireText(receipt.mission_id, 'receipt.mission_id');
+      requireText(receipt.task_id, 'receipt.task_id');
+      requireText(receipt.wake_trace_id, 'receipt.wake_trace_id');
       const entity = await persistence.create('artifact', {
         id: `remote-receipt:${deliveryId}`,
         artifactType: 'remote.execution.receipt',
