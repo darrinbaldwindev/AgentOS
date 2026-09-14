@@ -141,6 +141,8 @@ function render() {
   composer.hidden = false;
   form.hidden = false;
   message.hidden = false;
+  composer.setAttribute('aria-busy', sending ? 'true' : 'false');
+  form.setAttribute('aria-busy', sending ? 'true' : 'false');
   const blocked = sending || state.paused || state.stopped || !state.ready;
   send.disabled = blocked;
   message.disabled = blocked;
