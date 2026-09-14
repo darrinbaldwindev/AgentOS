@@ -196,6 +196,20 @@ test('evidence packet fails closed when no exact durable receipt exists', async 
   });
 });
 
+test('evidence packet rejects noncanonical durable receipt id instead of synthesizing provenance', async () => {
+  await withAdapter(async ({ adapter, persistence }) => {
+    await persistence.create('artifact', {
+      id: 'forged-receipt-id',
+      artifactType: 'remote.execution.receipt',
+      payload: receipt(),
+    });
+    await assert.rejects(
+      adapter.evidencePacketForDelivery('delivery:1'),
+      /REMOTE_RECEIPT_EVIDENCE_ID_MISMATCH/,
+    );
+  });
+});
+
 test('evidence packet rejects malformed durable correlation instead of projecting false success', async () => {
   await withAdapter(async ({ adapter, persistence }) => {
     await persistence.create('artifact', {
