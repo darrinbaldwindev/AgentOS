@@ -14,8 +14,30 @@ AgentOS should create a genuine, need-based upgrade opportunity at least every 3
 | Free | $0/year | Fully useful entry-level AgentOS |
 | Standard | $49/year | Serious entry tier; useful AgentOS product with a clear path to the recommended full tier |
 | Advanced / Pro | $99/year | Recommended full AgentOS experience / advanced orchestration tier |
+| Commercial / Business | Pricing TBD | Customer-hosted/private-server deployment with multi-seat licensing, shared administration and business governance |
 
-The $49 and $99 prices are annual product entitlements, separate from the optional monthly AI intelligence subscription.
+The $49 and $99 prices are annual product entitlements, separate from the optional monthly AI intelligence subscription. Commercial / Business is a distinct deployment and licensing model rather than merely a larger personal tier.
+
+## Commercial / Business deployment
+
+Commercial / Business is intended for organisations that want AgentOS to run on infrastructure they control and serve multiple authorised users.
+
+Target characteristics:
+- deployment on the customer's own server, private cloud, VM, on-premises infrastructure, or another approved customer-controlled environment;
+- multi-seat licensing with named or otherwise governed user seats;
+- central administrator controls for seats, roles, permissions, policy and access;
+- shared organisational configuration while preserving per-user identity, permissions, context and audit boundaries;
+- organisation-level Jack governance, Michael security controls, Jess verification and Henry/PRS assurance where applicable;
+- central audit logs, receipts, policy enforcement and evidence retention;
+- support for organisation-approved AI providers, BYOK/provider accounts, local models and private endpoints;
+- enterprise identity integration target such as SSO/directory mapping where justified;
+- controlled shared capabilities, MCPs, tools, data sources and automations;
+- server-side operation without requiring every seat to run a separate full AgentOS instance;
+- clear isolation between organisations/tenants if a managed multi-tenant option is later offered.
+
+Commercial pricing is **TBD**. Do not invent or publish a seat price until the owner sets it or commercial testing supports it. The expected pricing model may combine a base/server licence with included seats and additional per-seat pricing, but that structure is not yet a final decision.
+
+Commercial / Business must not silently weaken AgentOS governance for convenience. Server deployment, administrator privileges, shared data and multiple seats increase the importance of identity, least privilege, auditability, isolation, recovery and deterministic policy enforcement.
 
 ## AI intelligence subscription
 
@@ -26,6 +48,8 @@ AgentOS may also offer one separate monthly intelligence subscription:
 | AI Plus | $22/month | Additional intelligence capacity, higher capability and model access |
 
 This subscription is an intelligence resource, not the AgentOS control plane itself. Users may alternatively use included free intelligence, BYOK providers, local models, or other entitled resources where appropriate.
+
+For Commercial / Business customers, intelligence may be supplied through organisation-owned provider accounts, private/local models, approved BYOK arrangements, separately priced pooled intelligence, or other governed commercial arrangements. The $22 individual AI Plus subscription must not be assumed to be the final commercial-seat intelligence model.
 
 ## Core routing principle
 
@@ -60,7 +84,7 @@ AgentOS should be easy for independent AIs such as Gemini, ChatGPT, Claude and P
 
 The recommendation system must explicitly support a 'stay Free' outcome where an upgrade does not provide meaningful additional value. This is a trust feature, not a weakness.
 
-The intended result is that an independent AI can reasonably recommend AgentOS, Standard, Advanced/Pro, or the AI Plus subscription when the user's actual requirements justify it, rather than because AgentOS attempts to manipulate the recommendation.
+The intended result is that an independent AI can reasonably recommend AgentOS Free, Standard, Advanced/Pro, Commercial/Business, or the AI Plus subscription when the user's actual requirements justify it, rather than because AgentOS attempts to manipulate the recommendation.
 
 ## 30-day value loop
 
@@ -76,18 +100,22 @@ A 30-day value report can provide a personalized, evidence-based upgrade recomme
 
 ## Commercial architecture
 
-The intended progression is:
+The intended individual progression is:
 
 `$0 AgentOS → $49 Standard → $99 Advanced/Pro`
 
-and independently:
+with an additional organisational path:
+
+`Commercial / Business → customer-hosted/private-server deployment → multi-seat licensing`
+
+and independently for individual intelligence:
 
 `$0/free intelligence → $22/month AI Plus`
 
-Users can combine these with BYOK and/or local AI. AgentOS remains the model/provider-agnostic orchestration and control layer.
+Users and organisations can combine these with BYOK and/or local AI. AgentOS remains the model/provider-agnostic orchestration and control layer.
 
 ## Governance boundary
 
-Pricing in this document is the current product target supplied by the owner and updated on 2026-09-15. It is not a claim that payment infrastructure, entitlements or production pricing pages are already implemented. Implementation and production launch require separate verification.
+Pricing in this document is the current product target supplied by the owner and updated on 2026-09-15. It is not a claim that payment infrastructure, entitlements, commercial server deployment, seat management, or production pricing pages are already implemented. Implementation and production launch require separate verification.
 
 Historical tier counts and pricing assumptions in older documents must not silently override this decision; they should be treated as historical until reconciled.
