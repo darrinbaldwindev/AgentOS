@@ -71,22 +71,28 @@ function windowsCapabilityState(probe) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_HOST_CAPABILITY_PROBE_FAIL', missingRequired });
   }
 
-  // An asserted eligible=true Boolean is not enough. Only explicit canonical probe
-  // facts can support a positive capability presentation.
   return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED', missingRequired });
 }
 
-function physicalAcceptanceState(acceptance) {
+function physicalAcceptanceState(acceptance, expectedExactHead) {
   if (!acceptance || typeof acceptance !== 'object') {
     return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_EVIDENCE_UNAVAILABLE', exactHead: null });
   }
-  const exactHead = typeof acceptance.exact_head === 'string' ? acceptance.exact_head : null;
+  const exactHead = typeof acceptance.exact_head === 'string' && acceptance.exact_head.trim() ? acceptance.exact_head.trim() : null;
+  const expectedHead = typeof expectedExactHead === 'string' && expectedExactHead.trim() ? expectedExactHead.trim() : null;
   const canonicalSchema = acceptance.schema === 'agentos.windows-powershell-physical-acceptance.v1';
   const safeBoundary =
     acceptance.local_wake_execution_enabled === false &&
     acceptance.scheduler_execution_enabled === false &&
     acceptance.production_autonomy_enabled === false &&
     acceptance.owner_supervision_required === true;
+
+  if (!expectedHead) {
+    return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_EXPECTED_HEAD_REQUIRED', exactHead });
+  }
+  if (exactHead !== expectedHead) {
+    return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_HEAD_MISMATCH', exactHead });
+  }
   if (
     canonicalSchema &&
     acceptance.platform === 'win32' &&
@@ -108,13 +114,14 @@ export function projectBasicChatReadiness({
   localHostStatus = null,
   windowsHostProbe = null,
   physicalAcceptance = null,
+  expectedExactHead = null,
 } = {}) {
   return Object.freeze({
     schemaVersion: 1,
     basicChat: basicChatState(chatSnapshot),
     localHostLifecycle: localHostLifecycleState(localHostStatus),
     windowsHostCapability: windowsCapabilityState(windowsHostProbe),
-    physicalWindowsAcceptance: physicalAcceptanceState(physicalAcceptance),
+    physicalWindowsAcceptance: physicalAcceptanceState(physicalAcceptance, expectedExactHead),
     projectFileMutation: Object.freeze({
       state: 'unknown',
       reason: 'NO_CANONICAL_MUTATION_READINESS_SOURCE',
