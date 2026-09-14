@@ -148,7 +148,7 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /<summary>Technical details<\/summary>/);
       assert.match(html, /Mode: DRY_RUN/);
       assert.doesNotMatch(html, /Stop immediately/i);
-      assert.doesNotMatch(html, />VERIFIED</i);
+      assert.doesNotMatch(html, />VERIFIED</);
 
       assert.match(js, /COMPLETE: 'Finished — completion check passed'/);
       assert.match(js, /VERIFYING: 'Checking the result'/);
