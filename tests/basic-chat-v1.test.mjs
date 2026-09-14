@@ -147,6 +147,9 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /AgentOS checks the result before calling this job complete/);
       assert.match(html, /<summary>Technical details<\/summary>/);
       assert.match(html, /Mode: DRY_RUN/);
+      assert.match(html, /id="error-details"/);
+      assert.match(html, /<summary>Technical error details<\/summary>/);
+      assert.match(html, /id="error-technical"/);
       assert.doesNotMatch(html, /Stop immediately/i);
       assert.doesNotMatch(html, />VERIFIED</);
 
@@ -156,6 +159,10 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(js, /Stop requested — no new actions will start; the current action may still finish/);
       assert.match(js, /Unable to confirm status/);
       assert.match(js, /if \(sending\) return 'Working'/);
+      assert.match(js, /AgentOS could not confirm what happened\. Review the technical details before retrying\./);
+      assert.match(js, /Turn off scheduled checks before using this local chat\./);
+      assert.match(js, /Restart the local host before sending another job\./);
+      assert.match(js, /details\.hidden = false/);
       assert.doesNotMatch(js, /Status: WORKING/);
       assert.doesNotMatch(js, / · STOPPED/);
       assert.doesNotMatch(js, / · PAUSED/);
