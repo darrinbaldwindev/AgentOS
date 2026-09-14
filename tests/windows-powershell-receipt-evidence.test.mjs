@@ -70,6 +70,16 @@ test('binds exact PowerShell execution evidence to canonical remote correlation'
   assert.equal(Object.hasOwn(receipt, 'authority_evidence_id'), false);
 });
 
+test('non-admitted task cannot smuggle authority evidence into a PowerShell receipt', () => {
+  const receipt = make({
+    task: task({
+      authority_admitted: false,
+      authority_evidence_id: 'untrusted-payload-evidence',
+    }),
+  });
+  assert.equal(Object.hasOwn(receipt, 'authority_evidence_id'), false);
+});
+
 test('authority-admitted PowerShell task preserves source-backed authority evidence through receipt', () => {
   const receipt = make({
     task: task({
@@ -84,7 +94,7 @@ test('authority-admitted PowerShell task preserves source-backed authority evide
 });
 
 test('authority-admitted PowerShell task fails closed when authority evidence disappears before receipt', () => {
-  for (const authority_evidence_id of [undefined, null, '']) {
+  for (const authority_evidence_id of [undefined, null, '', '   ']) {
     assert.throws(
       () => make({ task: task({ authority_admitted: true, authority_evidence_id }) }),
       /task\.authority_evidence_id is required/,
