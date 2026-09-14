@@ -12,20 +12,20 @@
     <header>
       <h1>AgentOS <span>Chat</span></h1>
       <p class="sub">Working locally · Test actions only · Background work off</p>
-      <p id="status" role="status">Loading…</p>
-      <div class="controls" aria-label="Job controls">
+      <p id="status" role="status" aria-live="polite" aria-atomic="true">Loading…</p>
+      <div class="controls" aria-label="Job controls" aria-describedby="control-note">
         <button type="button" data-action="pause">Pause</button>
         <button type="button" data-action="resume">Resume</button>
         <button type="button" data-action="stop">Stop</button>
       </div>
-      <p class="note">Pause and Stop prevent new actions from starting. The action already in progress may finish before AgentOS can stop.</p>
+      <p id="control-note" class="note">Pause and Stop prevent new actions from starting. The action already in progress may finish before AgentOS can stop.</p>
       <details class="technical-details">
         <summary>Technical details</summary>
         <p>Execution: Local · Mode: DRY_RUN · Autonomy: disabled · Completion gate: Green PASS required</p>
       </details>
     </header>
     <main>
-      <section id="history" class="history" aria-label="Conversation" aria-live="polite"></section>
+      <section id="history" class="history" aria-label="Conversation"></section>
       <section id="evidence-summary" aria-labelledby="evidence-heading">
         <h2 id="evidence-heading">What happened</h2>
         <p id="evidence-result">No completed job to summarize yet.</p>
@@ -40,8 +40,8 @@
         </details>
       </section>
     </main>
-    <footer class="composer-area">
-      <form id="chat">
+    <footer class="composer-area" aria-busy="false">
+      <form id="chat" aria-busy="false">
         <label for="message">What would you like AgentOS to do?</label>
         <textarea id="message" maxlength="4000" rows="3" required placeholder="Try a local check, such as “show this project’s status”…"></textarea>
         <div class="row">
