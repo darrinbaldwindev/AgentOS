@@ -29,18 +29,30 @@ function windowsCapabilityState(probe) {
   if (evaluation.windows !== true) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_PLATFORM_NOT_CONFIRMED', missingRequired });
   }
-  if (evaluation.eligible === false) {
+
+  const tools = evaluation.tools && typeof evaluation.tools === 'object' ? evaluation.tools : null;
+  const workspace = evaluation.workspace && typeof evaluation.workspace === 'object' ? evaluation.workspace : null;
+  const explicitCapabilityEvidence = Boolean(
+    tools &&
+    workspace &&
+    tools['powershell.exe'] === true &&
+    tools['git.exe'] === true &&
+    tools['npm.cmd'] === true &&
+    workspace.readable === true &&
+    workspace.writable === true
+  );
+
+  if (explicitCapabilityEvidence) {
+    return Object.freeze({ state: 'capable', reason: 'WINDOWS_HOST_CAPABILITY_FACTS_CONFIRMED', missingRequired });
+  }
+
+  if (evaluation.eligible === false || missingRequired.length > 0) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_HOST_CAPABILITY_PROBE_FAIL', missingRequired });
   }
-  // A pre-evaluated eligible=true assertion is not canonical capability evidence.
-  // The governed runtime derives execution eligibility from canonical capability
-  // results; Basic Chat must not recreate a parallel trust path by promoting an
-  // asserted Boolean to readiness. Until a canonical Windows readiness evidence
-  // contract is wired here, fail closed to unknown.
-  if (evaluation.eligible === true) {
-    return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED', missingRequired });
-  }
-  return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_ELIGIBILITY_UNCONFIRMED', missingRequired });
+
+  // An asserted eligible=true Boolean is not enough. Only explicit canonical probe
+  // facts can support a positive capability presentation.
+  return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED', missingRequired });
 }
 
 function physicalAcceptanceState(acceptance) {
