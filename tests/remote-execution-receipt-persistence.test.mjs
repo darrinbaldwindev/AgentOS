@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLocalPersistence } from '../runtime/local-persistence.mjs';
+import { createRemoteExecutionReceipt } from '../runtime/remote-local-bridge-contract.mjs';
 import { createRemoteExecutionReceiptPersistence } from '../runtime/remote-execution-receipt-persistence.mjs';
 
 function receipt(overrides = {}) {
@@ -22,6 +23,23 @@ function receipt(overrides = {}) {
     created_at: '2026-09-13T02:40:00.000Z',
     ...overrides,
   };
+}
+
+function canonicalReceipt(overrides = {}) {
+  return createRemoteExecutionReceipt({
+    candidate: { delivery_id: 'delivery:1', request_id: 'request:1', project_id: 'agentos-local' },
+    missionId: 'mission:1',
+    taskId: 'task:1',
+    wakeTraceId: 'wake:1',
+    hostId: 'host:1',
+    workerId: 'agentos:windows-powershell-worker',
+    status: 'AWAITING_GREEN',
+    evidence: ['powershell:exit_code:0'],
+    budgetStatus: 'RECONCILED',
+    codeIdentity: 'code:head',
+    createdAt: '2026-09-13T02:40:00.000Z',
+    ...overrides,
+  });
 }
 
 async function withAdapter(fn) {
@@ -80,28 +98,26 @@ test('duplicate remote receipt id fails closed and preserves first durable recei
   });
 });
 
-test('receipt correlation identifiers are mandatory before persistence', async () => {
+test('receipt persistence identity fields are mandatory before persistence', async () => {
   await withAdapter(async ({ adapter }) => {
     await assert.rejects(adapter.record({ receipt: receipt({ delivery_id: '' }) }), /receipt.delivery_id is required/);
     await assert.rejects(adapter.record({ receipt: receipt({ request_id: '' }) }), /receipt.request_id is required/);
     await assert.rejects(adapter.record({ receipt: receipt({ host_id: '' }) }), /receipt.host_id is required/);
-    await assert.rejects(adapter.record({ receipt: receipt({ mission_id: '' }) }), /receipt.mission_id is required/);
-    await assert.rejects(adapter.record({ receipt: receipt({ task_id: '' }) }), /receipt.task_id is required/);
-    await assert.rejects(adapter.record({ receipt: receipt({ wake_trace_id: '   ' }) }), /receipt.wake_trace_id is required/);
   });
 });
 
-test('incomplete task or mission correlation creates no durable receipt artifact', async () => {
+test('canonical receipt construction rejects missing mission task or wake correlation before persistence', async () => {
   await withAdapter(async ({ adapter, persistence }) => {
-    await assert.rejects(
-      adapter.record({ receipt: receipt({ task_id: null }) }),
-      /receipt.task_id is required/,
-    );
-    await assert.rejects(
-      adapter.record({ receipt: receipt({ mission_id: undefined }) }),
-      /receipt.mission_id is required/,
-    );
+    for (const [field, value, expected] of [
+      ['missionId', '', /missionId is required/],
+      ['taskId', null, /taskId is required/],
+      ['wakeTraceId', '   ', /wakeTraceId is required/],
+    ]) {
+      assert.throws(() => canonicalReceipt({ [field]: value }), expected);
+    }
     assert.equal((await persistence.list('artifact')).length, 0);
+    await adapter.record({ receipt: canonicalReceipt() });
+    assert.equal((await persistence.list('artifact')).length, 1);
   });
 });
 
