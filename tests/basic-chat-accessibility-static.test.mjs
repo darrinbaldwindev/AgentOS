@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const html = await readFile(new URL('../ui/basic-chat.html', import.meta.url), 'utf8');
+const css = await readFile(new URL('../ui/basic-chat.css', import.meta.url), 'utf8');
+
+test('Basic Chat keeps keyboard-visible focus and touch-sized controls', () => {
+  assert.match(html, /<meta name="viewport" content="width=device-width,initial-scale=1">/);
+  assert.match(html, /aria-label="Job controls"/);
+  assert.match(html, /role="status"/);
+  assert.match(html, /role="alert"/);
+  assert.match(css, /min-height:\s*44px/);
+  assert.match(css, /min-width:\s*44px/);
+  assert.match(css, /button:focus-visible/);
+  assert.match(css, /textarea:focus-visible/);
+  assert.match(css, /summary:focus-visible/);
+  assert.match(css, /outline:\s*3px solid currentColor/);
+});
+
+test('Basic Chat has a narrow-layout fallback without removing the composer', () => {
+  assert.match(html, /class="composer-area"/);
+  assert.match(html, /id="message"/);
+  assert.match(html, /id="send"/);
+  assert.match(css, /@media \(max-width:\s*600px\)/);
+  assert.match(css, /\.row\s*\{[^}]*flex-direction:\s*column/s);
+  assert.match(css, /#send\s*\{\s*width:\s*100%/s);
+  assert.match(css, /\.controls\s*\{[^}]*flex-wrap:\s*wrap/s);
+});
+
+test('Basic Chat honors reduced-motion preference', () => {
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(css, /animation-iteration-count:\s*1\s*!important/);
+  assert.match(css, /scroll-behavior:\s*auto\s*!important/);
+});
