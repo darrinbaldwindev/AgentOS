@@ -29,9 +29,6 @@ async function acquireHostLock(lockPath) {
     await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8');
     return handle;
   } catch (error) {
-    // Always attempt to release the descriptor while retaining the lock path.
-    // The file itself stays in place because a failed publication leaves
-    // ownership uncertain and must require explicit recovery.
     try {
       await handle.close();
     } catch {}
@@ -118,8 +115,14 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
   const config = await readSafeChatConfig(root);
   const lockPath = join(root, 'basic-chat.lock');
   const lock = await acquireHostLock(lockPath);
+  const stateFilePath = join(root, config.stateFile);
 
-  const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
+  let persistence = await createLocalPersistence({ filePath: stateFilePath });
+  async function refreshPersistence() {
+    persistence = await createLocalPersistence({ filePath: stateFilePath });
+    return persistence;
+  }
+
   if (!(await persistence.get('artifact', CONTROL))) {
     await persistence.create('artifact', {
       id: CONTROL,
@@ -229,7 +232,14 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
           objective: message,
           requireSchedulerDisabled: true,
         });
+        // wakeLocal owns a separate adapter instance over the same canonical file.
+        // Reload before any further Basic Chat mutation so wake receipts/events are
+        // retained instead of being overwritten by this instance's pre-wake view.
+        await refreshPersistence();
       } catch (error) {
+        // Preserve any canonical partial/failure evidence wakeLocal may have written
+        // before Basic Chat records its user-facing blocked message.
+        await refreshPersistence();
         let errText = error?.message ?? String(error);
         if (/LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED/.test(errText)) {
           errText = 'Basic Chat needs scheduled checks turned off before starting.';
