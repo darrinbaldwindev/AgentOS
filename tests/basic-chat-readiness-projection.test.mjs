@@ -99,41 +99,47 @@ test('Windows host capability requires explicit canonical probe facts instead of
   assert.equal(notWindows.windowsHostCapability.state, 'not_capable');
 });
 
-test('physical Windows acceptance requires canonical exact-head supervised PASS evidence', () => {
-  const pass = projectBasicChatReadiness({
-    physicalAcceptance: {
-      schema: 'agentos.windows-powershell-physical-acceptance.v1',
-      exact_head: 'a'.repeat(40),
-      platform: 'win32',
-      pass: true,
-      disposition: 'PHYSICAL_POWERSHELL_ACCEPTANCE_PASS',
-      local_wake_execution_enabled: false,
-      scheduler_execution_enabled: false,
-      production_autonomy_enabled: false,
-      owner_supervision_required: true,
-    },
+test('physical Windows acceptance requires canonical supervised PASS evidence bound to the expected exact head', () => {
+  const head = 'a'.repeat(40);
+  const acceptance = {
+    schema: 'agentos.windows-powershell-physical-acceptance.v1',
+    exact_head: head,
+    platform: 'win32',
+    pass: true,
+    disposition: 'PHYSICAL_POWERSHELL_ACCEPTANCE_PASS',
+    local_wake_execution_enabled: false,
+    scheduler_execution_enabled: false,
+    production_autonomy_enabled: false,
+    owner_supervision_required: true,
+  };
+
+  const missingExpectedHead = projectBasicChatReadiness({ physicalAcceptance: acceptance });
+  assert.equal(missingExpectedHead.physicalWindowsAcceptance.state, 'not_established');
+  assert.equal(missingExpectedHead.physicalWindowsAcceptance.reason, 'PHYSICAL_ACCEPTANCE_EXPECTED_HEAD_REQUIRED');
+
+  const stale = projectBasicChatReadiness({
+    physicalAcceptance: acceptance,
+    expectedExactHead: 'b'.repeat(40),
   });
+  assert.equal(stale.physicalWindowsAcceptance.state, 'not_established');
+  assert.equal(stale.physicalWindowsAcceptance.reason, 'PHYSICAL_ACCEPTANCE_HEAD_MISMATCH');
+  assert.equal(stale.physicalWindowsAcceptance.exactHead, head);
+
+  const pass = projectBasicChatReadiness({ physicalAcceptance: acceptance, expectedExactHead: head });
   assert.equal(pass.physicalWindowsAcceptance.state, 'passed_for_exact_head');
-  assert.equal(pass.physicalWindowsAcceptance.exactHead, 'a'.repeat(40));
+  assert.equal(pass.physicalWindowsAcceptance.exactHead, head);
 
   const unsafe = projectBasicChatReadiness({
-    physicalAcceptance: {
-      schema: 'agentos.windows-powershell-physical-acceptance.v1',
-      exact_head: 'a'.repeat(40),
-      platform: 'win32',
-      pass: true,
-      disposition: 'PHYSICAL_POWERSHELL_ACCEPTANCE_PASS',
-      local_wake_execution_enabled: true,
-      scheduler_execution_enabled: false,
-      production_autonomy_enabled: false,
-      owner_supervision_required: true,
-    },
+    expectedExactHead: head,
+    physicalAcceptance: { ...acceptance, local_wake_execution_enabled: true },
   });
   assert.equal(unsafe.physicalWindowsAcceptance.state, 'not_established');
 });
 
 test('lifecycle capability or physical acceptance never upgrades project-file mutation', () => {
+  const head = 'b'.repeat(40);
   const result = projectBasicChatReadiness({
+    expectedExactHead: head,
     chatSnapshot: { ready: true, paused: false, stopped: false },
     localHostStatus: {
       schema_version: 1,
@@ -153,7 +159,7 @@ test('lifecycle capability or physical acceptance never upgrades project-file mu
     },
     physicalAcceptance: {
       schema: 'agentos.windows-powershell-physical-acceptance.v1',
-      exact_head: 'b'.repeat(40),
+      exact_head: head,
       platform: 'win32',
       pass: true,
       disposition: 'PHYSICAL_POWERSHELL_ACCEPTANCE_PASS',
