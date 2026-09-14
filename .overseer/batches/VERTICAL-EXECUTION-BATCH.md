@@ -3,542 +3,420 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Frontend Overseer  
-**Cycle:** Frontend vertical cycle 002  
-**Fresh scan:** 2026-09-14 16:31 Australia/Brisbane  
+**Cycle:** Frontend vertical cycle 002 — replenished post-execution  
+**Fresh-scan context:** 2026-09-14, Australia/Brisbane  
 **Reconciled main:** `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`  
-**Frontend contract PR:** #110, draft  
-**Frontend implementation PR:** #111, draft  
-**Current #111 head:** `36fbe7ba3379e0f693b1247b20e494cd0b34e188`  
+**Frontend contract PR:** #110 — OPEN / DRAFT / UNMERGED  
+**Frontend implementation PR:** #111 — OPEN / DRAFT / UNMERGED  
+**Verified #111 head:** `d528f953201d299c823ffe12df1615f3396e278e`  
+**Exact-head CI:** AgentOS Tests run #1000 — SUCCESS  
 **Current #104 API head:** `a4d1a1baa104d76ae7667d5e079df4ffe87688a0`  
-**Status:** ACTIVE — Level 2 / Founding-Beta trust and usability are P0.
+**Batch status:** ACTIVE  
+**P0:** Level 2 / Founding-Beta trust, control and ordinary-user comprehension.
 
 ## 1. Mission
 
-Make AgentOS feel like one trustworthy AI system rather than a developer dashboard over multiple technical subsystems.
-
-The frontend translates canonical AgentOS intent, authority, execution, evidence, recovery, Green and PRS state into a product ordinary users can understand. It must never become an alternate scheduler, queue, authority store, mission ledger, persistence layer, memory system, Green system, PRS system or source of truth.
-
-North-star interaction model:
+Translate AgentOS's canonical governed execution system into one coherent product for ordinary users without creating a second control plane.
 
 > Chat for intent. Palette for speed. Inbox for attention. Jobs for repetition. Jack for authority. Isla for execution. Henry for proof.
 
-The immediate product objective is not the broadest interface. It is the smallest coherent Everyday / Founding-Beta loop that makes a real governed job understandable from request to evidence.
+The frontend owns comprehension and interaction quality. Runtime, authority, persistence, Green, PRS, scheduling, mission state and evidence remain canonical elsewhere.
 
-## 2. Governance boundaries
+Evidence > claims. Simple does not mean powerless. Advanced does not mean confusing.
 
-This batch does not authorize merge, approve, mark-ready, rebase, deploy, credential changes, production writes, production autonomy, unrestricted PowerShell, authority bypass, Green bypass, PRS bypass or product claims unsupported by exact evidence.
+## 2. Hard governance boundaries
 
-Frontend rules:
+This batch does not authorize merge, approval, ready transition, rebase, deployment, credential changes, production writes, production autonomy, unrestricted PowerShell or bypass of Jack/authority, Green or PRS.
 
-- canonical runtime state controls work state;
-- canonical authority controls permissions;
-- canonical evidence controls evidence presentation;
-- Green controls Green disposition;
-- PRS controls Henry/independent assurance disposition;
-- predecessor evidence is historical, never silently promoted to a newer head;
-- unknown state fails closed in the presentation layer;
-- mockups and specs are labelled as design work, not capability;
-- no generic reassuring badges when the exact verified object/scope cannot be named.
+Never create a duplicate scheduler, queue, worker registry, mission ledger, job database, authority system, persistence layer, memory system, Green system or PRS system.
 
-## 3. Fresh-scan state
+Presentation rules:
+
+- canonical runtime determines work state;
+- canonical authority determines permission state;
+- canonical evidence determines evidence presentation;
+- Green determines completion-check disposition;
+- PRS determines independent assurance / Henry disposition;
+- unknown state fails closed;
+- stale evidence is labelled historical/stale;
+- mockups/specifications are never presented as implemented capability;
+- no generic `VERIFIED` or reassuring green tick when the verified object and scope cannot be named.
+
+## 3. Current repository reality
 
 ### Main
 
 `main` remains `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`.
 
-Current main still does not contain a coherent end-user AgentOS shell. The explicit frontend implementation on main is primarily the self-contained fallback/prototype lane under `agents/ui/...`. `package.json` continues to expose local runtime/test scripts rather than a complete browser application build/dev surface.
+Current main still does not contain a complete mainstream AgentOS application shell. The explicit frontend on main remains concentrated in the self-contained fallback/prototype lane under `agents/ui/...`, while `package.json` exposes local runtime/test scripts rather than a settled full browser-app build surface.
 
-Therefore the Basic Chat/Everyday frontend must still be described as draft lineage work, not a current-main shipped capability.
+Therefore the richer Everyday/Basic Chat experience remains draft-lineage work and must not be described as shipped current-main capability.
 
-### Basic Chat lineage
+### Basic Chat / frontend implementation
 
-The coherent Basic Chat experience remains on stacked draft lineages derived from the V1 chat work and Windows lifecycle repairs.
+PR #111 is stacked on the coherent Basic Chat Windows-repair lineage rather than rebasing or merging runtime work.
 
-Frontend PR #111 is stacked on `work/batch-windows-boundary` / PR #102 rather than rebasing or merging those runtime branches. This preserves the backend lineage and keeps the frontend change bounded.
+Current exact head `d528f953201d299c823ffe12df1615f3396e278e` modifies only:
 
-PR #111 predecessor exact head `d42b86aca13d6222a88cc1363d16b1b9d4f383ff` completed AgentOS Tests run #985 successfully. That evidence certifies that exact frontend presentation head only.
+- `ui/basic-chat.html`
+- `ui/basic-chat.js`
+- `tests/basic-chat-v1.test.mjs`
 
-Cycle 002 added a further frontend-only status-mapping change. The new #111 exact head is `36fbe7ba3379e0f693b1247b20e494cd0b34e188`; AgentOS Tests run #989 was queued at the last check. Do not borrow #985 PASS for the new head.
+No frontend change in this slice modifies canonical runtime authority, scheduler, persistence, Green, PRS or execution semantics.
 
-### Level 2 dependency
+AgentOS Tests run #1000 completed SUCCESS against this exact current head.
 
-PR #104 remains OPEN, DRAFT and UNMERGED. API metadata reports head `a4d1a1baa104d76ae7667d5e079df4ffe87688a0` while its body contains a checkpoint narrative referring to another exact implementation checkpoint. Treat API head as current branch identity and checkpoint claims as scoped historical evidence until reconciled.
+### Level 2 runtime dependency
 
-The PR still records unresolved project-file mutation ownership, authenticated admission and current-head acceptance/assurance. Its own body states that mutation remains AMBER and must not be enabled. The frontend therefore must not offer broad file mutation or imply dependable autonomous Windows editing.
+PR #104 remains OPEN / DRAFT / UNMERGED at current API head `a4d1a1baa104d76ae7667d5e079df4ffe87688a0`.
 
-## 4. Evidence classes for current frontend
+Its current evidence still records unresolved mutation ownership, admission and assurance limitations. Broad project-file mutation must therefore remain unavailable in mainstream frontend claims. The frontend cannot repair a missing runtime proof gate with copy or animation.
 
-### PROVEN — current main scope
+## 4. Cycle 002 — VERIFIED work
 
-- self-contained fallback/recovery React component exists;
-- its explicit no-provider/no-credential/no-persistence boundary is documented in code;
-- local fixtures/prototype and accessibility-oriented interaction patterns exist.
+### F002-01 — ordinary-user Basic Chat primary copy
 
-### PROVEN — exact draft frontend head only
+**VERIFIED** on exact current lineage.
 
-At #111 predecessor head `d42b86...`:
+Primary UI now leads with:
 
-- primary Basic Chat copy was changed from engineering-first to ordinary-user wording;
-- technical `DRY_RUN`, autonomy and Green details remained available through disclosure;
-- Stop copy preserved the runtime caveat that an action already in progress may finish;
-- regression assertions rejected `Stop immediately` and generic `VERIFIED` overclaims;
-- exact-head AgentOS Tests run #985 succeeded.
+- `AgentOS Chat`
+- `Working locally · Test actions only · Background work off`
+- `What would you like AgentOS to do?`
 
-### ACTIVE / awaiting exact-head verification
+Technical `DRY_RUN`, autonomy-disabled and Green-gate information remains available through progressive disclosure rather than being removed.
 
-At #111 head `36fbe7ba...`:
+### F002-02 — truthful Stop language
 
-- raw user-visible enum labels are replaced with a presentation-only mapping;
-- active `sending` state now wins over stale previous state so the UI cannot revert to an earlier status during an in-flight request;
-- STOPPED is not inferred from the frontend `stopped` flag;
-- stopped presentation is `Stop requested — no new actions will start; the current action may still finish`;
-- unknown states render `Unable to confirm status`;
-- test assertions lock this fail-closed wording.
+**VERIFIED** for presentation scope.
 
-This head is ACTIVE until exact-head CI passes.
+The frontend does not claim immediate termination or infer confirmed stopped state from the existing Basic Chat control flag.
 
-## 5. Current ordinary-user experience
+Current wording:
 
-### What works in the draft Basic Chat slice
+> Stop requested — no new actions will start; the current action may still finish.
 
-- large conversation surface;
-- persistent composer;
-- conversation restore;
-- Pause / Resume / Stop controls;
-- bounded local governed wake path;
-- clear local/test/background-off summary;
-- technical-details disclosure;
-- ordinary-user task prompt;
-- fail-closed status presentation in current frontend work.
+This accurately reflects the current backend contract, where new work is blocked but an action already in progress is not proven immediately terminated.
 
-### What is still missing
+### F002-03 — stale status during active send
 
-- first-run onboarding;
-- preflight intent review for consequential actions;
-- Jack permission card;
-- explicit temporary-authority visibility;
-- Evidence Timeline;
-- independent Henry/PRS presentation;
-- minimal Inbox;
-- persistent Jobs surface based on canonical mission/job state;
-- recovery-required screen;
-- connector permission centre;
-- Restricted Mode UI;
-- device trust;
-- Local / Cloud / Mixed execution placement;
-- cost/capacity presentation;
-- complete responsive acceptance;
-- browser-based end-to-end beta acceptance.
+**VERIFIED** by exact-head CI.
 
-## 6. Shared product architecture — Simple / Essentials / Tech Head
+Previously the submit handler could briefly set `Status: WORKING` and then `render()` could replace it with the prior canonical snapshot state while the request was still running.
 
-All three modes use the same canonical data and the same product shell. They differ only in density and progressive disclosure.
+The presentation now gives active `sending` state precedence and shows `Working` throughout the in-flight request. No backend status is mutated.
 
-### Shared surfaces
+### F002-04 — fail-closed status adapter
 
-1. Chat — dominant intent surface.
-2. Current work — one understandable job card.
-3. Attention — Inbox entry point for things requiring a user decision.
-4. Authority — Jack presentation based on canonical policy/grant state.
-5. Evidence — human-readable timeline derived from canonical evidence.
-6. Assurance — Green and Henry/PRS shown separately.
-7. Control — Pause / Stop / Revoke only when supported by canonical behavior.
-8. Settings — mode/profile/cost/connector controls as supported.
+**VERIFIED** by exact-head CI.
+
+Canonical chat states are translated to ordinary-user labels:
+
+- READY -> Ready
+- WORKING -> Working
+- VERIFYING -> Checking the result
+- COMPLETE -> Finished — completion check passed
+- BLOCKED -> Needs attention — work was not marked complete
+- PAUSED -> Paused — no new actions will start
+- NEEDS_ATTENTION -> Needs attention
+- unknown -> Unable to confirm status
+
+The adapter is presentation-only. It does not create a second state machine.
+
+### F002-05 — safe error comprehension
+
+**VERIFIED** by exact-head CI.
+
+The browser previously surfaced server/runtime error strings directly as the only user explanation.
+
+The frontend now maps known errors to safe next actions while preserving the exact technical reason in a separate `Technical error details` disclosure.
+
+Examples:
+
+- paused -> resume before new work;
+- stop requested -> restart local host before another job;
+- scheduler conflict -> turn off scheduled checks;
+- oversized message/request -> shorten and retry;
+- unknown -> `AgentOS could not confirm what happened. Review the technical details before retrying.`
+
+Unknown errors do not receive invented diagnoses.
+
+### F002-06 — regression protection
+
+**VERIFIED** by exact-head CI.
+
+Tests now guard against presentation regressions including:
+
+- `Stop immediately`;
+- generic `VERIFIED`;
+- raw appended `· STOPPED`;
+- raw appended `· PAUSED`;
+- hard-coded `Status: WORKING` path that can be overwritten by stale state;
+- loss of technical error-detail disclosure;
+- loss of safe next-action error copy.
+
+### F002-07 — concurrency reconciliation
+
+**VERIFIED process behavior.**
+
+A test-file update received GitHub 409 because another commit changed the blob during this cycle. The stale write was not forced. The new blob was re-read, its newer change preserved, and the additional regression assertions were applied against the fresh SHA.
+
+## 5. Current claim matrix
+
+| Capability / UX | Evidence class | Allowed treatment |
+|---|---|---|
+| Main fallback manager | PROVEN on main | May describe only at its explicit self-contained/local-fixture scope |
+| Basic Chat interface | BETA/RC draft evidence | May describe as draft governed local chat, not shipped main |
+| Plain-language chat copy/status/errors | PROVEN on #111 exact head | Current draft implementation claim allowed with branch scope stated |
+| Pause | Bounded draft capability | May say it prevents new work; active action caveat still required where applicable |
+| Stop | Bounded request semantics | `Stop requested`; do not say execution definitely terminated |
+| Green completion check | Runtime-backed on Basic Chat lineage | Present as completion check, not independent assurance |
+| Henry / PRS in Basic Chat | NOT YET EVIDENCED as a frontend field | Do not show PASS unless canonical PRS evidence is available |
+| Controlled Windows mutation | NOT YET SUPPORTABLE generally | Do not expose as mainstream available action |
+| Evidence Timeline | PRODUCT DIRECTION / next implementation target | Build only as projection over canonical evidence |
+| Jack permission card | PRODUCT DIRECTION with runtime dependency | Adapter/spec first; no synthetic approvals |
+| Inbox / Jobs / Palette | PRODUCT DIRECTION | Design against canonical sources only |
+
+## 6. Shared Simple / Essentials / Tech Head architecture
+
+All three modes use one shell and one truth source. Progressive disclosure changes density, not facts.
+
+### Shared in every mode
+
+- dominant Chat;
+- current work state;
+- attention entry point;
+- Pause/Stop access when supported;
+- authority summary;
+- completion-check summary;
+- independent-assurance summary when available;
+- evidence summary;
+- execution location when known;
+- cost/capacity when known.
 
 ### Simple
 
-- no raw IDs, model names, cron, policy objects or runtime enums by default;
-- very large controls;
-- plain-language status;
-- Jack explains permissions and blocks;
-- Henry explains whether the result was actually checked;
-- Evidence is labelled `What happened`.
+- large controls;
+- plain language;
+- no raw IDs/providers/policies by default;
+- `What happened` instead of logs;
+- Jack explains boundaries;
+- Isla explains current work;
+- Henry explains independent assurance.
 
 ### Essentials
 
 - mainstream target;
-- current step, scope, evidence, cost and location visible when known;
-- compact technical disclosure available;
-- useful filtering in Inbox/Jobs without exposing backend implementation details.
+- current step, scope, evidence, cost/location visible where real;
+- compact technical details on demand;
+- Inbox/Jobs filtering without backend jargon.
 
 ### Tech Head
 
 - same human summary first;
-- expandable raw runtime/provider/model/policy/correlation/evidence data;
-- machine-readable receipt/export surfaces where canonical data exists;
-- never substitutes raw logs for the plain-language state.
+- raw IDs, models/providers, policies, receipts, correlation, traces and diagnostics expandable;
+- raw data never becomes the sole explanation.
 
-## 7. P0 trust/control contracts
+## 7. Smallest coherent Founding-Beta frontend
 
-### Work state
+Wave 0 requires one trustworthy real-job loop:
 
-Frontend vocabulary must be derived from canonical state and remain conservative:
-
-- Ready
-- Preparing
-- Waiting for permission
-- Working
-- Checking the result
-- Pause requested
-- Paused — no new actions will start
-- Stop requested — no new actions will start; current action may still finish
-- Recovery required
-- Needs attention
-- Finished — completion check passed
-- Unable to confirm status
-
-Do not display `Stopped` until the runtime supplies sufficient evidence to confirm termination/no active execution at the relevant scope.
-
-### Authority / Jack
-
-Jack answers:
-
-- what AgentOS wants to do;
-- why;
-- exact target/scope;
-- duration;
-- reversibility;
-- credential/external-contact implication;
-- cost/capability implication if known;
-- what remains prohibited;
-- what requires a new approval.
-
-Preferred actions when canonical authority supports them:
-
-- Allow once
-- Allow for this job
-- Deny
-- View details
-
-Do not invent `Always allow` or durable permission persistence from frontend state.
-
-### Verification
-
-Worker execution success is not generic `Verified`.
-
-Allowed scoped examples:
-
-- Completion check passed for this task.
-- 12 tests passed for this exact run output.
-- Green PASS at the stated completion scope.
-- Henry / PRS PASS at the stated independent-assurance scope.
-
-If evidence is stale for current head/state, say so explicitly.
-
-### Stop / Pause / Revoke
-
-Pause and Stop are execution/control requests. Revoke is authority withdrawal. Do not merge them conceptually.
-
-Required states eventually include:
-
-- Pause requested
-- Pausing after current safe boundary
-- Paused
-- Stop requested
-- Stopping / active action may still finish
-- No further actions authorised
-- Execution stopped, only when proven
-- Unable to confirm stop
-
-`Revoke` remains BLOCKED for UI implementation until canonical revocation semantics are exposed to the frontend contract.
-
-## 8. Evidence Timeline minimum viable design
-
-The smallest coherent timeline should adapt existing canonical evidence rather than create a new event store.
-
-User-facing event order:
-
-1. **You asked** — normalized request.
-2. **AgentOS prepared** — bounded intended step when evidence exists.
-3. **Jack checked** — authority decision/scope when canonical authority evidence exists.
-4. **Isla started** — execution start / placement when known.
-5. **Action performed** — human-readable operation + target.
-6. **Change recorded** — receipt / affected objects when applicable.
-7. **Completion check** — Green result and evidence scope.
-8. **Henry checked** — PRS independent assurance when applicable.
-9. **Recovered** — preserve interruption/recovery evidence rather than rewriting history.
-10. **Finished / needs attention** — bounded terminal presentation.
-
-P0 rule: missing events must not be fabricated to make the story look complete. The timeline should show `Not available for this job` where necessary.
-
-## 9. Smallest coherent Founding-Beta frontend
-
-Wave 0 should require one complete loop, not a broad dashboard:
-
-1. readiness/welcome state;
-2. one dominant Chat;
-3. clear intent restatement where consequential work is proposed;
-4. Jack permission card when authority is required;
-5. current work / Isla card;
-6. truthful Pause / Stop behavior;
-7. evidence summary/timeline;
+1. readiness / beta scope;
+2. dominant Chat;
+3. intent restatement for consequential work;
+4. Jack permission card where authority is required;
+5. current work / Isla state;
+6. truthful Pause / Stop;
+7. `What happened` evidence summary;
 8. Green completion-check result;
-9. Henry/PRS status if independent assurance applies;
-10. recovery / blocked presentation;
-11. minimal attention queue derived from canonical attention states;
-12. one obvious route back to Chat.
+9. Henry/PRS independent assurance if available;
+10. recovery / blocked state;
+11. minimal attention queue derived from canonical state;
+12. obvious return to Chat.
 
-Wave 0 entry remains dependent on runtime Level 2 gates and must not be activated from frontend readiness alone.
+Do not activate beta recruitment merely because frontend assets are ready. Level 2 runtime entry gates remain controlling.
 
-## 10. Accessibility P0
+## 8. P0 next queue — execute before broader UI expansion
 
-Before Wave 0:
+### P0-C1 — canonical `What happened` evidence discovery
 
-- keyboard operation for chat and controls;
-- visible focus;
-- descriptive accessible names;
-- status announcements via appropriate live region without focus theft;
-- errors associated with the affected operation;
-- no color-only risk/verification information;
-- 44px-class practical touch targets where feasible;
-- reduced-motion support for future progress animation;
-- evidence timeline available as ordered text;
-- clear headings/landmarks;
-- no mascot animation required to understand state;
-- button disabled/busy state understandable to assistive technology;
-- Stop/Pause state changes announced with truthful caveats.
+**NEXT.**
 
-## 11. Responsive P0
+- inspect the existing durable artifacts/events produced by `wakeLocal` and Basic Chat;
+- identify the canonical read path available from the Basic Chat server without creating new storage;
+- determine whether `lastTaskId` can safely correlate to task/run/mission/evidence records;
+- inventory fields that are genuinely user-relevant: request, action, target, result, check state, timestamp, receipt/evidence pointer;
+- identify unavailable fields explicitly;
+- do not create synthetic timeline events.
 
-### Desktop
+### P0-C2 — smallest Evidence Summary implementation
 
-- Chat remains visually dominant;
-- trust/current-work rail can collapse;
-- Inbox/Jobs/Settings must not turn Chat into a small dashboard tile;
-- evidence can expand without removing composer access.
+Eligibility: only after C1 confirms a canonical read path.
 
-### Narrow/mobile
+Initial surface may be `What happened`, not yet a full Evidence Timeline.
 
-- Chat first;
-- current work, authority and evidence stack beneath/behind sheets;
-- Stop/Pause reachable without horizontal scrolling;
-- permission actions never depend on hover;
-- Tech Head raw data collapsed by default;
-- long evidence IDs wrap without breaking layout.
+Minimum truthful states:
 
-No responsive implementation claim exists yet.
+- no job yet;
+- evidence available;
+- completion check pending;
+- completion check passed;
+- work blocked / not marked complete;
+- evidence unavailable;
+- evidence stale for current state.
 
-## 12. Cycle 002 work executed
+Technical IDs remain hidden in Simple and expandable in Essentials/Tech Head.
 
-### F002-01 — consume #111 prior exact-head CI
+### P0-D1 — Green versus Henry/PRS reconciliation
 
-**State:** VERIFIED for exact head `d42b86aca13d6222a88cc1363d16b1b9d4f383ff` only.
+- inspect the exact Green result object available from local wake;
+- inspect whether PRS result is durably accessible on the current Basic Chat lineage;
+- define two separate presentation channels:
+  - `Completion check` = Green;
+  - `Independent assurance` = Henry / PRS;
+- if PRS is absent, show `Independent assurance not available for this job` rather than neutral success;
+- never inherit Henry PASS from Green PASS.
 
-Evidence: AgentOS Tests run #985 completed SUCCESS.
+### P0-E1 — Jack permission adapter discovery
 
-### F002-02 — inspect canonical chat status contract
+- inspect authority/grant contracts on current AgentOS runtime/remote bridge;
+- identify canonical fields for requested action, target, scope, duration, consequence, credentials, external contact, reversibility and policy result;
+- report missing backend fields;
+- do not wire approval actions until a canonical mutation endpoint exists.
 
-**State:** VERIFIED inspection.
+### P0-F1 — Stop / Revoke runtime dependency report
 
-`runtime/local-chat.mjs` supplies `READY`, `WORKING`, `VERIFYING`, `COMPLETE`, `BLOCKED`, `PAUSED`, `NEEDS_ATTENTION` plus `paused`, `stopped`, `ready`, `lastTaskId` and history. The current backend stop control sets `stopped` but does not prove immediate termination of an already-running action. Therefore frontend confirmation wording must remain conservative.
+- document what current Stop does and does not prove;
+- identify whether active in-flight wake cancellation exists;
+- identify evidence required to claim `Execution stopped`;
+- separate Stop from authority Revoke;
+- specify runtime contract needed for `No further actions authorised` and confirmed `Stopped`.
 
-### F002-03 — fix stale-status-during-send presentation
+### P0-G1 — beta readiness onboarding
 
-**State:** ACTIVE pending exact-head CI.
+After claim matrix is stable:
 
-Changed `ui/basic-chat.js` so `sending` maps directly to `Working` before any previous snapshot status is displayed. This fixes the previous render path that could overwrite a temporary working label with stale prior state.
+- one-page readiness screen;
+- local/test/bounded scope in plain language;
+- one proven starter task;
+- clear unavailable capabilities;
+- no pricing distraction;
+- no unsupported autonomous-computer-control claims.
 
-### F002-04 — fail-closed user status mapper
+## 9. P1 queue — everyday usability after P0 trust loop
 
-**State:** ACTIVE pending exact-head CI.
+### Inbox
 
-Mapped canonical states to ordinary-user labels without modifying backend semantics. Unknown values become `Unable to confirm status`. `stopped` becomes Stop requested, not confirmed stopped.
+Build as a filtered projection over canonical permission-required, blocked, verification-failed, recovery-required and completion states. No new queue/database.
 
-### F002-05 — regression assertions
+### Jobs
 
-**State:** ACTIVE pending exact-head CI.
+Reconcile terminology with canonical mission/task/schedule objects before implementation. Saved Jobs must not become frontend-owned persistence.
 
-The Basic Chat server test now checks the served JS for completion/check/block/stop/unknown wording and ensures raw appended `· STOPPED`, `· PAUSED`, `Status: WORKING`, generic `VERIFIED` and `Stop immediately` patterns do not return.
+### Palette
 
-### F002-06 — exact-head CI
+Expose user actions/capabilities, not implementation commands. Capability availability must be evidence-based.
 
-**State:** ACTIVE.
+### Responsive / accessibility
 
-AgentOS Tests run #989 queued for current #111 head `36fbe7ba3379e0f693b1247b20e494cd0b34e188` at last check. Do not promote until the run completes successfully.
+- inspect current CSS against desktop/narrow layout;
+- keyboard/focus behavior;
+- live-region noise;
+- button busy/disabled semantics;
+- screen-reader truthful Stop/Pause announcements;
+- touch target sizing;
+- reduced-motion readiness;
+- ordered-text evidence fallback.
 
-## 13. Priority queue — maximum useful next batch
+### Character-function discipline
 
-### P0-A — complete current status slice
+- Willow = planning/clarification;
+- Isla = current execution;
+- Jack = authority/risk/boundaries;
+- Henry = independent assurance.
 
-1. Consume run #989 exact-head result.
-2. If failure: inspect the failing job/test, repair only the frontend/test regression, rerun exact-head CI.
-3. If success: mark #111 current presentation slice VERIFIED at its exact scope.
-4. Inspect PR #111 diff again to ensure no runtime/control-plane files changed unexpectedly.
-5. Update #111 body with exact-head evidence and remaining limits.
+Characters never replace authoritative text.
 
-### P0-B — Basic Chat failure/recovery comprehension
+## 10. Runtime dependencies that frontend must expose, not disguise
 
-1. Inspect `runtime/basic-chat-server.mjs` error payloads and current `local-chat` interruption behavior.
-2. Inventory exact machine error strings that can reach an ordinary user.
-3. Define a presentation-only error mapper for known cases: scheduler enabled, chat already running/recovery required, interrupted before response, safe-mode mismatch, unknown error.
-4. Keep raw technical reason available through details.
-5. Unknown errors must use `AgentOS could not confirm what happened` plus safe next action, not invented diagnosis.
-6. Add regression tests ensuring raw stack/runtime jargon is not the sole user-facing explanation.
-
-### P0-C — minimal Evidence Summary using existing canonical state
-
-1. Identify which durable artifacts/events are already accessible to Basic Chat without adding storage.
-2. Determine whether last task ID can safely link to an existing canonical run/evidence read path.
-3. Build the smallest read-only `What happened` summary only if canonical evidence can be retrieved without a new frontend database.
-4. Initial allowed fields: request, task identifier in technical details, completion-check state, blocked reason, timestamp if canonical.
-5. Do not call this an Evidence Timeline until multiple canonical evidence events are actually available.
-6. Add empty/unavailable states rather than synthetic events.
-
-### P0-D — Green versus Henry/PRS presentation
-
-1. Inspect canonical Green result object used by Basic Chat/local wake.
-2. Identify whether PRS result is available on the same lineage.
-3. Define explicit UI separation:
-   - `Completion check` = Green;
-   - `Independent assurance` = Henry/PRS.
-4. If PRS is unavailable in this slice, show `Independent assurance not available for this job` rather than a neutral green tick.
-5. Never inherit Henry PASS from Green PASS.
-
-### P0-E — Jack permission contract against real authority seams
-
-1. Inspect current authority/grant interfaces on #104/remote-bridge lineage and main.
-2. Identify the smallest canonical authority data contract a frontend could read.
-3. Draft adapter fields: action, target, scope, duration, consequence, credential use, external communication, reversibility, policy result.
-4. Do not implement approval buttons until the canonical write/control endpoint exists for the relevant lineage.
-5. Document missing backend fields explicitly for engineering.
-
-### P0-F — Stop/Revoke backend dependency report
-
-1. Document current Basic Chat Stop semantics precisely.
-2. Determine whether active in-flight wake can be cancelled at a canonical safe boundary.
-3. Determine what evidence exists to confirm no further actions can run.
-4. Separate job stop from authority revoke.
-5. Produce implementation-ready backend requirements for confirmed Stopped / Revoked UI states.
-
-### P0-G — Founding-Beta first-run readiness
-
-1. Draft a minimal readiness screen based only on proven beta scope.
-2. Explain local/test-only limitations without engineering jargon.
-3. State what AgentOS can currently do on the beta lineage.
-4. State what it cannot yet do.
-5. Provide one safe starter task based on bounded proven operations only.
-6. Hold implementation behind runtime/acceptance evidence if claims cannot be kept current.
-
-### P1-A — minimal Inbox architecture
-
-1. Find canonical states representing permission required, blocked, verification failure, recovery required and completion.
-2. Design Inbox as a filtered projection over canonical state, not a new queue/database.
-3. Specify item identity/correlation and stale-event handling.
-4. Do not implement until a reliable read contract exists.
-
-### P1-B — Jobs architecture
-
-1. Reconcile job terminology against mission/task canonical objects.
-2. Determine which object represents repeatable/scheduled user work.
-3. Avoid frontend-owned Saved Jobs persistence.
-4. Define Simple/Essentials/Tech Head views over the same underlying record.
-
-### P1-C — Palette
-
-1. Define command categories that route to existing product actions rather than backend implementation commands.
-2. Keep capability availability evidence-based.
-3. Disabled/unavailable actions must explain why rather than silently disappear where comprehension benefits.
-
-### P1-D — responsive/accessibility acceptance
-
-1. Inspect current CSS.
-2. Add keyboard/focus tests feasible in the current dependency-light architecture.
-3. Audit live-region behavior: conversation and status must not create excessive repeated announcements.
-4. Check control labels, target sizes and narrow viewport behavior.
-5. Add `prefers-reduced-motion` contract if motion appears later.
-
-### P1-E — characters as functional UI
-
-1. Jack appears only at authority/policy boundaries.
-2. Isla appears only for execution/current work.
-3. Henry appears only for independent assurance.
-4. Willow appears for plan/intent clarification.
-5. No mascot should be needed to understand a state; text remains authoritative.
-
-### P2 — later ecosystem
-
-HOLD until Level 2 and Founding Beta are coherent:
-
-- Connector Centre expansion;
-- verified capability store;
-- publisher identities;
-- signed/versioned capability manifests;
-- organisation allowlists;
-- private capability registries;
-- capability rollback/update UX.
-
-## 14. Runtime/backend dependencies to report, not hide
-
-Current important dependencies:
-
-- no safe current-head general mutation claim from PR #104;
+- project-file mutation remains blocked from general claim by current Level 2 assurance gaps;
 - authenticated admission/grant composition remains incomplete;
-- Basic Chat stop flag does not prove immediate termination of an in-flight action;
-- durable authority revocation contract is not evidenced in Basic Chat;
-- PRS result is not yet evidenced as a Basic Chat presentation field;
-- full user-facing evidence feed has not yet been reconciled to Basic Chat;
-- execution placement data is insufficient for a truthful Local / Cloud / Mixed indicator across the product;
-- cost/capacity data is insufficient for a truthful mainstream cost dashboard in this slice.
+- Basic Chat stop does not prove immediate termination of an in-flight action;
+- Basic Chat does not yet expose proven durable authority revocation;
+- PRS/Henry state is not yet established as a canonical frontend field;
+- full evidence projection into Basic Chat is not yet reconciled;
+- Local / Cloud / Mixed placement is not yet reliable across the product;
+- mainstream cost/capacity data is not yet available for a truthful dashboard.
 
-These are product requirements, not UI inconveniences. Do not mask them with animations or optimistic copy.
+## 11. Accessibility acceptance for Wave 0
 
-## 15. Founding-Beta acceptance questions
+Required:
 
-Wave 0 frontend must gather evidence for:
+- full keyboard operation;
+- visible focus;
+- descriptive labels;
+- useful live status without focus theft;
+- errors associated with the affected operation;
+- no color-only risk/assurance;
+- touch-appropriate targets;
+- ordered textual evidence;
+- no mascot required for comprehension;
+- truthful state announcements for Pause/Stop/verification.
 
-- Can an ordinary user describe a first real job without help?
-- Can they explain what Jack is asking permission for?
-- Can they tell whether an action is currently running, merely requested to stop, or actually stopped?
-- Can they distinguish job completion from independent assurance?
-- Can they recover from an interrupted/blocked task without reading logs?
-- Can they identify what changed?
-- Can they find why AgentOS refused an action?
-- Can they attempt a second real task without being prompted?
+## 12. Responsive acceptance for Wave 0
 
-Primary adoption signal remains spontaneous second real job use.
+Desktop: Chat dominant, current-work/trust rail collapsible, evidence expandable without losing composer.
 
-## 16. Completion criteria for this frontend phase
+Narrow/mobile: Chat first; authority/work/evidence stack; controls reachable without horizontal scrolling; permissions do not rely on hover; Tech Head raw data collapsed by default.
 
-Do not call the Everyday/Founding-Beta frontend coherent until at minimum:
+No responsive implementation claim exists until browser/runtime evidence supports it.
 
-- Chat is dominant and ordinary-user readable;
-- state presentation is fail-closed and tested;
-- active work cannot display stale prior status;
-- Stop semantics are truthful;
-- permission presentation maps to canonical authority;
-- evidence summary maps to canonical evidence;
-- Green and PRS/Henry are visibly distinct;
-- failures/recovery are understandable;
-- keyboard/accessibility baseline is tested;
-- responsive layout has browser/runtime evidence;
-- Wave 0 technical entry gate is independently cleared by the runtime/governance workstreams.
+## 13. Founding-Beta product questions
 
-## 17. Protected actions / HOLD
+Measure whether testers can:
 
-Remain unauthorized:
+- give a first real job without coaching;
+- explain what Jack is asking to allow;
+- distinguish working, stop-requested and actually stopped;
+- distinguish completion check from independent assurance;
+- recover from interruption without reading logs;
+- identify what changed;
+- understand why work was blocked;
+- attempt a second real job unprompted.
 
-- merge #110 or #111;
-- mark either ready;
-- rebase runtime lineages;
-- deploy any UI;
-- enable production autonomy;
-- add credentials;
-- activate general Windows mutation;
-- synthesize authority/Green/PRS state in frontend code;
-- recruit/activate Founding Beta solely because frontend assets exist.
+Primary early adoption signal: spontaneous second real job.
 
-## 18. Next trigger rule
+## 14. Completion rule for this frontend phase
 
-On `cont` / `continue autonomously`:
+Do not call the Founding-Beta frontend coherent until:
 
-1. fresh-scan main, #104, #110, #111, exact-head CI and Overseer#49;
-2. reconcile this batch against live state;
-3. consume #111 CI first;
-4. repair failures if any;
-5. then execute P0-B failure/recovery comprehension and P0-C evidence-summary discovery in the same cycle where safe;
-6. verify exact changed heads;
-7. fresh-scan again;
-8. replenish this same batch at maximum useful depth;
-9. durably checkpoint substantive results to Overseer#49.
+- Chat is ordinary-user readable;
+- status is fail-closed and exact-head tested;
+- active work cannot show stale prior status;
+- Stop language matches runtime guarantees;
+- error/recovery paths provide safe next actions;
+- permission UI is backed by canonical authority;
+- evidence UI is backed by canonical evidence;
+- Green and Henry/PRS are visibly separate;
+- accessibility baseline is verified;
+- responsive behavior has browser/runtime evidence;
+- Level 2 runtime/governance entry gates independently clear.
 
-**Core rule:** evidence > claims; simple does not mean powerless; advanced does not mean confusing; governance the user cannot understand is incomplete product design.
+## 15. Protected HOLD
+
+No merge or ready transition for #110/#111; no rebase; no deployment; no credentials; no production writes/autonomy; no unrestricted Windows mutation; no synthetic authority/Green/PRS state; no beta activation solely from frontend readiness.
+
+## 16. Next `cont` execution order
+
+1. fresh-scan main, #104, #110, #111, CI and Overseer#49;
+2. reconcile this batch;
+3. execute P0-C1 canonical evidence discovery;
+4. implement P0-C2 only if a real read path exists;
+5. execute P0-D1 Green-versus-Henry reconciliation;
+6. if evidence path blocks, move immediately to P0-E1 Jack contract discovery rather than starving the cycle;
+7. verify exact changed heads and CI;
+8. second fresh scan;
+9. replenish this same batch at maximum useful depth;
+10. log the checkpoint durably to Overseer#49.
+
+**Core principle:** make AgentOS feel like one trustworthy AI system, not a pile of AI infrastructure.
