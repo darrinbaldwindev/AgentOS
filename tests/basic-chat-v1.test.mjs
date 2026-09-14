@@ -142,7 +142,9 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /composer-area/);
       assert.match(html, /id="send"/);
       assert.match(html, /aria-label="Job controls"/);
-      assert.match(html, /Working locally · Test actions only · Background work off/);
+      assert.match(html, /Local Basic Chat · Test actions only · Background work off/);
+      assert.match(html, /Physical Windows worker readiness: not established/);
+      assert.doesNotMatch(html, /Physical Windows worker readiness: (ready|verified|passed)/i);
       assert.match(html, /The action already in progress may finish before AgentOS can stop/);
       assert.match(html, /AgentOS checks the result before calling this job complete/);
       assert.match(html, /<summary>Technical details<\/summary>/);
