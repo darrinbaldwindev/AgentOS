@@ -14,11 +14,11 @@
 - PR #104 remains at `83a58b8bd230550b5781a0fee700cca250819a75`; general project-file mutation remains AMBER/HOLD because continuous protected ownership through publish/recovery/durable receipt/release is still not independently proven. No PRS PASS.
 - PR #110 began this cycle at `3b224800ca1d946eaa99eea67701ba0314077070`.
 - PR #111 began this cycle at `f9a2c0d66b81366321c38fbf4163fb2ecdb08214` with the canonical task-evidence projection already wired into `local-chat` and exact-head AgentOS Tests #1123 SUCCESS.
-- PR #112 moved during the cycle to `5eb83386af073f9590bb93f2e1be052897559c52`.
+- PR #112 first moved during the cycle to `5eb83386af073f9590bb93f2e1be052897559c52`.
 
 ## Project-wide runtime truth consumed
 
-PR #112 now hardens the legacy local-wake capability fixture and its boot admission tests. The bounded historical fixture is explicitly:
+PR #112 hardens the legacy local-wake capability fixture and its boot admission tests. The bounded historical fixture is explicitly:
 
 - `mode: DRY_RUN`;
 - `classification: legacy-dry-run-fixture`;
@@ -31,7 +31,7 @@ New exact-head tests reject:
 - a near-match classification such as `legacy-dry-run`;
 - a bare eligible claim that tries to hide `mode` inside the evaluation object.
 
-PR #112 exact head `5eb83386...` passed AgentOS Tests #1125 and Project Overseer Wake #395.
+PR #112 head `5eb83386...` passed AgentOS Tests #1125 and Project Overseer Wake #395.
 
 ### Frontend implication
 
@@ -106,6 +106,18 @@ No synthetic Allow/Revoke control is authorized.
 
 Physical responsive/browser acceptance remains NOT PROVEN. Static CSS/tests and mockups are useful design evidence but are not runtime browser acceptance. Execute the real narrow-layout/keyboard checks only against a trustworthy runnable draft target.
 
+## Final live rescan
+
+The cycle closed on a second fresh scan rather than the starting state:
+
+- `main` still `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`;
+- PR #104 still `83a58b8bd230550b5781a0fee700cca250819a75`;
+- PR #110 advanced only through this cycle's documentation to `b3f7dd5c949a3611973aa3b4c91f11933a31ae99` before this final checkpoint update;
+- PR #111 remained `93a7244e47c357d589ba08410085fddca9a8a11b`;
+- PR #112 advanced again to `7d02675c42df4f45af4ab81f6d6b9bb7b5bed82f`.
+
+The final #112 movement from `5eb83386...` to `7d02675c...` is two commits changing only `.overseer/batches/VERTICAL-EXECUTION-BATCH.md`; no runtime/test source changed. Exact new-head AgentOS Tests #1135 and Project Overseer Wake #398 both completed SUCCESS. Therefore the frontend runtime-truth conclusion from the tested `physical:false` hardening remains unchanged.
+
 ## Current claim matrix
 
 - Main mainstream frontend: NOT SHIPPED; richer Basic Chat remains draft lineage.
@@ -121,17 +133,17 @@ Physical responsive/browser acceptance remains NOT PROVEN. Static CSS/tests and 
 - Project-file mutation: AMBER/HOLD.
 - Browser/mobile physical acceptance: NOT PROVEN.
 - Current #111 exact-head CI: SUCCESS.
+- Current #112 exact-head CI: SUCCESS; final delta docs-only.
 
 ## Replenished next queue
 
 1. Fresh-scan #104/#110/#111/#112 before the next action.
-2. Update PR #111 durable description to remove stale pre-wiring claims and record exact current CI.
-3. Continue authority-field change detection on #104; no interactive Jack mutations without canonical lifetime/revoke/consequence semantics.
-4. Keep recovery contract-only until a real producer/read path exists.
-5. If runtime exposes a canonical capability/readiness snapshot, build a read-only frontend adapter distinguishing Basic Chat test path, physical Windows readiness and mutation availability without deriving truth from mode/location/fixture labels.
-6. Execute physical browser/mobile acceptance immediately when a trustworthy runnable draft target is available.
-7. Prepare Founding-Beta readiness only after Level 2 ownership/authority/assurance gates improve; no beta activation.
-8. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density may differ.
+2. Continue authority-field change detection on #104; no interactive Jack mutations without canonical lifetime/revoke/consequence semantics.
+3. Keep recovery contract-only until a real producer/read path exists.
+4. If runtime exposes a canonical capability/readiness snapshot, build a read-only frontend adapter distinguishing Basic Chat test path, physical Windows readiness and mutation availability without deriving truth from mode/location/fixture labels.
+5. Execute physical browser/mobile acceptance immediately when a trustworthy runnable draft target is available.
+6. Prepare Founding-Beta readiness only after Level 2 ownership/authority/assurance gates improve; no beta activation.
+7. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density may differ.
 
 ## Protected HOLD
 
