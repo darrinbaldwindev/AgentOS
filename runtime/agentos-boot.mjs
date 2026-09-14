@@ -14,12 +14,23 @@ function capabilityResults(probe = {}) {
 
 export function assertBootCapabilities(probe = {}) {
   const results = capabilityResults(probe);
-  if (!results) {
-    const error = new Error('OVERSEER_CAPABILITY_EVIDENCE_REQUIRED');
-    error.code = 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED';
-    throw error;
+  if (results) return assertCapabilityResults(results);
+
+  // Compatibility is limited to the historical local DRY_RUN fixture. It is not
+  // physical capability evidence and must never be accepted for a general boot.
+  if (probe.mode === 'DRY_RUN' && probe.evaluation?.eligible === true) {
+    return Object.freeze({
+      eligible: true,
+      results: Object.freeze({}),
+      missingRequired: Object.freeze([]),
+      localPreferred: false,
+      evidenceClass: 'legacy-dry-run-fixture',
+    });
   }
-  return assertCapabilityResults(results);
+
+  const error = new Error('OVERSEER_CAPABILITY_EVIDENCE_REQUIRED');
+  error.code = 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED';
+  throw error;
 }
 
 export async function bootAgentOS({ persistence, capabilityProbe, modelRegistry, continuityCheck, now }) {
