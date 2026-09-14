@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
-import { main, wakeLocal } from '../runtime/local-wake.mjs';
+import { createLocalWakeDryRunCapabilityProbe, main, wakeLocal } from '../runtime/local-wake.mjs';
 
 async function makeInstall() {
   const root = await mkdtemp(join(tmpdir(), 'agentos-wake-'));
@@ -22,6 +22,9 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     assert.notEqual(first.response.wake_trace_id, second.response.wake_trace_id);
     assert.equal(first.boot.overseer.id, second.boot.overseer.id);
     assert.equal(first.boot.capabilities.mode, 'DRY_RUN');
+    assert.equal(first.boot.capabilities.classification, 'legacy-dry-run-fixture');
+    assert.equal(first.boot.capabilities.physical, false);
+    assert.equal(first.boot.capabilities.evaluation.localPreferred, false);
     assert.equal(first.response.source_agent, 'agentos:deterministic-skill-agent');
     assert.equal(second.response.source_agent, 'agentos:deterministic-skill-agent');
     assert.ok(first.response.evidence.some((item) => item === 'worker:agentos:deterministic-skill-agent'));
@@ -37,6 +40,43 @@ test('installed runtime wake persists task, response, event and Overseer reuse',
     assert.equal(wakes.length, 2);
     assert.equal(wakes[0].workerId, 'agentos:deterministic-skill-agent');
     assert.equal(state.records.agent['agentos:overseer'].status, 'online');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('explicit local wake fixture is canonical evidence but never physical capability proof', async () => {
+  const probe = createLocalWakeDryRunCapabilityProbe();
+  const result = await probe.probe('agentos:overseer');
+  assert.equal(probe.classification, 'legacy-dry-run-fixture');
+  assert.equal(probe.physical, false);
+  assert.equal(result.mode, 'DRY_RUN');
+  assert.equal(result.classification, 'legacy-dry-run-fixture');
+  assert.equal(result.physical, false);
+  assert.equal(result.evaluation.results['github.read'], true);
+  assert.equal(result.evaluation.results['continuity.read'], true);
+  assert.equal(result.evaluation.results.handoff, true);
+  assert.equal(result.evaluation.results['workspace.read'], false);
+  assert.equal(result.evaluation.results['workspace.write'], false);
+});
+
+test('wake rejects a naked pre-evaluated eligible claim before dispatch or worker completion', async () => {
+  const root = await makeInstall();
+  try {
+    await assert.rejects(
+      () => wakeLocal({
+        root,
+        capabilityProbe: { probe: async () => ({ mode: 'DRY_RUN', evaluation: { eligible: true } }) },
+      }),
+      (error) => error?.code === 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED',
+    );
+
+    const state = JSON.parse(await readFile(join(root, DEFAULT_CONFIG.stateFile), 'utf8'));
+    const artifacts = Object.values(state.records.artifact);
+    const tasks = artifacts.filter((a) => a.artifactType === 'dispatch.task');
+    const wakes = Object.values(state.records.event).filter((e) => e.eventType === 'agentos.manual-wake.completed');
+    assert.equal(tasks.length, 0);
+    assert.equal(wakes.length, 0);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
