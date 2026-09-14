@@ -70,6 +70,41 @@ test('unclassified DRY_RUN eligible claim is not accepted as compatibility evide
   );
 });
 
+test('legacy fixture classification cannot claim physical capability', () => {
+  assert.throws(
+    () => assertBootCapabilities({
+      mode: 'DRY_RUN',
+      classification: 'legacy-dry-run-fixture',
+      physical: true,
+      evaluation: { eligible: true },
+    }),
+    (error) => error.code === 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED',
+  );
+});
+
+test('near-match legacy fixture classification cannot bypass canonical evidence', () => {
+  assert.throws(
+    () => assertBootCapabilities({
+      mode: 'DRY_RUN',
+      classification: 'legacy-dry-run',
+      physical: false,
+      evaluation: { eligible: true },
+    }),
+    (error) => error.code === 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED',
+  );
+});
+
+test('nested mode cannot convert a bare eligible claim into compatibility evidence', () => {
+  assert.throws(
+    () => assertBootCapabilities({
+      classification: 'legacy-dry-run-fixture',
+      physical: false,
+      evaluation: { eligible: true, mode: 'DRY_RUN' },
+    }),
+    (error) => error.code === 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED',
+  );
+});
+
 test('explicitly classified legacy DRY_RUN fixture cannot imply local preference', () => {
   const evaluation = assertBootCapabilities({
     mode: 'DRY_RUN',
