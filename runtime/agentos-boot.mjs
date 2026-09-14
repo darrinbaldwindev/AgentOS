@@ -16,9 +16,15 @@ export function assertBootCapabilities(probe = {}) {
   const results = capabilityResults(probe);
   if (results) return assertCapabilityResults(results);
 
-  // Compatibility is limited to the historical local DRY_RUN fixture. It is not
-  // physical capability evidence and must never be accepted for a general boot.
-  if (probe.mode === 'DRY_RUN' && probe.evaluation?.eligible === true) {
+  // Compatibility is limited to an explicitly classified historical DRY_RUN
+  // fixture. The mode or an asserted eligible flag alone is never authority or
+  // physical capability evidence.
+  if (
+    probe.mode === 'DRY_RUN'
+    && probe.classification === 'legacy-dry-run-fixture'
+    && probe.physical === false
+    && probe.evaluation?.eligible === true
+  ) {
     return Object.freeze({
       eligible: true,
       results: Object.freeze({}),
