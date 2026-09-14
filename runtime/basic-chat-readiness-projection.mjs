@@ -2,6 +2,9 @@
 // Callers must supply canonical snapshots/probe results. This module performs no
 // probing, persistence, authority mutation, execution, assurance or enablement.
 
+const HOST_LIFECYCLE_STATES = new Set(['idle', 'working', 'blocked', 'recovery_required', 'offline_or_stale']);
+const HOST_FRESHNESS_STATES = new Set(['fresh', 'stale', 'unknown', 'conflicting']);
+
 function basicChatState(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') {
     return Object.freeze({ state: 'unknown', reason: 'BASIC_CHAT_SNAPSHOT_UNAVAILABLE' });
@@ -16,6 +19,24 @@ function basicChatState(snapshot) {
     return Object.freeze({ state: 'available', reason: 'BASIC_CHAT_READY' });
   }
   return Object.freeze({ state: 'unknown', reason: 'BASIC_CHAT_STATE_UNCONFIRMED' });
+}
+
+function localHostLifecycleState(status) {
+  if (!status || typeof status !== 'object') {
+    return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_STATUS_UNAVAILABLE', freshness: 'unknown', hostId: null });
+  }
+  if (status.schema_version !== 1 || typeof status.host_id !== 'string' || !status.host_id.trim()) {
+    return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_STATUS_SCHEMA_INVALID', freshness: 'unknown', hostId: null });
+  }
+  const lifecycle = typeof status.lifecycle_state === 'string' ? status.lifecycle_state : '';
+  const freshness = HOST_FRESHNESS_STATES.has(status.evidence_freshness) ? status.evidence_freshness : 'unknown';
+  if (!HOST_LIFECYCLE_STATES.has(lifecycle)) {
+    return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_LIFECYCLE_UNCONFIRMED', freshness, hostId: status.host_id });
+  }
+  if (freshness === 'conflicting') {
+    return Object.freeze({ state: 'blocked', reason: status.reason ?? 'LOCAL_HOST_EVIDENCE_CONFLICT', freshness, hostId: status.host_id });
+  }
+  return Object.freeze({ state: lifecycle, reason: status.reason ?? null, freshness, hostId: status.host_id });
 }
 
 function windowsCapabilityState(probe) {
@@ -84,12 +105,14 @@ function physicalAcceptanceState(acceptance) {
 
 export function projectBasicChatReadiness({
   chatSnapshot = null,
+  localHostStatus = null,
   windowsHostProbe = null,
   physicalAcceptance = null,
 } = {}) {
   return Object.freeze({
     schemaVersion: 1,
     basicChat: basicChatState(chatSnapshot),
+    localHostLifecycle: localHostLifecycleState(localHostStatus),
     windowsHostCapability: windowsCapabilityState(windowsHostProbe),
     physicalWindowsAcceptance: physicalAcceptanceState(physicalAcceptance),
     projectFileMutation: Object.freeze({
