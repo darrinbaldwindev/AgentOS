@@ -121,6 +121,35 @@ test('retained exact identity cannot be borrowed by another mission task or wake
   });
 });
 
+test('sparse retained identity cannot be upgraded into a richer replay lineage', async () => {
+  for (const omitted of ['mission_id', 'task_id', 'wake_trace_id']) {
+    await withGuard(async ({ guarded, claims }) => {
+      const retained = {
+        deliveryId: task.delivery_id,
+        requestId: task.request_id,
+        hostId: 'host:win:1',
+        missionId: task.mission_id,
+        taskId: task.task_id,
+        wakeTraceId: task.wake_trace_id,
+      };
+      if (omitted === 'mission_id') retained.missionId = null;
+      if (omitted === 'task_id') retained.taskId = null;
+      if (omitted === 'wake_trace_id') retained.wakeTraceId = null;
+      await claims.claim(retained);
+
+      let invokeCalls = 0;
+      await assert.rejects(
+        guarded.execute({ actorContext, task, async invoke() { invokeCalls += 1; return {}; } }),
+        (error) => error?.code === 'GOVERNED_EXECUTION_CLAIM_CORRELATION_MISMATCH' &&
+          error?.details?.[`actual_${omitted}`] === null &&
+          error?.details?.[`expected_${omitted}`] === task[omitted],
+      );
+      assert.equal(invokeCalls, 0);
+      assert.equal((await claims.get(task.delivery_id))?.[omitted] ?? null, null);
+    });
+  }
+});
+
 test('stale claim requires recovery and never auto-reclaims or invokes', async () => {
   const claimTime = () => new Date('2026-09-13T02:00:00.000Z');
   const recoveryTime = () => new Date('2026-09-13T02:30:01.000Z');
