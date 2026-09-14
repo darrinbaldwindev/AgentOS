@@ -67,6 +67,29 @@ test('binds exact PowerShell execution evidence to canonical remote correlation'
   assert.equal(receipt.execution.stdout, 'clean\n');
   assert.equal(receipt.evidence.includes('powershell:exit_code:0'), true);
   assert.equal(receipt.evidence.includes('powershell:stdout_bytes:6'), true);
+  assert.equal(Object.hasOwn(receipt, 'authority_evidence_id'), false);
+});
+
+test('authority-admitted PowerShell task preserves source-backed authority evidence through receipt', () => {
+  const receipt = make({
+    task: task({
+      authority_admitted: true,
+      authority_evidence_id: 'authority-evidence-pwsh-1',
+    }),
+  });
+  assert.equal(receipt.authority_evidence_id, 'authority-evidence-pwsh-1');
+  assert.equal(receipt.task_id, 'task-pwsh-1');
+  assert.equal(receipt.mission_id, 'mission-pwsh-1');
+  assert.equal(receipt.wake_trace_id, 'wake-pwsh-1');
+});
+
+test('authority-admitted PowerShell task fails closed when authority evidence disappears before receipt', () => {
+  for (const authority_evidence_id of [undefined, null, '']) {
+    assert.throws(
+      () => make({ task: task({ authority_admitted: true, authority_evidence_id }) }),
+      /task\.authority_evidence_id is required/,
+    );
+  }
 });
 
 test('PowerShell evidence binder cannot self-declare completion', () => {
