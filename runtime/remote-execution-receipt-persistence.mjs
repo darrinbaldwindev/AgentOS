@@ -60,6 +60,14 @@ export function createRemoteExecutionReceiptPersistence({ persistence } = {}) {
     return Object.freeze(artifacts.map((artifact) => Object.freeze({ ...artifact.payload })));
   }
 
+  async function evidencePacketForDelivery(deliveryId) {
+    const id = requireText(deliveryId, 'deliveryId');
+    const artifacts = await listArtifactsForDelivery(id);
+    if (artifacts.length !== 1) throw new Error('REMOTE_RECEIPT_EVIDENCE_EXACTLY_ONE_REQUIRED');
+    if (artifacts[0]?.id !== `remote-receipt:${id}`) throw new Error('REMOTE_RECEIPT_EVIDENCE_ID_MISMATCH');
+    return evidencePacket(artifacts[0].payload);
+  }
+
   return Object.freeze({
     async record({ receipt } = {}) {
       requireObject(receipt, 'receipt');
@@ -79,12 +87,22 @@ export function createRemoteExecutionReceiptPersistence({ persistence } = {}) {
 
     listForDelivery,
 
-    async evidencePacketForDelivery(deliveryId) {
-      const id = requireText(deliveryId, 'deliveryId');
-      const artifacts = await listArtifactsForDelivery(id);
-      if (artifacts.length !== 1) throw new Error('REMOTE_RECEIPT_EVIDENCE_EXACTLY_ONE_REQUIRED');
-      if (artifacts[0]?.id !== `remote-receipt:${id}`) throw new Error('REMOTE_RECEIPT_EVIDENCE_ID_MISMATCH');
-      return evidencePacket(artifacts[0].payload);
+    evidencePacketForDelivery,
+
+    async evidencePacketForCorrelation({ deliveryId, missionId, taskId, wakeTraceId } = {}) {
+      const expectedDeliveryId = requireText(deliveryId, 'deliveryId');
+      const expectedMissionId = requireText(missionId, 'missionId');
+      const expectedTaskId = requireText(taskId, 'taskId');
+      const expectedWakeTraceId = requireText(wakeTraceId, 'wakeTraceId');
+      const packet = await evidencePacketForDelivery(expectedDeliveryId);
+      if (
+        packet.mission_id !== expectedMissionId ||
+        packet.task_id !== expectedTaskId ||
+        packet.wake_trace_id !== expectedWakeTraceId
+      ) {
+        throw new Error('REMOTE_RECEIPT_EVIDENCE_CORRELATION_MISMATCH');
+      }
+      return packet;
     },
   });
 }
