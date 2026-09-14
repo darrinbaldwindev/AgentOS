@@ -224,6 +224,22 @@ test('evidence packet rejects malformed durable correlation instead of projectin
   });
 });
 
+test('evidence packet rejects malformed durable task or wake correlation from direct adapter state', async () => {
+  for (const [field, value, expected] of [
+    ['task_id', '', /receipt.task_id is required/],
+    ['wake_trace_id', '   ', /receipt.wake_trace_id is required/],
+  ]) {
+    await withAdapter(async ({ adapter, persistence }) => {
+      await persistence.create('artifact', {
+        id: 'remote-receipt:delivery:1',
+        artifactType: 'remote.execution.receipt',
+        payload: receipt({ [field]: value }),
+      });
+      await assert.rejects(adapter.evidencePacketForDelivery('delivery:1'), expected);
+    });
+  }
+});
+
 test('correlation-bound evidence packet returns the exact expected mission task and wake lineage', async () => {
   await withAdapter(async ({ adapter }) => {
     await adapter.record({ receipt: receipt() });
@@ -260,4 +276,36 @@ test('correlation-bound evidence packet rejects cross-mission task or wake borro
       );
     }
   });
+});
+
+test('correlation-bound evidence survives restart and still denies stale expected lineage', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-remote-receipt-correlation-reload-'));
+  const filePath = join(root, 'state.json');
+  try {
+    const firstPersistence = await createLocalPersistence({ filePath });
+    const firstAdapter = createRemoteExecutionReceiptPersistence({ persistence: firstPersistence });
+    await firstAdapter.record({ receipt: receipt() });
+
+    const reloadedPersistence = await createLocalPersistence({ filePath });
+    const reloadedAdapter = createRemoteExecutionReceiptPersistence({ persistence: reloadedPersistence });
+    const exact = await reloadedAdapter.evidencePacketForCorrelation({
+      deliveryId: 'delivery:1',
+      missionId: 'mission:1',
+      taskId: 'task:1',
+      wakeTraceId: 'wake:1',
+    });
+    assert.equal(exact.receipt_id, 'remote-receipt:delivery:1');
+
+    await assert.rejects(
+      reloadedAdapter.evidencePacketForCorrelation({
+        deliveryId: 'delivery:1',
+        missionId: 'mission:stale',
+        taskId: 'task:1',
+        wakeTraceId: 'wake:1',
+      }),
+      /REMOTE_RECEIPT_EVIDENCE_CORRELATION_MISMATCH/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
