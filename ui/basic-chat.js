@@ -37,21 +37,36 @@ function evidencePresentation() {
       task: 'Task: none',
     };
   }
-  if (state.status === 'COMPLETE') {
+
+  const evidence = state.evidence;
+  if (!evidence || evidence.taskId !== task || evidence.evidenceAvailable !== true) {
+    return {
+      result: 'AgentOS cannot confirm matching evidence for this job from the canonical local record.',
+      completion: 'Unable to confirm',
+      task: `Task: ${task}`,
+    };
+  }
+
+  if (evidence.completionStatus === 'COMPLETED' && evidence.greenDisposition === 'pass') {
     return {
       result: 'The bounded local job finished and its required completion check passed.',
       completion: 'Passed for this job',
       task: `Task: ${task}`,
     };
   }
-  if (state.status === 'VERIFYING') {
+  if (evidence.completionStatus === 'AWAITING_GREEN') {
     return {
       result: 'The bounded local job finished execution and its completion check is still pending.',
       completion: 'Checking the result',
       task: `Task: ${task}`,
     };
   }
-  if (state.status === 'BLOCKED' || state.status === 'NEEDS_ATTENTION') {
+  if (
+    evidence.completionStatus === 'INCOMPLETE' ||
+    evidence.completionStatus === 'GREEN_BLOCKED' ||
+    evidence.greenDisposition === 'fail' ||
+    evidence.greenDisposition === 'blocked'
+  ) {
     return {
       result: 'This job needs attention and was not presented as complete.',
       completion: 'Did not establish completion',
@@ -59,7 +74,7 @@ function evidencePresentation() {
     };
   }
   return {
-    result: 'AgentOS cannot confirm the completion evidence for this job from the current state.',
+    result: 'AgentOS cannot confirm the completion evidence for this job from the current canonical record.',
     completion: 'Unable to confirm',
     task: `Task: ${task}`,
   };
