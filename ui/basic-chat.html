@@ -26,6 +26,19 @@
     </header>
     <main>
       <section id="history" class="history" aria-label="Conversation" aria-live="polite"></section>
+      <section id="evidence-summary" aria-labelledby="evidence-heading">
+        <h2 id="evidence-heading">What happened</h2>
+        <p id="evidence-result">No completed job to summarize yet.</p>
+        <dl>
+          <div><dt>Completion check</dt><dd id="completion-check">Not checked</dd></div>
+          <div><dt>Independent assurance</dt><dd id="independent-assurance">Not shown in Basic Chat</dd></div>
+        </dl>
+        <details class="technical-details">
+          <summary>Evidence details</summary>
+          <p id="evidence-task">Task: none</p>
+          <p>Green is the completion gate for this bounded local chat. Henry/PRS is separate independent assurance and is not inferred from Green or worker success.</p>
+        </details>
+      </section>
     </main>
     <footer class="composer-area">
       <form id="chat">
