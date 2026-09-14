@@ -87,3 +87,47 @@ test('receipt correlation identifiers are mandatory before persistence', async (
     await assert.rejects(adapter.record({ receipt: receipt({ host_id: '' }) }), /receipt.host_id is required/);
   });
 });
+
+test('authority evidence id survives durable persistence restart and reload unchanged', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-remote-receipt-reload-'));
+  const filePath = join(root, 'state.json');
+  try {
+    const firstPersistence = await createLocalPersistence({ filePath });
+    const firstAdapter = createRemoteExecutionReceiptPersistence({ persistence: firstPersistence });
+    await firstAdapter.record({
+      receipt: receipt({ authority_evidence_id: 'authority-evidence:grant:exact-1' }),
+    });
+
+    const reloadedPersistence = await createLocalPersistence({ filePath });
+    const reloadedAdapter = createRemoteExecutionReceiptPersistence({ persistence: reloadedPersistence });
+    const found = await reloadedAdapter.listForDelivery('delivery:1');
+
+    assert.equal(found.length, 1);
+    assert.equal(found[0].authority_evidence_id, 'authority-evidence:grant:exact-1');
+    assert.equal(found[0].request_id, 'request:1');
+    assert.equal(found[0].task_id, 'task:1');
+    assert.equal(found[0].mission_id, 'mission:1');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('duplicate durable receipt cannot replace original authority evidence provenance', async () => {
+  await withAdapter(async ({ adapter, persistence }) => {
+    await adapter.record({
+      receipt: receipt({ authority_evidence_id: 'authority-evidence:grant:original' }),
+    });
+
+    await assert.rejects(
+      adapter.record({
+        receipt: receipt({ authority_evidence_id: 'authority-evidence:grant:replacement' }),
+      }),
+      /Duplicate artifact id: remote-receipt:delivery:1/,
+    );
+
+    const stored = await persistence.get('artifact', 'remote-receipt:delivery:1');
+    assert.equal(stored.payload.authority_evidence_id, 'authority-evidence:grant:original');
+    assert.equal(stored.payload.request_id, 'request:1');
+    assert.equal(stored.payload.task_id, 'task:1');
+  });
+});
