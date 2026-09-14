@@ -39,6 +39,11 @@ function executableEvidence(powerShellResult) {
   return Object.freeze(normalized);
 }
 
+function admittedAuthorityEvidence(task) {
+  if (task.authority_admitted !== true) return null;
+  return requiredString(task.authority_evidence_id, 'task.authority_evidence_id');
+}
+
 export function createWindowsPowerShellReceiptEvidence({
   candidate,
   task,
@@ -76,6 +81,7 @@ export function createWindowsPowerShellReceiptEvidence({
   if (!task.mission_id || !task.task_id || !task.wake_trace_id) {
     throw new Error('POWERSHELL_RECEIPT_TASK_CORRELATION_REQUIRED');
   }
+  const authorityEvidenceId = admittedAuthorityEvidence(task);
 
   const evidence = [
     `powershell:operation:${operation}`,
@@ -110,6 +116,7 @@ export function createWindowsPowerShellReceiptEvidence({
 
   return Object.freeze({
     ...receipt,
+    ...(authorityEvidenceId === null ? {} : { authority_evidence_id: authorityEvidenceId }),
     execution: Object.freeze({
       operation,
       cwd,
