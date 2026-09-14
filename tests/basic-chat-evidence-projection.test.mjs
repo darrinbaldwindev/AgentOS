@@ -10,7 +10,7 @@ test('projects only bounded canonical evidence for one Basic Chat task', () => {
       {
         id: `green-disposition:${taskId}`,
         artifactType: 'green.disposition',
-        payload: { disposition: 'pass', task_status: 'complete', secret: 'must-not-leak' },
+        payload: { disposition: 'pass', task_id: taskId, task_status: 'complete', secret: 'must-not-leak' },
       },
       {
         id: `response:${taskId}`,
@@ -51,7 +51,7 @@ test('ignores evidence from other tasks and fails closed when matching evidence 
     taskId: 'local-wake-target',
     artifacts: [
       { id: 'response:local-wake-other', artifactType: 'project-overseer.response', payload: { status: 'COMPLETED', mission_id: 'wrong' } },
-      { id: 'green-disposition:local-wake-other', artifactType: 'green.disposition', payload: { disposition: 'pass' } },
+      { id: 'green-disposition:local-wake-other', artifactType: 'green.disposition', payload: { disposition: 'pass', task_id: 'local-wake-other' } },
     ],
     events: [
       { eventType: 'agentos.manual-wake.completed', taskId: 'local-wake-other', status: 'COMPLETED', greenDisposition: 'pass' },
@@ -89,7 +89,7 @@ test('rejects same-task artifacts and events that do not have canonical record t
     taskId,
     artifacts: [
       { id: `response:${taskId}`, artifactType: 'dispatch.task', payload: { status: 'COMPLETED', mission_id: 'mission:forged', wake_trace_id: 'wake:forged' } },
-      { id: `green-disposition:${taskId}`, artifactType: 'worker.result', payload: { disposition: 'pass' } },
+      { id: `green-disposition:${taskId}`, artifactType: 'worker.result', payload: { disposition: 'pass', task_id: taskId } },
     ],
     events: [
       { eventType: 'worker.self-reported-complete', taskId, status: 'COMPLETED', missionId: 'mission:forged', wakeTraceId: 'wake:forged', greenDisposition: 'pass' },
@@ -130,6 +130,34 @@ test('fails closed when same-task response and canonical event disagree on missi
     assert.equal(result.greenDisposition, null);
     assert.equal(result.missionId, null);
     assert.equal(result.wakeTraceId, null);
+  }
+});
+
+test('fails closed when a canonical Green artifact is missing or conflicts with task identity', () => {
+  const taskId = 'local-wake-green-binding';
+  for (const payload of [
+    { disposition: 'pass' },
+    { disposition: 'pass', task_id: 'local-wake-other' },
+  ]) {
+    const result = projectBasicChatEvidence({
+      taskId,
+      artifacts: [
+        { id: `green-disposition:${taskId}`, artifactType: 'green.disposition', payload },
+        { id: `response:${taskId}`, artifactType: 'project-overseer.response', payload: { status: 'COMPLETED', mission_id: `mission:${taskId}`, wake_trace_id: 'wake:bound' } },
+      ],
+      events: [],
+    });
+    assert.deepEqual(result, {
+      schemaVersion: 1,
+      taskId,
+      evidenceAvailable: false,
+      missionId: null,
+      wakeTraceId: null,
+      completionStatus: null,
+      greenDisposition: null,
+      completedAt: null,
+      blockerCount: 0,
+    });
   }
 });
 
