@@ -13,10 +13,47 @@ function requireText(value, name) {
   return value.trim();
 }
 
+function evidencePacket(receipt) {
+  requireObject(receipt, 'receipt');
+  const deliveryId = requireText(receipt.delivery_id, 'receipt.delivery_id');
+  const requestId = requireText(receipt.request_id, 'receipt.request_id');
+  const missionId = requireText(receipt.mission_id, 'receipt.mission_id');
+  const taskId = requireText(receipt.task_id, 'receipt.task_id');
+  const wakeTraceId = requireText(receipt.wake_trace_id, 'receipt.wake_trace_id');
+  const hostId = requireText(receipt.host_id, 'receipt.host_id');
+  const workerId = requireText(receipt.worker_id, 'receipt.worker_id');
+  const status = requireText(receipt.status, 'receipt.status');
+  const codeIdentity = requireText(receipt.code_identity, 'receipt.code_identity');
+  const authorityEvidenceId = receipt.authority_evidence_id == null
+    ? null
+    : requireText(receipt.authority_evidence_id, 'receipt.authority_evidence_id');
+  return Object.freeze({
+    receipt_id: `remote-receipt:${deliveryId}`,
+    delivery_id: deliveryId,
+    request_id: requestId,
+    mission_id: missionId,
+    task_id: taskId,
+    wake_trace_id: wakeTraceId,
+    host_id: hostId,
+    worker_id: workerId,
+    status,
+    code_identity: codeIdentity,
+    authority_evidence_id: authorityEvidenceId,
+  });
+}
+
 export function createRemoteExecutionReceiptPersistence({ persistence } = {}) {
   requireObject(persistence, 'persistence');
   if (typeof persistence.create !== 'function' || typeof persistence.list !== 'function') {
     throw new TypeError('persistence.create and persistence.list are required');
+  }
+
+  async function listForDelivery(deliveryId) {
+    const id = requireText(deliveryId, 'deliveryId');
+    const artifacts = await persistence.list('artifact');
+    return Object.freeze(artifacts
+      .filter((artifact) => artifact?.artifactType === 'remote.execution.receipt' && artifact?.payload?.delivery_id === id)
+      .map((artifact) => Object.freeze({ ...artifact.payload })));
   }
 
   return Object.freeze({
@@ -36,12 +73,12 @@ export function createRemoteExecutionReceiptPersistence({ persistence } = {}) {
       return entity;
     },
 
-    async listForDelivery(deliveryId) {
-      const id = requireText(deliveryId, 'deliveryId');
-      const artifacts = await persistence.list('artifact');
-      return Object.freeze(artifacts
-        .filter((artifact) => artifact?.artifactType === 'remote.execution.receipt' && artifact?.payload?.delivery_id === id)
-        .map((artifact) => Object.freeze({ ...artifact.payload })));
+    listForDelivery,
+
+    async evidencePacketForDelivery(deliveryId) {
+      const receipts = await listForDelivery(deliveryId);
+      if (receipts.length !== 1) throw new Error('REMOTE_RECEIPT_EVIDENCE_EXACTLY_ONE_REQUIRED');
+      return evidencePacket(receipts[0]);
     },
   });
 }
