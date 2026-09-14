@@ -13,7 +13,7 @@
 
 - `main` remains `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`.
 - #101 remains at `d91abaecf602d7ef223c4888f10fa9361677302e`; its `local-host-status` contract remains the strongest read-only host lifecycle source.
-- #104 moved materially to live head `bbfee5221652c9bf0551ce5b31eb0b1cf6e78af1`. Its body records authority-evidence receipt hardening and exact-head CI success on the predecessor hardened head; the final live head adds receipt-evidence regression coverage only. Project-file mutation remains AMBER/BLOCKED, SG-08 unresolved, no PRS PASS.
+- #104 moved materially to live head `bbfee5221652c9bf0551ce5b31eb0b1cf6e78af1`. Its body records authority-evidence receipt hardening; the final live head adds receipt-evidence regression coverage only. AgentOS Tests #1187 passed on the final observed head. Project-file mutation remains AMBER/BLOCKED, SG-08 unresolved, no PRS PASS.
 - #112 moved to `d1645450a06d00c49a7a78f176e97b44b9eaa225`; its final observed delta from the prior integration head is documentation-only. AgentOS Tests #1189 and Project Overseer Wake #413 passed on this exact head.
 - #111 began this cycle at `146f1118d34c36fdcb579450987a72a6e656c3d7` after concurrent readiness hardening.
 
@@ -52,7 +52,7 @@ If those facts are absent while `eligible:true` is asserted, presentation remain
 
 If explicit missing requirements or `eligible:false` exist, presentation is `not_capable`.
 
-This is a presentation projection only. It performs no probe and creates no eligibility authority.
+This is presentation-only. It performs no probe and creates no eligibility authority.
 
 ### Local host lifecycle composition
 
@@ -89,13 +89,23 @@ Even when all of the following are supplied together:
 
 because no canonical runtime-owned mutation-readiness/assurance object is available to Basic Chat.
 
-## Current implementation head
+## Exact-head result
 
 Current #111 exact implementation head after Cycle 010 code/test changes:
 
 `429b6d5bc14b2790f1a9bace09b76e699cb88b8c`
 
-AgentOS Tests #1199 was still running when this checkpoint was first written. Do not claim exact-head PASS until completion is observed.
+AgentOS Tests #1199 (`34859721665`) completed **SUCCESS** on this exact head.
+
+This exact-head PASS covers the new local-host-lifecycle projection, explicit Windows capability fact requirements, mutation non-promotion invariant, existing evidence projection/hardening, full test suite, npm audit and Windows Basic Chat lifecycle.
+
+It does not prove:
+- physical browser/mobile acceptance;
+- Level-2 project-file mutation safety;
+- authority revocation;
+- PRS/Henry assurance;
+- mainline shipping;
+- overall AgentOS readiness.
 
 ## Authority update consumed
 
@@ -117,12 +127,12 @@ No merge, approval, ready transition, rebase, deployment, credential change, pro
 
 ## Replenished next queue
 
-1. Consume exact-head #111 CI #1199 and classify any failure exactly.
-2. Re-scan #104/#111/#112 after CI because all are moving concurrently.
-3. Keep readiness projection pure until a runtime-owned composition endpoint/snapshot supplies #101/#104 facts with freshness and exact-head correlation.
-4. If such composition appears, wire it read-only into the Basic Chat snapshot; do not add frontend persistence.
-5. Keep project-file mutation unknown until its own canonical readiness/assurance source exists.
-6. Continue authority-field change detection for Jack; provenance alone is insufficient for interactive permissions.
-7. Keep recovery contract-only until a live producer/read path exists.
-8. Execute physical browser/mobile acceptance only against a trustworthy runnable draft target.
-9. Update durable PR descriptions and Overseer #49 with final exact-head state.
+1. Fresh-scan #101/#104/#110/#111/#112 before the next implementation action.
+2. Keep readiness projection pure until a runtime-owned composition endpoint/snapshot supplies #101/#104 facts with freshness and exact-head correlation.
+3. If such composition appears, wire it read-only into the Basic Chat snapshot; do not add frontend persistence.
+4. Keep project-file mutation unknown until its own canonical readiness/assurance source exists.
+5. Continue authority-field change detection for Jack; provenance alone is insufficient for interactive permissions.
+6. Keep recovery contract-only until a live producer/read path exists.
+7. Execute physical browser/mobile acceptance only against a trustworthy runnable draft target.
+8. Re-run exact-head CI for every changed implementation head and consume failures before claims.
+9. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density changes.
