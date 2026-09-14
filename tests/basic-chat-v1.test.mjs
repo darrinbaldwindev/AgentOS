@@ -132,7 +132,7 @@ describe('Mission C Basic Chat V1', () => {
     }
   });
 
-  it('loopback server serves UI and keeps composer markup', async () => {
+  it('loopback server serves truthful ordinary-user UI and keeps composer markup', async () => {
     const root = await makeRoot();
     const app = await startBasicChat({ root, port: 0 });
     try {
@@ -140,6 +140,14 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /id="message"/);
       assert.match(html, /composer-area/);
       assert.match(html, /id="send"/);
+      assert.match(html, /aria-label="Job controls"/);
+      assert.match(html, /Working locally · Test actions only · Background work off/);
+      assert.match(html, /The action already in progress may finish before AgentOS can stop/);
+      assert.match(html, /AgentOS checks the result before calling this job complete/);
+      assert.match(html, /<summary>Technical details<\/summary>/);
+      assert.match(html, /Mode: DRY_RUN/);
+      assert.doesNotMatch(html, /Stop immediately/i);
+      assert.doesNotMatch(html, />VERIFIED</i);
     } finally {
       await app.close();
       await rm(root, { recursive: true, force: true });
