@@ -13,7 +13,7 @@ test('local persistence survives reopening and boot reuses the Overseer', async 
   const makeDeps = (persistence) => ({
     persistence,
     continuityCheck: async () => ({ ok: true }),
-    capabilityProbe: { probe: async () => ({ evaluation: { eligible: true } }) },
+    capabilityProbe: { probe: async () => ({ results: { githubRead: true, continuityRead: true, handoff: true } }) },
     modelRegistry: { listAvailable: async () => [] },
     now: () => '2026-09-02T00:00:00.000Z',
   });
