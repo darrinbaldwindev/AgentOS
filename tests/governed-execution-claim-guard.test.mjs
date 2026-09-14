@@ -121,7 +121,7 @@ test('retained exact identity cannot be borrowed by another mission task or wake
   });
 });
 
-test('sparse retained identity cannot be upgraded into a richer replay lineage', async () => {
+test('sparse retained identity cannot authorize richer replay lineage', async () => {
   for (const omitted of ['mission_id', 'task_id', 'wake_trace_id']) {
     await withGuard(async ({ guarded, claims }) => {
       const retained = {
@@ -140,9 +140,7 @@ test('sparse retained identity cannot be upgraded into a richer replay lineage',
       let invokeCalls = 0;
       await assert.rejects(
         guarded.execute({ actorContext, task, async invoke() { invokeCalls += 1; return {}; } }),
-        (error) => error?.code === 'GOVERNED_EXECUTION_CLAIM_CORRELATION_MISMATCH' &&
-          error?.details?.[`actual_${omitted}`] === null &&
-          error?.details?.[`expected_${omitted}`] === task[omitted],
+        (error) => error?.code === 'GOVERNED_EXECUTION_DUPLICATE_DELIVERY',
       );
       assert.equal(invokeCalls, 0);
       assert.equal((await claims.get(task.delivery_id))?.[omitted] ?? null, null);
