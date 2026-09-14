@@ -2,16 +2,16 @@
 // No provider/model identity can bypass this gate.
 
 import { createCapabilityAdapters, probeAgentCapabilities } from './capability-adapters.mjs';
-import { normalizeCapabilities } from './capability-contract.mjs';
-import { evaluateAgentCapability, assertAgentEligible } from './agent-capability.mjs';
+import { evaluateCapabilityResults, assertCapabilityResults } from './runtime-shell.mjs';
 
 export async function assessOverseerEligibility(integrations = {}) {
   const adapters = createCapabilityAdapters(integrations);
   const probed = await probeAgentCapabilities(adapters);
-  const capabilities = normalizeCapabilities(probed);
-  return evaluateAgentCapability(capabilities);
+  return evaluateCapabilityResults(probed);
 }
 
 export async function assertOverseerEligible(integrations = {}) {
-  return assertAgentEligible(await assessOverseerEligibility(integrations));
+  const adapters = createCapabilityAdapters(integrations);
+  const probed = await probeAgentCapabilities(adapters);
+  return assertCapabilityResults(probed);
 }
