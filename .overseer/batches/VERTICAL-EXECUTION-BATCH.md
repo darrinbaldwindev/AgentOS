@@ -10,13 +10,13 @@
 - Purpose: bounded Level 2 execution manifest. Repository/runtime/CI evidence always outranks this file.
 
 ## Fresh-scan checkpoint
-- Reconciled: 2026-09-15 03:08+10:00 (Brisbane).
-- Pre-cycle exact head: `7f84f4f3fae841b18068bfe3d630ce36e8b1a07e`, Tests `34866176685` SUCCESS.
-- Current A-AG-05 implementation head before this docs-only reconciliation: `393ff76bd8ae0dd56853d24451fe881ff07b191f`.
-- PR state: OPEN / DRAFT / UNMERGED / runtime-disabled.
-- First A-AG-05 attempt `8c1fe9440b20097f33c095f416de5f509c24913a` hardened the generic persistence adapter and failed exact-head Tests `34872492121` on Ubuntu and Windows. That enforcement point was too broad; the generic adapter was restored unchanged.
-- Current implementation keeps correlation denial at the existing canonical `createRemoteExecutionReceipt` boundary. Missing/blank mission, task or wake identity is rejected before any durable receipt artifact exists; a complete canonical receipt persists normally; existing duplicate durable receipt provenance protection remains intact.
-- Tests `34872702057` on `393ff76b...`: Ubuntu/Node22 full suite + npm audit PASS. Windows/Node26 first attempt FAILED; a rerun of only that failed job is queued/running. Therefore A-AG-05 is not VERIFIED yet.
+- Reconciled: 2026-09-15 05:03+10:00 (Brisbane).
+- Pre-cycle repaired receipt-evidence head: `2c52de5820f1dfb0dc2536ec1a6887443b5a063d`; independent Jess/Michael checkpoint `Overseer#49/5668899858` records A-AG-06 PASS_BOUNDED and SG-08 / SG-01/02 still BLOCKED.
+- Current substantive A-AG-05B head before this docs-only reconciliation: `a24270b5d1e90d946c6d0ecc52c9aa66736d02bb`.
+- Exact-head AgentOS Tests `34884462139`: Ubuntu/Node22 full suite + npm audit SUCCESS; Windows/Node26 full suite + npm audit SUCCESS.
+- PR state at substantive verification: OPEN / DRAFT / UNMERGED / runtime-disabled.
+- New bounded evidence-consumer method `evidencePacketForCorrelation()` reuses the existing durable receipt projection and fails closed if the caller's expected mission/task/wake lineage differs from the persisted receipt. Deterministic regressions cover exact match plus cross-mission, cross-task and cross-wake borrowing denial.
+- This closes only the expected-lineage mismatch sub-slice of A-AG-05B. It does not prove blanket replay/idempotency, conflicting replay, restart/reload replay closure, canonical freshness/expiry semantics, authenticated actor/grant binding, or continuous mutation ownership.
 - SG-08 continuous ownership remains BLOCKED. SG-01/02 authenticated actor + canonical grant binding remain BLOCKED. Functional evidence does not promote either security gate.
 
 ## Governance boundaries
@@ -30,75 +30,122 @@ Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification,
 - state: BLOCKED
 - risk_class: S2
 - security_gates: SG-03, SG-08, SG-09, SG-10, SG-11, SG-14, SG-18, SG-19
+- authority_required: scoped non-production branch/test write only when a real ownership primitive is being changed.
 - objective: one crash-releasing kernel-enforced fence held continuously from final verification through publish/prepared recovery and durable success receipt.
-- blocker: existing exact lineage still lacks independent evidence that ownership remains continuously valid through that whole sequence.
+- negative_tests: replacement-after-verification; successor/three-writer; stale identity; TOCTOU; crash/replay; duplicate mutation/result; prepared-recovery stale-owner.
+- receipt_evidence: actor/task/file/pre-postimage/ownership/result lineage.
+- green_required: yes
+- prs_required: yes
+- owner_boundary: merge/deploy/physical production
+- security_disposition: BLOCKED
+- blocker: current exact lineage still lacks independent evidence that ownership remains continuously valid through the whole sequence.
 - next: keep single-threaded; do not parallelize or create a second lock/ledger.
 
 ### A-AG-02 — authenticated actor + canonical grant binding
 - state: BLOCKED
 - risk_class: S2
 - security_gates: SG-01, SG-02, SG-03, SG-04, SG-09, SG-10, SG-11, SG-18, SG-19
+- authority_required: real existing authenticated identity/grant read plus scoped tests.
 - objective: bind an existing authenticated actor source and canonical grant resolver.
+- negative_tests: host-as-auth; spoof actor; payload self-grant; absent/mismatch/cross-project/replayed grant.
+- receipt_evidence: issuer/source/version/request/task/mission where the canonical source actually provides them.
+- green_required: yes
+- prs_required: yes
+- owner_boundary: credentials/security policy
+- security_disposition: BLOCKED
 - blocker: current admission producer consumes caller-supplied authenticated actor context and injected grant evidence; no bindable canonical transport/grant source is yet evidenced.
 - next: architecture discovery only until a real existing source is identified. No self-grant or duplicate authority registry.
 
 ### A-AG-03 — Basic Chat lifecycle/readiness
-- state: VERIFIED (functional exact-head scope only)
-- security_disposition: PENDING_SG18
+- state: VERIFIED (functional bounded scope)
 - exact prior evidence: PR #111 `352c83fdbcff65dd9dc592fb3b8d65d4aa130969`, Tests `34863648579` SUCCESS.
-- next: independent Green false-readiness/evidence-leakage sample on the exact eligible lineage.
+- risk_class: S1
+- security_gates: SG-03, SG-05, SG-10, SG-14, SG-18
+- green_required: yes before promotion
+- prs_required: conditional
+- security_disposition: PASS_BOUNDED on prior sampled scope; no mutation/physical readiness implied.
 
 ### A-AG-04 — authority-evidence receipt persistence/reload
-- state: VERIFIED_EXACT_HEAD (functional)
-- exact prior anchor: PR #104 `7f84f4f3fae841b18068bfe3d630ce36e8b1a07e`, substantive `5e3d7c2ac6f515dceda832ef09b3087f20fb1d7b`, Tests `34866176685` SUCCESS.
+- state: VERIFIED (functional bounded scope)
+- exact prior anchor: receipt persistence/reload lineage carried forward on PR #104.
 - risk_class: S2
 - security_gates: SG-02, SG-09, SG-10, SG-11, SG-14, SG-18
 - authority_required: scoped non-production branch tests only.
-- negative_tests: persistence restart/reload retains exact authority evidence; duplicate durable receipt cannot replace original provenance; upstream binder denies missing/blank admitted authority evidence.
+- negative_tests: restart/reload retains exact authority evidence; duplicate durable receipt cannot replace original provenance; upstream binder denies missing/blank admitted authority evidence.
 - receipt_evidence: exact `authority_evidence_id` + delivery/request/task/mission durable receipt lineage.
 - green_required: yes
 - prs_required: conditional
 - owner_boundary: merge/deploy/runtime enablement
-- security_disposition: PENDING_SG18
+- security_disposition: PENDING_SG18 for any promoted capability.
 
-### A-AG-05 — receipt replay/correlation adjacency
-- state: ACTIVE / CI_PENDING
-- implementation_head: `393ff76bd8ae0dd56853d24451fe881ff07b191f`
-- risk_class: S2
-- security_gates: SG-09, SG-10, SG-11, SG-14, SG-18
-- authority_required: scoped non-production branch tests only.
-- objective: homogeneous deterministic replay/correlation regressions around the stable receipt primitive without widening the generic persistence contract.
-- implemented: canonical receipt construction now has regression evidence that missing/blank mission/task/wake correlation is rejected before persistence; complete canonical receipt persists; duplicate durable receipt cannot replace original authority provenance.
-- CI: `34872702057`; Ubuntu PASS; Windows first attempt FAIL, failed-job rerun pending. Earlier broad persistence hardening attempt `34872492121` failed and was corrected rather than weakened around.
-- acceptance remaining: Windows exact-head rerun must pass or expose a reproducible platform defect; stale-receipt freshness is not invented because no canonical freshness/expiry semantics are evidenced at this layer.
-- negative_tests: missing mission/task/wake; duplicate durable receipt/provenance replacement; existing upstream replay/cross-task/cross-mission claim guards remain separate evidence.
-- receipt_evidence: delivery/request/mission/task/wake/authority-evidence durable lineage + exact run IDs.
-- green_required: yes
+### A-AG-05A — canonical required correlation + duplicate provenance
+- state: VERIFIED (functional bounded scope)
+- risk_class: S1
+- security_gates: SG-10, SG-11, SG-14, SG-18
+- objective: retain only evidence actually proved: required canonical mission/task/wake identity and duplicate durable receipt-ID first-write provenance.
+- negative_tests: blank required IDs; duplicate durable receipt ID.
+- receipt_evidence: immutable IDs/provenance/disposition.
+- green_required: yes if promoted
 - prs_required: conditional
-- owner_boundary: merge/deploy/runtime enablement
-- security_disposition: PENDING_SG18
+- owner_boundary: merge/deploy
+- security_disposition: PASS_BOUNDED on previously sampled scope.
 
-### A-AG-06 — local-wake correlation preservation
-- state: VERIFIED (bounded prior scope)
-- exact prior evidence: `a69562dfe19696b79474c1a3f01a10d67b8d8e90`, runs `34849679000` and `34849679095` SUCCESS.
-- security_disposition: PENDING_SG18 before promotion.
+### A-AG-05B — mismatch/replay/direct-adapter correlation closure
+- state: SPLIT_REQUIRED / PARTIAL_FUNCTIONAL_VERIFIED
+- substantive_head: `a24270b5d1e90d946c6d0ecc52c9aa66736d02bb`
+- exact_tests: `34884462139` SUCCESS on Ubuntu/Node22 and Windows/Node26 including npm audits.
+- risk_class: S2 parent item; this cycle's read-only evidence-consumer sub-slice is S1.
+- security_gates: SG-09, SG-10, SG-11, SG-14, SG-18
+- authority_required: scoped non-production branch/test write.
+- objective: close previously overstated receipt replay/correlation scope without creating new persistence/authority layers.
+- verified_this_cycle: existing durable receipt evidence can be consumed only against caller-supplied expected delivery/mission/task/wake lineage; exact lineage passes; cross-mission, cross-task and cross-wake borrowing fails `REMOTE_RECEIPT_EVIDENCE_CORRELATION_MISMATCH`.
+- negative_tests_verified: exact expected mission/task/wake; cross-mission; cross-task; cross-wake.
+- remaining_negative_tests: conflicting replay; restart/reload replay behavior; direct-adapter malformed receipt bypass beyond the already repaired forged artifact-ID case; stale/freshness only if a canonical freshness source exists.
+- receipt_evidence: durable receipt ID + delivery/request/mission/task/wake/authority-evidence identity + exact head/run.
+- green_required: yes for the new exact head before promotion.
+- prs_required: conditional; completion-grade PRS remains ineligible while A-AG-01/A-AG-02 are blocked.
+- owner_boundary: no new persistence/authority plane; merge/deploy/runtime enablement.
+- security_disposition: PENDING_SG18 for this new sub-slice; parent remains SPLIT_REQUIRED.
+- next: independent Green sample on unchanged substantive lineage; then inspect existing replay/direct-adapter paths before any further compatible change. Do not invent freshness semantics.
+
+### A-AG-06 — bounded receipt provenance evidence projection
+- state: VERIFIED / PASS_BOUNDED
+- exact prior repaired head: `2c52de5820f1dfb0dc2536ec1a6887443b5a063d`.
+- exact independent assurance: `Overseer#49/5668899858`; exact-head Linux/Windows tests PASS.
+- risk_class: S1
+- security_gates: SG-05, SG-10, SG-11, SG-14, SG-18
+- negative_tests: noncanonical durable artifact ID -> `REMOTE_RECEIPT_EVIDENCE_ID_MISMATCH`; missing receipt; malformed required correlation; secret-shaped field exclusion.
+- receipt_evidence: exact durable artifact ID plus bounded whitelisted projection.
+- green_required: satisfied only for this bounded repaired projection scope at the cited head; does not transfer automatically to newer heads.
+- prs_required: conditional
+- owner_boundary: no new evidence authority; merge/deploy
+- security_disposition: PASS_BOUNDED on the cited exact head only.
 
 ### A-AG-07 — physical Windows acceptance packet
 - state: BLOCKED / OWNER_REQUIRED
-- dependencies: SG-08 closure, SG-01/02 closure, exact-head Green/PRS where required, explicit owner physical-host authority.
-- no physical Windows action is authorized by this batch.
+- risk_class: S2
+- security_gates: SG-03, SG-08, SG-10, SG-11, SG-14, SG-18, SG-20
+- authority_required: explicit owner-authorized physical Windows action.
+- dependencies: SG-08 closure, SG-01/02 closure, exact-head Green/PRS where required.
+- negative_tests: wrong head; production root; missing receipt.
+- receipt_evidence: exact head/host/root/test/result.
+- green_required: yes
+- prs_required: yes if promoted
+- owner_boundary: physical Windows execution
+- security_disposition: BLOCKED
 
 ## PRS / Green assurance
-- stale-owner false-GREEN baseline remains historical evidence only; it does not transfer to successor heads.
-- successor ownership challenge remains BLOCKED on A-AG-01 + exact-head Green.
-- admission false-GREEN challenge remains BLOCKED on A-AG-02 + exact-head Green.
-- Basic Chat false-readiness/evidence-leakage sample is eligible only for an exact stable PR #111 lineage; this execution context does not impersonate Green or PRS.
+- Historical stale-owner false-GREEN evidence remains a defect baseline only and does not transfer to successor heads.
+- Completion-grade ownership challenge remains BLOCKED on A-AG-01 + exact-head Green.
+- Admission challenge remains BLOCKED on A-AG-02 + exact-head Green.
+- A-AG-06 has independent bounded Green/security PASS only at `2c52de582...`.
+- The new A-AG-05B expected-lineage sub-slice at `a24270b5...` requires independent exact-head Green before any security promotion; this execution context does not impersonate Green or PRS.
 
 ## Execution order / replenishment
-1. Finish exact-head Windows CI closure for A-AG-05; if it fails again, record the exact platform evidence gap and do not promote.
-2. Keep A-AG-01 single-threaded and BLOCKED until a real ownership primitive is available.
-3. Keep A-AG-02 BLOCKED until a real canonical authenticated actor/grant source is evidenced.
-4. After A-AG-05 exact-head functional closure, route the unchanged eligible lineage to independent Green; PRS follows only where required and only on identical evidence lineage.
+1. Route the unchanged A-AG-05B substantive head/evidence to independent Green for the exact expected-lineage mismatch sub-slice; do not infer PASS from CI.
+2. Inspect existing replay/conflicting-replay and direct-adapter pathways and add only compatible regressions at existing boundaries; keep stale/freshness semantics UNKNOWN/N/A unless a canonical source exists.
+3. Keep A-AG-01 single-threaded and BLOCKED until a real continuous ownership primitive is available.
+4. Keep A-AG-02 BLOCKED until a real canonical authenticated actor/grant source is evidenced.
 5. Keep physical Windows acceptance owner-gated and downstream of software/security prerequisites.
 6. Continue adjacent safe Level 2 work if a blocked primitive cannot move; never manufacture progress by widening authority.
 
