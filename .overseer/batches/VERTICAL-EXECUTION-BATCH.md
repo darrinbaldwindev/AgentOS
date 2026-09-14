@@ -10,14 +10,14 @@
 - Purpose: bounded Level 2 execution manifest. Repository/runtime/CI evidence always outranks this file.
 
 ## Fresh-scan checkpoint
-- Reconciled: 2026-09-15 06:15+10:00 (Brisbane).
-- Pre-cycle docs head `d46d67414228231611cd6a34999163055315de57` had contradictory exact-head CI: `34884690804` was cross-platform SUCCESS, while later `34884807154` reproduced a Windows failure. The later failure controls and invalidated any blanket current-head verification claim.
-- Receipt-regression head `62b961112766b5d8d8f5f033b0c32b3686632a74` added restart/reload expected-lineage denial plus direct-adapter malformed task/wake fail-close regressions. Its exact-head AgentOS Tests `34890361429` completed SUCCESS on Ubuntu/Node22 and Windows/Node26.
-- Windows shared-state investigation reproduced `EPERM` during concurrent lock-directory acquisition, then exposed a second `EPERM` during atomic `agentos.json` replacement under the eight-process scheduler regression. No authority or ownership semantics were widened.
-- Current substantive repair head before this docs-only reconciliation: `74fe4e8edeae851e06d75e663c04d4b0c15419d4`.
-- Exact-head AgentOS Tests `34891305730`: Ubuntu/Node22 full suite + npm audit SUCCESS; Windows/Node26 full suite + npm audit SUCCESS. The previously failing multi-process scheduler regression, local-persistence concurrency suite and project-file-writer suite all completed successfully on this exact head.
-- Shared local persistence now treats Windows lock-directory `EPERM` as bounded contention only at the existing lock seam, and retries transient Windows atomic replacement failures (`EPERM`/`EACCES`/`EBUSY`) only while the existing mutation lock remains continuously held. Retry exhaustion fails closed as `LOCAL_STATE_ATOMIC_REPLACE_FAILED`.
-- This is shared-state concurrency evidence, not proof of SG-08 project-file continuous ownership. A-AG-01 remains BLOCKED. SG-01/02 authenticated actor + canonical grant binding remain BLOCKED.
+- Reconciled: 2026-09-15 07:00+10:00 (Brisbane).
+- Pre-cycle exact head `0d27c8bfb9a39f2f5449a859a145cd7494926933` retained A-AG-01 SG-08 continuous project-file ownership and A-AG-02 SG-01/02 authenticated actor/canonical grant binding as controlling BLOCKED primitives.
+- Replay inspection found a candidate sparse-retained-claim ambiguity. A bounded stricter runtime experiment at `2ef81a226faf95635a4f0133ea062ca49dccd2ac` made null-vs-present mission/task/wake lineage an explicit correlation mismatch. Exact-head AgentOS Tests `34896755271` rejected that semantic change on both OSes because four established claimed-runtime compatibility fixtures deliberately classify legacy sparse retained claims as conservative duplicate delivery. The new negative test itself passed.
+- The stricter runtime experiment was withdrawn rather than redefining compatibility behavior. At exact head `e7f4898cca841fa51a818990d9fbf1bc81258db8`, both runtime files are byte-for-byte restored to the pre-cycle baseline; the net cycle diff before this docs reconciliation is test-only.
+- New deterministic regression: a retained claim missing mission, task, or wake identity cannot authorize a richer replay, cannot rewrite/upgrade its stored lineage, and invokes the boundary zero times. Existing conservative `DUPLICATE_DELIVERY` remains the fail-closed disposition for that legacy sparse case.
+- Exact-head AgentOS Tests `34897414042`: Ubuntu/Node22 full suite + npm audit SUCCESS; Windows/Node26 full suite + npm audit SUCCESS.
+- An earlier corrective head `340ecc275ef438bf47d62c421fefdf99f5e524db` produced one Ubuntu cancellation in the pre-existing project-file-writer same-key concurrency test (`Promise resolution is still pending but the event loop has already resolved`) while all replay tests passed and Windows passed. The unchanged final head then passed the complete Ubuntu suite. Treat that cancellation as an SG-08 ownership/concurrency assurance signal, not as proof of closure and not as a replay failure.
+- A-AG-01 remains BLOCKED. A-AG-02 remains BLOCKED. No authority/ownership/persistence/scheduler/governance plane was added.
 
 ## Governance boundaries
 This batch does **not** authorize merge, approve, mark-ready, rebase, deploy, credential/security-policy changes, production writes, unrestricted PowerShell, runtime enablement, purchases/spend, external contact/publication, physical owner-host action, bypass of Green/PRS, or creation of duplicate scheduler/queue/registry/mission-ledger/authority/persistence/governance systems.
@@ -38,8 +38,8 @@ Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification,
 - prs_required: yes
 - owner_boundary: merge/deploy/physical production
 - security_disposition: BLOCKED
-- blocker: current exact lineage still lacks independent proof that ownership remains continuously valid through final verification -> publish/prepared recovery -> durable success receipt -> release. Cross-platform test success alone cannot promote SG-08.
-- next: keep single-threaded; route an unchanged eligible ownership lineage to independent Green/PRS only after the actual primitive is proven. Do not create a second lock/ledger.
+- blocker: current exact lineage still lacks independent proof that ownership remains continuously valid through final verification -> publish/prepared recovery -> durable success receipt -> release. Cross-platform test success alone cannot promote SG-08. The one exact-head project-file-writer concurrency cancellation observed this cycle reinforces that this primitive remains assurance-sensitive even though a later unchanged-head/full-suite run passed.
+- next: keep single-threaded; independently reproduce/explain the same-key concurrency cancellation before treating that test harness as stable; route an unchanged eligible ownership lineage to independent Green/PRS only after the actual primitive is proven. Do not create a second lock/ledger.
 
 ### A-AG-02 — authenticated actor + canonical grant binding
 - state: BLOCKED
@@ -95,20 +95,21 @@ Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification,
 
 ### A-AG-05B — mismatch/replay/direct-adapter correlation closure
 - state: SPLIT_REQUIRED / PARTIAL_FUNCTIONAL_VERIFIED
-- current_verified_test_lineage: `62b961112766b5d8d8f5f033b0c32b3686632a74`, Tests `34890361429` SUCCESS cross-platform.
-- risk_class: S2 parent item; read-only evidence-consumer regressions are S1.
+- current_verified_test_lineage: `e7f4898cca841fa51a818990d9fbf1bc81258db8`, Tests `34897414042` SUCCESS cross-platform.
+- risk_class: S2 parent item; read-only/test evidence-consumer regressions are S1.
 - security_gates: SG-09, SG-10, SG-11, SG-14, SG-18
 - authority_required: scoped non-production branch/test write.
 - objective: close previously overstated receipt replay/correlation scope without creating new persistence/authority layers.
-- verified: exact expected delivery/mission/task/wake lineage passes; cross-mission/cross-task/cross-wake borrowing fails closed; malformed durable task/wake fields fail closed through the direct adapter; after restart/reload the exact lineage remains consumable while stale expected mission lineage is denied.
-- negative_tests_verified: exact expected lineage; cross-mission; cross-task; cross-wake; malformed durable task; malformed durable wake; restart/reload exact lineage; restart/reload stale expected lineage.
+- verified: exact expected delivery/mission/task/wake lineage passes; cross-mission/cross-task/cross-wake borrowing fails closed; malformed durable task/wake fields fail closed through the direct adapter; after restart/reload the exact lineage remains consumable while stale expected mission lineage is denied; a legacy retained claim missing mission/task/wake cannot authorize or rewrite itself into a richer replay lineage and invokes zero times.
+- negative_tests_verified: exact expected lineage; cross-mission; cross-task; cross-wake; malformed durable task; malformed durable wake; restart/reload exact lineage; restart/reload stale expected lineage; sparse retained mission; sparse retained task; sparse retained wake.
 - remaining_negative_tests: conflicting replay semantics where not already covered by the canonical claim/recovery store; freshness/expiry remains UNKNOWN/N/A unless a real canonical freshness source exists.
-- receipt_evidence: durable receipt ID + delivery/request/mission/task/wake/authority-evidence identity + exact head/run.
+- receipt_evidence: durable receipt/claim identity + delivery/request/mission/task/wake/authority-evidence identity + exact head/run where applicable.
 - green_required: yes on an unchanged eligible lineage before promotion.
 - prs_required: conditional; completion-grade PRS remains ineligible while A-AG-01/A-AG-02 are blocked.
 - owner_boundary: no new persistence/authority plane; merge/deploy/runtime enablement.
 - security_disposition: PENDING_SG18; parent remains SPLIT_REQUIRED.
-- next: inspect existing claim/recovery replay coverage before adding any further semantics; do not invent freshness.
+- note: the rejected stricter runtime experiment is not part of the verified behavior; established conservative sparse-claim duplicate classification was preserved.
+- next: do not add new replay semantics unless an uncovered execution-authorizing path is evidenced; freshness remains UNKNOWN/N/A without a canonical source.
 
 ### A-AG-06 — bounded receipt provenance evidence projection
 - state: VERIFIED / PASS_BOUNDED
@@ -156,12 +157,12 @@ Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification,
 - Historical stale-owner false-GREEN evidence remains a defect baseline only and does not transfer to successor heads.
 - Completion-grade ownership challenge remains BLOCKED on A-AG-01 + exact-head Green.
 - Admission challenge remains BLOCKED on A-AG-02 + exact-head Green.
-- A-AG-08 has functional exact-head CI only; SG-18 remains PENDING and PRS status is not promoted by this executor.
+- A-AG-08 and A-AG-05B have bounded functional exact-head CI evidence only; SG-18 remains PENDING and PRS status is not promoted by this executor.
 
 ## Execution order / replenishment
-1. Preserve A-AG-01 as the single-threaded SG-08 critical primitive; independently challenge the current ownership sequence without conflating A-AG-08 persistence success with ownership proof.
+1. Preserve A-AG-01 as the single-threaded SG-08 critical primitive; independently reproduce/explain the observed project-file-writer same-key concurrency cancellation before treating the ownership test harness as stable, without conflating A-AG-08 persistence success with ownership proof.
 2. Keep A-AG-02 BLOCKED until a real canonical authenticated actor/grant source is evidenced; no substitute authority source.
-3. Inspect canonical remote claim/recovery coverage for any still-uncovered conflicting replay case before adding A-AG-05B semantics; freshness remains UNKNOWN/N/A without a canonical source.
+3. Treat A-AG-05B sparse retained replay behavior as bounded functional evidence only; do not redefine legacy sparse-claim semantics or invent freshness.
 4. Route unchanged eligible A-AG-08/A-AG-05B evidence to independent Green only after exact-head eligibility is confirmed; then PRS only where prerequisites are satisfied.
 5. Keep physical Windows acceptance owner-gated and downstream of software/security prerequisites.
 6. Continue adjacent Everyday frontend / Night Shift / Morning Brief / upgrade-boundary work only where it does not widen authority.
