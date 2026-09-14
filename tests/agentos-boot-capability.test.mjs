@@ -63,8 +63,20 @@ test('boot fails before model routing when capability evidence is absent', async
   assert.equal(modelRegistryCalls, 0);
 });
 
-test('legacy DRY_RUN fixture stays explicitly classified and cannot imply local preference', () => {
-  const evaluation = assertBootCapabilities({ mode: 'DRY_RUN', evaluation: { eligible: true } });
+test('unclassified DRY_RUN eligible claim is not accepted as compatibility evidence', () => {
+  assert.throws(
+    () => assertBootCapabilities({ mode: 'DRY_RUN', evaluation: { eligible: true } }),
+    (error) => error.code === 'OVERSEER_CAPABILITY_EVIDENCE_REQUIRED',
+  );
+});
+
+test('explicitly classified legacy DRY_RUN fixture cannot imply local preference', () => {
+  const evaluation = assertBootCapabilities({
+    mode: 'DRY_RUN',
+    classification: 'legacy-dry-run-fixture',
+    physical: false,
+    evaluation: { eligible: true },
+  });
   assert.equal(evaluation.eligible, true);
   assert.equal(evaluation.evidenceClass, 'legacy-dry-run-fixture');
   assert.equal(evaluation.localPreferred, false);
