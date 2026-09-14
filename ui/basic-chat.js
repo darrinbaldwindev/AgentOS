@@ -155,6 +155,14 @@ function render() {
   } else if (!sending) {
     message.placeholder = 'Describe what you want AgentOS to do…';
   }
+
+  const pause = document.querySelector('[data-action="pause"]');
+  const resume = document.querySelector('[data-action="resume"]');
+  const stop = document.querySelector('[data-action="stop"]');
+  const controlsAvailable = Boolean(state.ready || state.paused || state.stopped || sending);
+  if (pause) pause.disabled = !controlsAvailable || Boolean(state.paused) || Boolean(state.stopped);
+  if (resume) resume.disabled = !controlsAvailable || !Boolean(state.paused) || Boolean(state.stopped);
+  if (stop) stop.disabled = !controlsAvailable || Boolean(state.stopped);
 }
 
 async function refresh() {
@@ -191,7 +199,7 @@ for (const button of document.querySelectorAll('[data-action]')) {
     } catch (error) {
       showError(error);
     } finally {
-      button.disabled = false;
+      render();
     }
   });
 }
