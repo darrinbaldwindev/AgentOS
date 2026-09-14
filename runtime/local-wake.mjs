@@ -195,7 +195,7 @@ export async function wakeLocal({
     const completedAt = new Date().toISOString();
     const executionEvidence = completedTask.evidence ?? {};
     const response = {
-      mission_id: completedTask.task_id,
+      mission_id: completedTask.mission_id,
       source_agent: executionEvidence.source_agent ?? WORKER_ID,
       wake_trace_id: completedTask.wake_trace_id,
       status: 'COMPLETED',
