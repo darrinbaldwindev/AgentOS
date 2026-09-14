@@ -137,6 +137,7 @@ describe('Mission C Basic Chat V1', () => {
     const app = await startBasicChat({ root, port: 0 });
     try {
       const html = await (await fetch(`${app.url}/`)).text();
+      const js = await (await fetch(`${app.url}/chat.js`)).text();
       assert.match(html, /id="message"/);
       assert.match(html, /composer-area/);
       assert.match(html, /id="send"/);
@@ -148,6 +149,18 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /Mode: DRY_RUN/);
       assert.doesNotMatch(html, /Stop immediately/i);
       assert.doesNotMatch(html, />VERIFIED</i);
+
+      assert.match(js, /COMPLETE: 'Finished — completion check passed'/);
+      assert.match(js, /VERIFYING: 'Checking the result'/);
+      assert.match(js, /BLOCKED: 'Needs attention — work was not marked complete'/);
+      assert.match(js, /Stop requested — no new actions will start; the current action may still finish/);
+      assert.match(js, /Unable to confirm status/);
+      assert.match(js, /if \(sending\) return 'Working'/);
+      assert.doesNotMatch(js, /Status: WORKING/);
+      assert.doesNotMatch(js, / · STOPPED/);
+      assert.doesNotMatch(js, / · PAUSED/);
+      assert.doesNotMatch(js, /Stop immediately/i);
+      assert.doesNotMatch(js, /VERIFIED/);
     } finally {
       await app.close();
       await rm(root, { recursive: true, force: true });
