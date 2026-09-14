@@ -96,6 +96,15 @@ describe('Basic Chat canonical evidence integration', () => {
     const taskId = 'local-wake-sensitive';
     await seedControl(persistence, { lastTaskId: taskId, lastUserStatus: 'COMPLETE' });
     await persistence.create('artifact', {
+      id: taskId,
+      artifactType: 'dispatch.task',
+      payload: {
+        task_id: taskId,
+        mission_id: 'mission:sensitive',
+        wake_trace_id: 'wake:sensitive',
+      },
+    });
+    await persistence.create('artifact', {
       id: `response:${taskId}`,
       artifactType: 'project-overseer.response',
       payload: {
