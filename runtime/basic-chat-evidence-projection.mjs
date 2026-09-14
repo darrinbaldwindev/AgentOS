@@ -20,6 +20,20 @@ function sameIfPresent(a, b) {
   return !a || !b || a === b;
 }
 
+function unavailable(task) {
+  return Object.freeze({
+    schemaVersion: 1,
+    taskId: task,
+    evidenceAvailable: false,
+    missionId: null,
+    wakeTraceId: null,
+    completionStatus: null,
+    greenDisposition: null,
+    completedAt: null,
+    blockerCount: 0,
+  });
+}
+
 export function projectBasicChatEvidence({ taskId, artifacts = [], events = [] } = {}) {
   const task = typeof taskId === 'string' && taskId.trim() ? taskId.trim() : null;
   if (!task) return null;
@@ -37,22 +51,17 @@ export function projectBasicChatEvidence({ taskId, artifacts = [], events = [] }
   const payload = response?.payload && typeof response.payload === 'object' ? response.payload : {};
   const greenPayload = green?.payload && typeof green.payload === 'object' ? green.payload : {};
 
+  // Canonical Green records produced by local-wake carry the assigned task_id.
+  // Do not project a Green disposition solely because an artifact key/type looks
+  // canonical: missing or conflicting payload identity is false-evidence risk.
+  if (green && greenPayload.task_id !== task) return unavailable(task);
+
   const responseMissionId = typeof payload.mission_id === 'string' ? payload.mission_id : null;
   const responseWakeTraceId = typeof payload.wake_trace_id === 'string' ? payload.wake_trace_id : null;
   const eventMissionId = typeof lastEvent?.missionId === 'string' ? lastEvent.missionId : null;
   const eventWakeTraceId = typeof lastEvent?.wakeTraceId === 'string' ? lastEvent.wakeTraceId : null;
   if (!sameIfPresent(responseMissionId, eventMissionId) || !sameIfPresent(responseWakeTraceId, eventWakeTraceId)) {
-    return Object.freeze({
-      schemaVersion: 1,
-      taskId: task,
-      evidenceAvailable: false,
-      missionId: null,
-      wakeTraceId: null,
-      completionStatus: null,
-      greenDisposition: null,
-      completedAt: null,
-      blockerCount: 0,
-    });
+    return unavailable(task);
   }
 
   const completionStatus = typeof payload.status === 'string' ? payload.status : (typeof lastEvent?.status === 'string' ? lastEvent.status : null);
