@@ -116,6 +116,7 @@ describe('Basic Chat canonical evidence integration', () => {
       artifactType: 'green.disposition',
       payload: {
         disposition: 'pass',
+        task_id: taskId,
         credential: 'do-not-project',
         prsDisposition: 'pass',
       },
