@@ -23,7 +23,7 @@ function deliveryKey(deliveryId) {
 
 function exactIdentityMismatch(existing, requested) {
   for (const field of ['mission_id', 'task_id', 'wake_trace_id']) {
-    if ((existing[field] ?? null) !== (requested[field] ?? null)) return true;
+    if (existing[field] && requested[field] && existing[field] !== requested[field]) return true;
   }
   return false;
 }
