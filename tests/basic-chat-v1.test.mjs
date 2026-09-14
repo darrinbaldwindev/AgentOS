@@ -150,6 +150,11 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(html, /id="error-details"/);
       assert.match(html, /<summary>Technical error details<\/summary>/);
       assert.match(html, /id="error-technical"/);
+      assert.match(html, /id="evidence-summary"/);
+      assert.match(html, />What happened<\/h2>/);
+      assert.match(html, /id="completion-check"/);
+      assert.match(html, /id="independent-assurance">Not shown in Basic Chat/);
+      assert.match(html, /Henry\/PRS is separate independent assurance and is not inferred from Green or worker success/);
       assert.doesNotMatch(html, /Stop immediately/i);
       assert.doesNotMatch(html, />VERIFIED</);
 
@@ -163,6 +168,13 @@ describe('Mission C Basic Chat V1', () => {
       assert.match(js, /Turn off scheduled checks before using this local chat\./);
       assert.match(js, /Restart the local host before sending another job\./);
       assert.match(js, /details\.hidden = false/);
+      assert.match(js, /The bounded local job finished and its required completion check passed\./);
+      assert.match(js, /completion: 'Passed for this job'/);
+      assert.match(js, /Independent assurance/);
+      assert.match(js, /Not shown in Basic Chat/);
+      assert.match(js, /state\.lastTaskId/);
+      assert.doesNotMatch(js, /Henry PASS/);
+      assert.doesNotMatch(js, /PRS PASS/);
       assert.doesNotMatch(js, /Status: WORKING/);
       assert.doesNotMatch(js, / · STOPPED/);
       assert.doesNotMatch(js, / · PAUSED/);
