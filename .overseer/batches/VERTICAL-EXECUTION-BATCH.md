@@ -20,7 +20,7 @@ Do not merge, approve, mark ready, rebase protected work, deploy, change credent
 ## Cycle 004 fresh-scan reconciliation
 
 - PR #104 remains OPEN/DRAFT/UNMERGED at exact `83a58b8bd230550b5781a0fee700cca250819a75`; runtime writer has not moved. SG-08 continuous ownership is still independently BLOCKED. No competing writer was created.
-- PR #111 advanced beyond the shared manifest anchor to exact `f9a2c0d66b81366321c38fbf4163fb2ecdb08214`; exact-head AgentOS Tests `34845403658` SUCCESS. Its bounded read-only evidence path does not promote project-file mutation, physical Windows readiness, authority, Green or PRS.
+- PR #111 moved concurrently during this cycle and is now OPEN/DRAFT/UNMERGED at exact `93a7244e47c357d589ba08410085fddca9a8a11b`; exact-head AgentOS Tests `34848042741` SUCCESS. The final two commits from `f9a2c0d...` change only `tests/basic-chat-v1.test.mjs` and `ui/basic-chat.html`; its bounded read-only evidence path does not promote project-file mutation, physical Windows readiness, authority, Green or PRS.
 - PR #112 pre-action exact `c01418d587df454f17f6b8b142429865d7b21111` already had AgentOS Tests `34827350139` SUCCESS and Project Overseer Wake `34827349983` SUCCESS.
 - The canonical security matrix still makes SG-08 and SG-01/02 controlling Level-2 blockers; functional CI does not upgrade those gates.
 
@@ -33,8 +33,8 @@ Do not merge, approve, mark ready, rebase protected work, deploy, change credent
 | V004-03 | SPLIT_REQUIRED | Existing PR #104 tests already cover missing/mismatched actor/grant/provenance/capability/replay and zero-artifact denial. Expiry/staleness cannot be added honestly because the current grant schema exposes no expiry/version/nonce/freshness contract. Do not invent security semantics. | PR #104 authority producer + regression lineage; SG-01/02 remain BLOCKED |
 | V004-04 | VERIFIED | Fresh re-scan confirms #104 writer runtime unchanged; O1–O18/SG-08 ownership defect baseline remains applicable and single-threaded. | PR #104 exact `83a58b8...`; PRS immutable defect baseline remains controlling |
 | V004-05 | HOLD | General project-file mutation remains blocked. | Requires continuous ownership repair, exact-head Windows CI, physical Windows acceptance, Green and PRS as applicable |
-| V004-06 | PENDING | Reconcile current PR #111 Basic Chat presentation against capability/authority truth so no fixture/DRY_RUN state implies physical readiness or authority. | Exact PR #111 `f9a2c0d...` + `34845403658`; read-only frontend review only |
-| V004-07 | VERIFIED | Exact changed head was independently verified after the regression update. | `5eb83386...`; AgentOS Tests `34847844620` SUCCESS; Project Overseer Wake `34847844710` SUCCESS |
+| V004-06 | PENDING | Reconcile current PR #111 Basic Chat presentation against capability/authority truth so no fixture/DRY_RUN state implies physical readiness or authority. | Exact PR #111 `93a7244e...` + `34848042741`; read-only frontend review only |
+| V004-07 | VERIFIED | Exact changed code/test head was independently verified after the regression update; subsequent batch-only tips do not transfer that claim to code they do not alter. | `5eb83386...`; AgentOS Tests `34847844620` SUCCESS; Project Overseer Wake `34847844710` SUCCESS |
 
 ## Security classification
 
