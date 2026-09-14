@@ -39,6 +39,7 @@ export function projectBasicChatEvidence({ taskId, artifacts = [], events = [] }
   if (!task) return null;
   if (!Array.isArray(artifacts) || !Array.isArray(events)) throw new TypeError('artifacts and events must be arrays');
 
+  const taskRecord = taskArtifact(artifacts, task, 'dispatch.task');
   const response =
     taskArtifact(artifacts, `response:${task}`, 'project-overseer.response') ??
     taskArtifact(artifacts, `response-incomplete:${task}`, 'project-overseer.response') ??
@@ -48,19 +49,37 @@ export function projectBasicChatEvidence({ taskId, artifacts = [], events = [] }
   const taskEvents = events.filter((event) => event?.taskId === task && CANONICAL_EVENT_TYPES.has(event?.eventType));
   const lastEvent = latest(taskEvents);
 
+  const taskPayload = taskRecord?.payload && typeof taskRecord.payload === 'object' ? taskRecord.payload : {};
   const payload = response?.payload && typeof response.payload === 'object' ? response.payload : {};
   const greenPayload = green?.payload && typeof green.payload === 'object' ? green.payload : {};
+  const hasEvidence = Boolean(response || green || taskEvents.length);
+
+  // Canonical Basic Chat evidence is task-scoped. Response/event agreement alone is
+  // insufficient because both can repeat the same stale or incorrectly correlated
+  // mission identity. Require the canonical dispatch task before projecting evidence.
+  if (hasEvidence && (!taskRecord || taskPayload.task_id !== task)) return unavailable(task);
 
   // Canonical Green records produced by local-wake carry the assigned task_id.
   // Do not project a Green disposition solely because an artifact key/type looks
   // canonical: missing or conflicting payload identity is false-evidence risk.
   if (green && greenPayload.task_id !== task) return unavailable(task);
 
+  const taskMissionId = typeof taskPayload.mission_id === 'string' ? taskPayload.mission_id : null;
+  const taskWakeTraceId = typeof taskPayload.wake_trace_id === 'string' ? taskPayload.wake_trace_id : null;
   const responseMissionId = typeof payload.mission_id === 'string' ? payload.mission_id : null;
   const responseWakeTraceId = typeof payload.wake_trace_id === 'string' ? payload.wake_trace_id : null;
   const eventMissionId = typeof lastEvent?.missionId === 'string' ? lastEvent.missionId : null;
   const eventWakeTraceId = typeof lastEvent?.wakeTraceId === 'string' ? lastEvent.wakeTraceId : null;
-  if (!sameIfPresent(responseMissionId, eventMissionId) || !sameIfPresent(responseWakeTraceId, eventWakeTraceId)) {
+
+  if (hasEvidence && (!taskMissionId || !taskWakeTraceId)) return unavailable(task);
+  if (
+    !sameIfPresent(taskMissionId, responseMissionId) ||
+    !sameIfPresent(taskMissionId, eventMissionId) ||
+    !sameIfPresent(taskWakeTraceId, responseWakeTraceId) ||
+    !sameIfPresent(taskWakeTraceId, eventWakeTraceId) ||
+    !sameIfPresent(responseMissionId, eventMissionId) ||
+    !sameIfPresent(responseWakeTraceId, eventWakeTraceId)
+  ) {
     return unavailable(task);
   }
 
@@ -72,9 +91,9 @@ export function projectBasicChatEvidence({ taskId, artifacts = [], events = [] }
   return Object.freeze({
     schemaVersion: 1,
     taskId: task,
-    evidenceAvailable: Boolean(response || green || taskEvents.length),
-    missionId: responseMissionId ?? eventMissionId,
-    wakeTraceId: responseWakeTraceId ?? eventWakeTraceId,
+    evidenceAvailable: hasEvidence,
+    missionId: taskMissionId ?? responseMissionId ?? eventMissionId,
+    wakeTraceId: taskWakeTraceId ?? responseWakeTraceId ?? eventWakeTraceId,
     completionStatus,
     greenDisposition,
     completedAt: typeof payload.completed_at === 'string' ? payload.completed_at : null,
