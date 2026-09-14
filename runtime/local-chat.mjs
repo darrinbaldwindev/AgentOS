@@ -4,6 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, open, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
+import { projectBasicChatEvidence } from './basic-chat-evidence-projection.mjs';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
 
@@ -177,13 +178,25 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
     else if (control.paused) visible = USER_STATES.PAUSED;
     else if (control.status === 'working') visible = USER_STATES.WORKING;
     else if (control.lastUserStatus) visible = control.lastUserStatus;
+
+    const lastTaskId = control.lastTaskId ?? null;
+    let evidence = null;
+    if (lastTaskId) {
+      const [artifacts, events] = await Promise.all([
+        persistence.list('artifact'),
+        persistence.list('event'),
+      ]);
+      evidence = projectBasicChatEvidence({ taskId: lastTaskId, artifacts, events });
+    }
+
     return {
       ready: !control.paused && !control.stopped,
       paused: Boolean(control.paused),
       stopped: Boolean(control.stopped),
       status: visible,
       history: hist,
-      lastTaskId: control.lastTaskId ?? null,
+      lastTaskId,
+      evidence,
       note: 'Local · DRY_RUN · Autonomy disabled · Scheduler must stay disabled for chat',
     };
   }
