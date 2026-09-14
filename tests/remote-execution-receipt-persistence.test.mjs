@@ -85,6 +85,23 @@ test('receipt correlation identifiers are mandatory before persistence', async (
     await assert.rejects(adapter.record({ receipt: receipt({ delivery_id: '' }) }), /receipt.delivery_id is required/);
     await assert.rejects(adapter.record({ receipt: receipt({ request_id: '' }) }), /receipt.request_id is required/);
     await assert.rejects(adapter.record({ receipt: receipt({ host_id: '' }) }), /receipt.host_id is required/);
+    await assert.rejects(adapter.record({ receipt: receipt({ mission_id: '' }) }), /receipt.mission_id is required/);
+    await assert.rejects(adapter.record({ receipt: receipt({ task_id: '' }) }), /receipt.task_id is required/);
+    await assert.rejects(adapter.record({ receipt: receipt({ wake_trace_id: '   ' }) }), /receipt.wake_trace_id is required/);
+  });
+});
+
+test('incomplete task or mission correlation creates no durable receipt artifact', async () => {
+  await withAdapter(async ({ adapter, persistence }) => {
+    await assert.rejects(
+      adapter.record({ receipt: receipt({ task_id: null }) }),
+      /receipt.task_id is required/,
+    );
+    await assert.rejects(
+      adapter.record({ receipt: receipt({ mission_id: undefined }) }),
+      /receipt.mission_id is required/,
+    );
+    assert.equal((await persistence.list('artifact')).length, 0);
   });
 });
 
