@@ -28,6 +28,43 @@ function statusLabel() {
   return STATUS_LABELS[state.status] ?? 'Unable to confirm status';
 }
 
+function evidencePresentation() {
+  const task = state.lastTaskId || null;
+  if (!task) {
+    return {
+      result: 'No completed job to summarize yet.',
+      completion: state.status === 'VERIFYING' ? 'Checking the result' : 'Not checked',
+      task: 'Task: none',
+    };
+  }
+  if (state.status === 'COMPLETE') {
+    return {
+      result: 'The bounded local job finished and its required completion check passed.',
+      completion: 'Passed for this job',
+      task: `Task: ${task}`,
+    };
+  }
+  if (state.status === 'VERIFYING') {
+    return {
+      result: 'The bounded local job finished execution and its completion check is still pending.',
+      completion: 'Checking the result',
+      task: `Task: ${task}`,
+    };
+  }
+  if (state.status === 'BLOCKED' || state.status === 'NEEDS_ATTENTION') {
+    return {
+      result: 'This job needs attention and was not presented as complete.',
+      completion: 'Did not establish completion',
+      task: `Task: ${task}`,
+    };
+  }
+  return {
+    result: 'AgentOS cannot confirm the completion evidence for this job from the current state.',
+    completion: 'Unable to confirm',
+    task: `Task: ${task}`,
+  };
+}
+
 function presentError(error) {
   const technical = error?.message ?? String(error ?? 'Unknown error');
   const matched = ERROR_PRESENTATION.find(([needle]) => technical.includes(needle));
@@ -86,6 +123,12 @@ function render() {
     hist.scrollTop = hist.scrollHeight;
   }
   $('status').textContent = `Status: ${statusLabel()}`;
+  const evidence = evidencePresentation();
+  $('evidence-result').textContent = evidence.result;
+  $('completion-check').textContent = evidence.completion;
+  $('independent-assurance').textContent = 'Not shown in Basic Chat';
+  $('evidence-task').textContent = evidence.task;
+
   const composer = document.querySelector('.composer-area');
   const form = $('chat');
   const message = $('message');
