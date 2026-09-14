@@ -60,7 +60,16 @@ Added regression coverage in `tests/basic-chat-v1.test.mjs` requiring the `not e
 
 Current #111 exact head after this slice: `93a7244e47c357d589ba08410085fddca9a8a11b`.
 
-AgentOS Tests #1131 (`34848042741`) was still running when this checkpoint was first written. Do not claim exact-head PASS until it completes.
+### Exact-head CI
+
+AgentOS Tests #1131 (`34848042741`) completed **SUCCESS** on exact head `93a7244e47c357d589ba08410085fddca9a8a11b`.
+
+- general `test` job: SUCCESS;
+- full test suite: SUCCESS;
+- npm dependency audit: SUCCESS;
+- `windows-basic-chat-lifecycle`: SUCCESS.
+
+This exact-head PASS covers the current evidence integration plus physical-readiness presentation regression. It does not prove physical responsive/browser acceptance, Level 2 project-file mutation safety, authority revocation, PRS assurance or overall AgentOS readiness.
 
 ## Existing Basic Chat evidence path
 
@@ -111,18 +120,18 @@ Physical responsive/browser acceptance remains NOT PROVEN. Static CSS/tests and 
 - Physical Windows worker readiness from Basic Chat: NOT ESTABLISHED.
 - Project-file mutation: AMBER/HOLD.
 - Browser/mobile physical acceptance: NOT PROVEN.
+- Current #111 exact-head CI: SUCCESS.
 
 ## Replenished next queue
 
-1. Consume exact-head AgentOS Tests #1131 for #111 `93a7244e...` and classify any failure exactly.
-2. Fresh-scan #104/#110/#111/#112 after CI.
-3. Update PR #111 durable description to remove stale pre-wiring claims and record exact current CI.
-4. Refresh canonical frontend vertical batch with Cycle 008 current state.
-5. Continue authority-field change detection on #104; no interactive Jack mutations without canonical lifetime/revoke/consequence semantics.
-6. Keep recovery contract-only until a real producer/read path exists.
-7. Execute physical browser/mobile acceptance immediately when a trustworthy runnable draft target is available.
-8. Prepare Founding-Beta readiness only after Level 2 ownership/authority/assurance gates improve; no beta activation.
-9. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density may differ.
+1. Fresh-scan #104/#110/#111/#112 before the next action.
+2. Update PR #111 durable description to remove stale pre-wiring claims and record exact current CI.
+3. Continue authority-field change detection on #104; no interactive Jack mutations without canonical lifetime/revoke/consequence semantics.
+4. Keep recovery contract-only until a real producer/read path exists.
+5. If runtime exposes a canonical capability/readiness snapshot, build a read-only frontend adapter distinguishing Basic Chat test path, physical Windows readiness and mutation availability without deriving truth from mode/location/fixture labels.
+6. Execute physical browser/mobile acceptance immediately when a trustworthy runnable draft target is available.
+7. Prepare Founding-Beta readiness only after Level 2 ownership/authority/assurance gates improve; no beta activation.
+8. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density may differ.
 
 ## Protected HOLD
 
