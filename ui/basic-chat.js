@@ -126,6 +126,7 @@ function render() {
   const evidence = evidencePresentation();
   $('evidence-result').textContent = evidence.result;
   $('completion-check').textContent = evidence.completion;
+  $('independent-assurance').setAttribute('aria-label', 'Independent assurance');
   $('independent-assurance').textContent = 'Not shown in Basic Chat';
   $('evidence-task').textContent = evidence.task;
 
