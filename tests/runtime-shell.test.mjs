@@ -1,9 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRuntimeShell } from '../runtime/runtime-shell.mjs';
+import {
+  createRuntimeShell as createEligibilityShell,
+  evaluateCapabilityResults,
+  assertCapabilityResults,
+} from '../runtime/runtime-shell.mjs';
+import { createRuntimeShell as createIntegrationShell } from '../runtime/shell-contract.mjs';
 
 test('runtime shell normalizes adapter aliases before eligibility evaluation', async () => {
-  const shell = createRuntimeShell({
+  const shell = createEligibilityShell({
     probes: {
       githubRead: async () => true,
       continuityRead: async () => true,
@@ -20,7 +25,7 @@ test('runtime shell normalizes adapter aliases before eligibility evaluation', a
 });
 
 test('runtime shell blocks when canonical required connectivity is absent', async () => {
-  const shell = createRuntimeShell({
+  const shell = createEligibilityShell({
     probes: {
       githubRead: async () => false,
       continuityRead: async () => true,
@@ -28,4 +33,80 @@ test('runtime shell blocks when canonical required connectivity is absent', asyn
     },
   });
   await assert.rejects(() => shell.assertExecutionEligible(), (error) => error.code === 'AGENT_NOT_ELIGIBLE');
+});
+
+test('pure capability evaluation normalizes aliases through one canonical helper', () => {
+  const evaluation = evaluateCapabilityResults({
+    githubRead: true,
+    continuityRead: true,
+    handoff: true,
+    workspaceRead: true,
+    workspaceWrite: true,
+  });
+  assert.equal(evaluation.eligible, true);
+  assert.equal(evaluation.localPreferred, true);
+  assert.equal(evaluation.results['github.read'], true);
+});
+
+test('pure capability assertion fails closed for missing required connectivity', () => {
+  assert.throws(
+    () => assertCapabilityResults({ githubRead: false, continuityRead: true, handoff: true }),
+    (error) => error.code === 'AGENT_NOT_ELIGIBLE',
+  );
+});
+
+test('integration shell reuses canonical evaluation for alias-shaped probe results', async () => {
+  const workspaceAdapter = { id: 'workspace' };
+  const githubAdapter = { id: 'github' };
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        githubRead: true,
+        continuityRead: true,
+        handoff: true,
+        workspaceRead: true,
+        workspaceWrite: true,
+      }),
+    },
+    workspaceAdapter,
+    githubAdapter,
+  });
+
+  const authorization = await shell.authorize('agent-1');
+  assert.equal(authorization.evaluation.eligible, true);
+  assert.equal(authorization.mode, 'local-preferred');
+  assert.deepEqual(shell.adapters(), { workspace: workspaceAdapter, github: githubAdapter });
+});
+
+test('integration shell accepts previously evaluated result shape without treating eligible flag as authority', async () => {
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        evaluation: {
+          eligible: true,
+          results: {
+            'github.read': true,
+            'continuity.read': true,
+            handoff: true,
+            'workspace.read': false,
+            'workspace.write': false,
+          },
+        },
+      }),
+    },
+  });
+
+  const authorization = await shell.authorize('agent-2');
+  assert.equal(authorization.evaluation.eligible, true);
+  assert.equal(authorization.mode, 'github');
+});
+
+test('integration shell rejects an asserted eligible flag when canonical results are missing', async () => {
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({ evaluation: { eligible: true } }),
+    },
+  });
+
+  await assert.rejects(() => shell.authorize('agent-3'), (error) => error.code === 'AGENT_NOT_ELIGIBLE');
 });
