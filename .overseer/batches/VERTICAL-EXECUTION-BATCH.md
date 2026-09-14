@@ -3,17 +3,17 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Frontend Overseer  
-**Cycle:** Frontend vertical cycle 009 — readiness/evidence separation  
+**Cycle:** Frontend vertical cycle 010 — runtime-owned readiness composition  
 **Reconciled date:** 2026-09-15 Australia/Brisbane  
 **Canonical main:** `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`  
 **Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
-**Current #111 exact code/test head:** `fbe28323dba468078848963c0bad560ea35f427a`  
-**Current #111 exact-head CI:** AgentOS Tests #1169 SUCCESS  
-**Runtime dependency PR #104:** `83a58b8bd230550b5781a0fee700cca250819a75`  
-**Project integration PR #112 observed this cycle:** `e04bf63171d6b400a1c63d7b65e45b25d03b067e`  
+**Current #111 implementation head:** `429b6d5bc14b2790f1a9bace09b76e699cb88b8c`  
+**Runtime Windows dependency #104:** `bbfee5221652c9bf0551ce5b31eb0b1cf6e78af1`  
+**Read-only host status #101:** `d91abaecf602d7ef223c4888f10fa9361677302e`  
+**Project integration #112:** `d1645450a06d00c49a7a78f176e97b44b9eaa225`  
 **Batch status:** ACTIVE  
-**P0:** truthful readiness, authority, evidence and Level-2/Founding-Beta comprehension.
+**P0:** truthful readiness, evidence, authority and Level-2/Founding-Beta comprehension.
 
 ## Mission
 
@@ -21,15 +21,15 @@ Translate canonical AgentOS runtime facts into one coherent ordinary-user produc
 
 > Chat for intent. Palette for speed. Inbox for attention. Jobs for repetition. Jack for authority. Isla for execution. Henry for proof.
 
-Evidence > claims. Unknown, stale, contradictory or absent state fails closed.
+Evidence > claims. Unknown, stale, contradictory or absent state fails closed. Simple must never mean misleading.
 
 ## Hard boundaries
 
-No merge, approval, ready transition, rebase, deployment, credential change, production write, unrestricted PowerShell, production autonomy, beta activation, authority bypass, Green/PRS bypass or project-file mutation enablement.
+No merge, approval, ready transition, rebase, deployment, credential changes, production writes, unrestricted PowerShell, production autonomy, beta activation, authority bypass, Green/PRS bypass or project-file mutation enablement.
 
-Never create a duplicate scheduler, queue, registry, mission ledger, persistence layer, authority source, worker runtime, Green system or PRS system.
+Never create a duplicate scheduler, queue, registry, mission ledger, persistence layer, authority source, worker runtime, Green system, PRS system or frontend-owned readiness source.
 
-Frontend truth rules:
+Truth rules:
 
 - runtime determines work state;
 - authority determines permission state;
@@ -37,9 +37,10 @@ Frontend truth rules:
 - Green determines bounded completion-check disposition;
 - PRS/Henry determines independent assurance only from real PRS evidence;
 - `Stop requested` != `Execution stopped` != `Permission revoked`;
-- `Local` or `DRY_RUN` != physical Windows readiness;
-- Windows host capability != physical acceptance;
-- physical acceptance != project-file mutation safety;
+- `Local Basic Chat` != host lifecycle;
+- host lifecycle != Windows host capability;
+- Windows host capability != physical Windows acceptance;
+- physical Windows acceptance != project-file mutation readiness;
 - CI PASS != product/assurance GREEN.
 
 ## Current repository truth
@@ -48,42 +49,58 @@ Frontend truth rules:
 
 `main` remains `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`. The richer mainstream frontend and most Level-2 runtime capability remain draft lineages rather than shipped main.
 
-### PR #104 — Level 2 Windows/PowerShell dependency
+### PR #101 — read-only host lifecycle
 
-Still OPEN/DRAFT at `83a58b8bd230550b5781a0fee700cca250819a75`.
+#101 remains OPEN/DRAFT at `d91abaecf602d7ef223c4888f10fa9361677302e`.
 
-Controlling state:
+Its `runtime/local-host-status.mjs` contract is the strongest current read-only lifecycle projection. It derives:
 
-- bounded PowerShell host probe and supervised physical acceptance contracts exist;
+- `idle`;
+- `working`;
+- `blocked`;
+- `recovery_required`;
+- `offline_or_stale`.
+
+It fails closed on host/correlation conflicts, stale evidence, multiple active tasks and incomplete task identity. It does not wake, mutate, grant authority, retry, clear locks or promote Green/PRS.
+
+### PR #104 — Windows/PowerShell and project-file dependency
+
+#104 is OPEN/DRAFT at live head `bbfee5221652c9bf0551ce5b31eb0b1cf6e78af1`.
+
+Current controlling state:
+
+- bounded Windows/PowerShell host probing and physical-acceptance contracts exist;
+- authority-admitted PowerShell execution receipts now preserve source-backed `authority_evidence_id` and fail closed when that evidence disappears before receipt construction;
+- exact-head AgentOS Tests #1187 SUCCESS on the final observed head;
 - project-file mutation remains AMBER/BLOCKED;
-- continuous ownership through publish/recovery/durable receipt/release remains unproven;
-- authenticated transport/canonical grant binding remains incomplete;
-- no PRS PASS;
-- physical acceptance from predecessor/different heads cannot be inherited.
+- SG-08 continuous ownership through final verification -> publish/prepared recovery -> durable success receipt -> release remains unresolved;
+- authenticated transport and canonical grant lookup remain composition dependencies;
+- physical Windows acceptance remains separate from CI;
+- no PRS PASS.
 
-Frontend must not expose broad mutation as ready or safe.
-
-### PR #101 — read-only host observation
-
-`runtime/local-host-status.mjs` is the strongest current read-only host lifecycle projection. It derives idle/working/blocked/recovery-required/offline-or-stale from existing durable evidence, fails closed on host/correlation conflicts, and does not wake, mutate, grant authority, retry, clear locks or promote Green/PRS.
-
-It is a useful future input, not a frontend authority source.
+Authority provenance improvement does not establish permission lifetime, expiry, durable revoke semantics or interactive Jack readiness.
 
 ### PR #112 — project integration spine
 
-Observed during Cycle 009 at `e04bf63171d6b400a1c63d7b65e45b25d03b067e` after further project-wide movement. It continues to preserve the explicit non-physical `legacy-dry-run-fixture` boundary. Its additional movement this cycle includes authority dependency/reconciliation docs and local-wake test adjustments; no frontend permission to infer physical/mutation readiness follows from that movement.
+#112 is OPEN/DRAFT at `d1645450a06d00c49a7a78f176e97b44b9eaa225`.
+
+AgentOS Tests #1189 SUCCESS and Project Overseer Wake #413 SUCCESS on this exact head. The latest observed movement from the prior integration head is documentation-only.
+
+The integration spine continues to preserve the explicit non-physical `legacy-dry-run-fixture` boundary and canonical capability evaluation. Frontend must not infer physical or mutation readiness from the DRY_RUN compatibility path.
 
 ### PR #111 — frontend implementation
 
-Cycle 009 first consumed concurrent evidence hardening through `db6ac635f9dc1d269363ffd2450e3802f57c9b00` (AgentOS Tests #1161 SUCCESS). The evidence projection now requires a canonical `dispatch.task` artifact before trusting matching response/Green/event evidence, preventing response/event agreement from laundering stale or wrongly correlated mission identity.
+#111 remains OPEN/DRAFT/UNMERGED.
 
-Cycle 009 then added `runtime/basic-chat-readiness-projection.mjs` and `tests/basic-chat-readiness-projection.test.mjs` at `fbe28323dba468078848963c0bad560ea35f427a`.
+Cycle 010 began at `146f1118d34c36fdcb579450987a72a6e656c3d7`. AgentOS Tests #1177 was overall FAILURE due only to the known Ubuntu CLI signal lifecycle assertion (`SIGINT` versus expected `null`). All readiness/evidence/frontend tests passed and the Windows Basic Chat lifecycle job passed.
 
-AgentOS Tests #1169 completed SUCCESS on that exact head.
+Cycle 010 implementation now reaches `429b6d5bc14b2790f1a9bace09b76e699cb88b8c`.
 
-## Current frontend implementation
+Exact-head CI #1199 must be consumed before declaring this current head test-green.
 
-### Basic Chat presentation
+## Frontend truth model
+
+### Basic Chat
 
 Primary scope:
 
@@ -93,50 +110,155 @@ Technical boundary:
 
 `Execution: Local Basic Chat test path · Mode: DRY_RUN · Physical Windows worker readiness: not established · Autonomy: disabled · Completion gate: Green PASS required`
 
-Pause/Resume/Stop controls are reconciled against canonical Basic Chat snapshot state. Stop is a future-send/request boundary and does not prove in-flight cancellation.
+Pause/Resume/Stop presentation derives from canonical Basic Chat state. Stop remains a request/future-send boundary; the in-flight action may finish.
 
-### `What happened` evidence projection
+### Canonical `What happened` evidence
 
-Read-only projection consumes exact local-wake task evidence. It now requires:
+The read-only Basic Chat evidence projection requires canonical dispatch-task identity before trusting response/Green/event evidence.
 
-- canonical `dispatch.task` with matching task identity;
-- task mission/wake identity present;
-- no conflicting response/event mission or wake identity;
-- Green artifact task identity exact when Green exists;
-- canonical event types only.
+It fails closed on:
 
-It exposes bounded fields only and excludes prompt/objective/raw worker output/secrets/credentials/arbitrary metadata/PRS/recovery state.
+- absent canonical `dispatch.task` when matching derived evidence exists;
+- wrong task identity;
+- mission/wake correlation conflict;
+- Green artifact missing/conflicting task identity;
+- non-canonical event types.
 
-`lastTaskId` remains a correlation key for these exact records, not a generic run ID.
+It exposes only bounded task/mission/wake/completion/Green fields and excludes prompt/objective/raw output/secrets/credentials/arbitrary metadata/PRS/recovery state.
 
-### Readiness projection — Cycle 009
+`lastTaskId` is an exact local-wake correlation key, not a generic run ID.
 
-`runtime/basic-chat-readiness-projection.mjs` is pure presentation logic. It performs no persistence access, probing, authority mutation, execution, assurance or enablement.
+## Cycle 010 readiness composition
 
-It keeps four concepts separate:
+`runtime/basic-chat-readiness-projection.mjs` remains pure presentation logic. It performs no persistence access, probing, authority mutation, execution, assurance or enablement.
 
-1. **Basic Chat availability** — supplied canonical chat snapshot only: available / paused / stopped / unknown.
-2. **Windows host capability** — supplied Windows host-probe evaluation only: capable / not capable / unknown, with missing requirements retained.
-3. **Physical Windows acceptance** — only the existing canonical `agentos.windows-powershell-physical-acceptance.v1` object can produce `passed_for_exact_head`, and only when platform/pass/disposition/exact-head plus bounded safety flags agree.
-4. **Project-file mutation** — always `unknown / NO_CANONICAL_MUTATION_READINESS_SOURCE` because no canonical mutation-readiness projection is yet available to Basic Chat.
+It now keeps five concepts separate.
 
-Negative tests prove that even a capable Windows host plus physical acceptance PASS cannot upgrade mutation readiness.
+### 1. Basic Chat availability
 
-This adapter is not yet wired to Basic Chat UI because the live Basic Chat snapshot does not currently receive the #101/#104 runtime facts. Do not solve that by inventing a frontend store or cross-branch identifier.
+Derived only from the supplied canonical chat snapshot:
+
+- `available`;
+- `paused`;
+- `stopped`;
+- `unknown`.
+
+### 2. Local host lifecycle
+
+Derived only from a supplied #101-style host status object with:
+
+- `schema_version === 1`;
+- non-empty `host_id`;
+- recognized lifecycle state;
+- bounded evidence freshness.
+
+Recognized lifecycle states:
+
+- `idle`;
+- `working`;
+- `blocked`;
+- `recovery_required`;
+- `offline_or_stale`.
+
+Recognized freshness:
+
+- `fresh`;
+- `stale`;
+- `unknown`;
+- `conflicting`.
+
+Conflicting evidence is presented as blocked. Invalid schema or unknown lifecycle fails closed to unknown.
+
+Lifecycle state does not imply capability or readiness.
+
+### 3. Windows host capability
+
+A bare `evaluation.eligible === true` assertion is insufficient for positive presentation.
+
+`capable` requires explicit canonical probe facts:
+
+- `windows === true`;
+- PowerShell available;
+- Git available;
+- npm available;
+- workspace readable;
+- workspace writable.
+
+If explicit requirements are missing or `eligible:false`, present `not_capable`. If an eligible Boolean is asserted without explicit facts, remain `unknown / WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED`.
+
+This mirrors the fail-closed direction of project integration instead of creating a parallel Boolean trust path.
+
+### 4. Physical Windows acceptance
+
+Only the canonical `agentos.windows-powershell-physical-acceptance.v1` object can produce `passed_for_exact_head` and only when all bounded facts agree:
+
+- `platform === win32`;
+- `pass === true`;
+- exact head present;
+- expected PASS disposition;
+- local-wake execution remains disabled;
+- scheduler execution remains disabled;
+- production autonomy remains disabled;
+- owner supervision remains required.
+
+### 5. Project-file mutation readiness
+
+Still always:
+
+`unknown / NO_CANONICAL_MUTATION_READINESS_SOURCE`
+
+because Basic Chat has no canonical runtime-owned mutation-readiness/assurance object.
+
+Regression tests explicitly prove that this remains unknown even when:
+
+- Basic Chat is available;
+- local host is idle/fresh;
+- explicit Windows host capability facts are complete;
+- supervised exact-head physical acceptance is PASS.
+
+## Wiring boundary
+
+The readiness projection is intentionally not wired into live Basic Chat UI yet.
+
+The missing upstream seam is a runtime-owned read-only composition that supplies current/fresh/correlated:
+
+- #101 host lifecycle;
+- #104 Windows capability probe facts;
+- exact-head physical acceptance.
+
+Do not solve this by adding frontend persistence, manufacturing cross-branch identifiers or treating stale evidence as current.
+
+If/when a canonical runtime composition appears, the frontend may consume it read-only and add the projected facts to the existing Basic Chat snapshot.
 
 ## Authority / Jack boundary
 
-Interactive Jack actions remain blocked. Current runtime evidence is insufficient for truthful user-facing permission lifetime/expiry/revocation/revoke receipt/already-running behavior/reversibility/credential/data disclosure/external communication/cost/next-approval/mutation consequence semantics.
+Interactive Jack actions remain blocked.
 
-Read-only explanation is allowed when canonical facts are supplied. Synthetic Allow/Revoke/Always Allow is not.
+Current receipt provenance has improved, but truthful interactive permission controls still require canonical:
+
+- ordinary-language reason;
+- lifetime / one-action / job / session semantics;
+- expiry;
+- current revocation state;
+- durable revoke mutation and receipt;
+- already-running behavior after revoke;
+- reversibility;
+- credential involvement;
+- data disclosure consequence;
+- external communication/publication consequence;
+- cost/capacity consequence;
+- next/additional approval boundary;
+- mutation consequence.
+
+No synthetic Allow/Revoke/Always Allow.
 
 ## Recovery boundary
 
-Recovery contracts exist, but Basic Chat still has no proven live canonical recovery producer/read projection. No `Recovered`, rollback-success or retry-success may be synthesized from a click, cleared error, later success, new task or absence of evidence.
+Recovery remains contract-only for Basic Chat. No live canonical producer/read projection has been evidenced for recovery actions. Never synthesize `Recovered` from retry clicks, later success, cleared errors, new tasks or absence of failure evidence.
 
 ## Accessibility / browser boundary
 
-Static accessibility and responsive guards remain implemented/tested. Physical 320/360/390px browser/mobile acceptance remains NOT PROVEN because no trustworthy runnable draft target has been exercised from this context.
+Static accessibility/responsive guards remain implemented and tested. Physical 320/360/390px browser/mobile acceptance remains NOT PROVEN because no trustworthy runnable draft target has been exercised from this execution environment.
 
 ## Claim matrix
 
@@ -144,10 +266,10 @@ Static accessibility and responsive guards remain implemented/tested. Physical 3
 |---|---|
 | Main mainstream frontend | NOT SHIPPED |
 | Basic Chat | OPEN/DRAFT bounded local test path |
-| Canonical task evidence | IMPLEMENTED + wired + exact-head tested |
-| Readiness projection | IMPLEMENTED pure/read-only + exact-head tested; not yet wired to live cross-lineage runtime inputs |
-| Windows host capability | Can be shown only from canonical host-probe result |
-| Physical Windows acceptance | Can be shown only for exact head from canonical physical-acceptance record |
+| Canonical task evidence | IMPLEMENTED + wired + regression-tested |
+| Local host lifecycle projection | IMPLEMENTED pure/read-only; not live-wired |
+| Windows host capability projection | IMPLEMENTED from explicit probe facts; not live-wired |
+| Physical Windows acceptance projection | IMPLEMENTED exact-head fail-closed; not live-wired |
 | Project-file mutation | UNKNOWN/BLOCKED from frontend; no canonical readiness source |
 | Green completion | Bounded completion check only |
 | Henry/PRS | No Basic Chat PASS inference |
@@ -157,21 +279,22 @@ Static accessibility and responsive guards remain implemented/tested. Physical 3
 
 ## Replenished P0 queue
 
-1. Fresh-scan main/#101/#104/#110/#111/#112 before every action.
-2. Look for a canonical, read-only composition seam that can supply host-status/host-probe/physical-acceptance to Basic Chat without new persistence or duplicated authority.
-3. Do not wire readiness UI until correlation/freshness/exact-head semantics are explicit at the runtime boundary.
-4. Continue #104 authority-field change detection; interactive Jack remains blocked until canonical mutation semantics exist.
-5. Keep project-file mutation unknown in frontend until a runtime-owned readiness/assurance object is evidenced.
-6. Keep recovery contract-only until real producer/read evidence appears.
-7. Execute physical browser/mobile acceptance immediately when a trustworthy runnable draft target exists.
-8. Preserve one truth model across Simple / Essentials / Tech Head; only disclosure density changes.
-9. Prepare Founding-Beta readiness only after Level-2 ownership/authority/assurance gates improve; no activation.
-10. Re-run exact-head CI for every changed implementation head and consume failures before claims.
+1. Consume exact-head #111 AgentOS Tests #1199 and classify any failure exactly.
+2. Fresh-scan #101/#104/#110/#111/#112 after CI because active branches are moving concurrently.
+3. Find or request the smallest runtime-owned read-only readiness composition seam. Do not add frontend persistence.
+4. If a canonical composed snapshot appears, wire it read-only into Basic Chat and render capability/lifecycle/physical acceptance with the current projection.
+5. Keep mutation readiness unknown until its own runtime-owned assurance/readiness source exists.
+6. Continue authority-field change detection; receipt provenance is not interactive permission semantics.
+7. Keep recovery contract-only until a live producer/read path exists.
+8. Execute physical browser/mobile acceptance immediately when a trustworthy runnable target becomes available.
+9. Preserve one truth model across Simple / Essentials / Tech Head; disclosure density only.
+10. Prepare Founding-Beta readiness only after Level-2 ownership/authority/assurance gates improve; no activation.
+11. Re-run exact-head CI after every implementation change and consume failures before claims.
 
 ## Completion rule
 
-Do not call the frontend coherent for Founding Beta until ordinary-user Chat, fail-closed status, evidence projection, control semantics, authority presentation, readiness semantics, accessibility/browser acceptance and Level-2 runtime/governance gates are all backed by current exact evidence.
+Do not call the Founding-Beta frontend coherent until ordinary-user Chat, fail-closed status/evidence/control/readiness semantics, canonical authority presentation, accessibility/browser acceptance and Level-2 runtime/governance gates are all backed by current evidence.
 
 ## Protected HOLD
 
-No merge/approval/ready/rebase/deployment/credentials/production writes/autonomy/unrestricted PowerShell/mutation enablement/synthetic authority/Green/PRS/recovery state/beta activation/overall GREEN.
+No merge/approval/ready/rebase/deployment/credentials/production writes/autonomy/unrestricted PowerShell/mutation enablement/synthetic authority/Green/PRS/recovery/readiness state/beta activation/overall GREEN.
