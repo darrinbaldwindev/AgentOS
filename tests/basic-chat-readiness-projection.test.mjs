@@ -5,6 +5,7 @@ import { projectBasicChatReadiness } from '../runtime/basic-chat-readiness-proje
 test('readiness projection fails closed when no canonical inputs exist', () => {
   const result = projectBasicChatReadiness();
   assert.equal(result.basicChat.state, 'unknown');
+  assert.equal(result.localHostLifecycle.state, 'unknown');
   assert.equal(result.windowsHostCapability.state, 'unknown');
   assert.equal(result.physicalWindowsAcceptance.state, 'not_established');
   assert.equal(result.projectFileMutation.state, 'unknown');
@@ -15,6 +16,40 @@ test('Basic Chat availability comes only from the supplied canonical chat snapsh
   assert.equal(projectBasicChatReadiness({ chatSnapshot: { ready: true, paused: false, stopped: false } }).basicChat.state, 'available');
   assert.equal(projectBasicChatReadiness({ chatSnapshot: { ready: true, paused: true, stopped: false } }).basicChat.state, 'paused');
   assert.equal(projectBasicChatReadiness({ chatSnapshot: { ready: true, paused: false, stopped: true } }).basicChat.state, 'stopped');
+});
+
+test('local host lifecycle projects canonical status without becoming readiness', () => {
+  const working = projectBasicChatReadiness({
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'working',
+      reason: 'CORRELATED_IN_FLIGHT_TASK',
+      evidence_freshness: 'fresh',
+    },
+  });
+  assert.equal(working.localHostLifecycle.state, 'working');
+  assert.equal(working.localHostLifecycle.freshness, 'fresh');
+  assert.equal(working.windowsHostCapability.state, 'unknown');
+  assert.equal(working.projectFileMutation.state, 'unknown');
+
+  const conflicting = projectBasicChatReadiness({
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'idle',
+      reason: 'HOST_IDENTITY_CONFLICT',
+      evidence_freshness: 'conflicting',
+    },
+  });
+  assert.equal(conflicting.localHostLifecycle.state, 'blocked');
+  assert.equal(conflicting.localHostLifecycle.reason, 'HOST_IDENTITY_CONFLICT');
+
+  const malformed = projectBasicChatReadiness({
+    localHostStatus: { schema_version: 2, host_id: 'host-a', lifecycle_state: 'idle', evidence_freshness: 'fresh' },
+  });
+  assert.equal(malformed.localHostLifecycle.state, 'unknown');
+  assert.equal(malformed.localHostLifecycle.reason, 'LOCAL_HOST_STATUS_SCHEMA_INVALID');
 });
 
 test('Windows host capability requires explicit canonical probe facts instead of asserted eligibility', () => {
@@ -97,9 +132,16 @@ test('physical Windows acceptance requires canonical exact-head supervised PASS 
   assert.equal(unsafe.physicalWindowsAcceptance.state, 'not_established');
 });
 
-test('capability or physical acceptance never upgrades project-file mutation', () => {
+test('lifecycle capability or physical acceptance never upgrades project-file mutation', () => {
   const result = projectBasicChatReadiness({
     chatSnapshot: { ready: true, paused: false, stopped: false },
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'idle',
+      reason: 'FRESH_HOST_EVIDENCE_WITH_NO_ACTIVE_TASK',
+      evidence_freshness: 'fresh',
+    },
     windowsHostProbe: {
       evaluation: {
         windows: true,
@@ -122,6 +164,7 @@ test('capability or physical acceptance never upgrades project-file mutation', (
     },
   });
   assert.equal(result.basicChat.state, 'available');
+  assert.equal(result.localHostLifecycle.state, 'idle');
   assert.equal(result.windowsHostCapability.state, 'capable');
   assert.equal(result.physicalWindowsAcceptance.state, 'passed_for_exact_head');
   assert.equal(result.projectFileMutation.state, 'unknown');
