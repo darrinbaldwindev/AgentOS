@@ -17,11 +17,12 @@ test('Basic Chat availability comes only from the supplied canonical chat snapsh
   assert.equal(projectBasicChatReadiness({ chatSnapshot: { ready: true, paused: false, stopped: true } }).basicChat.state, 'stopped');
 });
 
-test('Windows host capability requires explicit Windows and eligibility evidence', () => {
-  const capable = projectBasicChatReadiness({
+test('Windows host capability fails closed on asserted eligibility without canonical evidence', () => {
+  const asserted = projectBasicChatReadiness({
     windowsHostProbe: { evaluation: { windows: true, eligible: true, missingRequired: [] } },
   });
-  assert.equal(capable.windowsHostCapability.state, 'capable');
+  assert.equal(asserted.windowsHostCapability.state, 'unknown');
+  assert.equal(asserted.windowsHostCapability.reason, 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED');
 
   const blocked = projectBasicChatReadiness({
     windowsHostProbe: { evaluation: { windows: true, eligible: false, missingRequired: ['tool.git.exe'] } },
@@ -85,7 +86,8 @@ test('capability or physical acceptance never upgrades project-file mutation', (
     },
   });
   assert.equal(result.basicChat.state, 'available');
-  assert.equal(result.windowsHostCapability.state, 'capable');
+  assert.equal(result.windowsHostCapability.state, 'unknown');
+  assert.equal(result.windowsHostCapability.reason, 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED');
   assert.equal(result.physicalWindowsAcceptance.state, 'passed_for_exact_head');
   assert.equal(result.projectFileMutation.state, 'unknown');
 });
