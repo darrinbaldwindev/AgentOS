@@ -142,4 +142,105 @@ describe('Basic Chat canonical evidence integration', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('fails closed when current-task response and canonical event disagree on mission correlation', async () => {
+    const root = await makeRoot();
+    const persistence = await persistenceFor(root);
+    const taskId = 'local-wake-mission-mismatch';
+    await seedControl(persistence, { lastTaskId: taskId, lastUserStatus: 'COMPLETE' });
+    await persistence.create('artifact', {
+      id: `response:${taskId}`,
+      artifactType: 'project-overseer.response',
+      payload: {
+        status: 'COMPLETED',
+        mission_id: 'mission:response',
+        wake_trace_id: 'wake:shared',
+      },
+    });
+    await persistence.create('event', {
+      id: `event:${taskId}`,
+      eventType: 'agentos.manual-wake.completed',
+      taskId,
+      missionId: 'mission:event',
+      wakeTraceId: 'wake:shared',
+      status: 'COMPLETED',
+      greenDisposition: 'pass',
+    });
+
+    const chat = await createLocalChat({ root });
+    try {
+      assert.equal((await chat.snapshot()).evidence?.evidenceAvailable, false);
+    } finally {
+      await chat.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('fails closed when current-task response and canonical event disagree on wake correlation', async () => {
+    const root = await makeRoot();
+    const persistence = await persistenceFor(root);
+    const taskId = 'local-wake-trace-mismatch';
+    await seedControl(persistence, { lastTaskId: taskId, lastUserStatus: 'COMPLETE' });
+    await persistence.create('artifact', {
+      id: `response:${taskId}`,
+      artifactType: 'project-overseer.response',
+      payload: {
+        status: 'COMPLETED',
+        mission_id: 'mission:shared',
+        wake_trace_id: 'wake:response',
+      },
+    });
+    await persistence.create('event', {
+      id: `event:${taskId}`,
+      eventType: 'agentos.manual-wake.completed',
+      taskId,
+      missionId: 'mission:shared',
+      wakeTraceId: 'wake:event',
+      status: 'COMPLETED',
+      greenDisposition: 'pass',
+    });
+
+    const chat = await createLocalChat({ root });
+    try {
+      assert.equal((await chat.snapshot()).evidence?.evidenceAvailable, false);
+    } finally {
+      await chat.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores non-canonical current-task events instead of fabricating completion or Green evidence', async () => {
+    const root = await makeRoot();
+    const persistence = await persistenceFor(root);
+    const taskId = 'local-wake-noncanonical-event';
+    await seedControl(persistence, { lastTaskId: taskId, lastUserStatus: 'COMPLETE' });
+    await persistence.create('event', {
+      id: `event:${taskId}`,
+      eventType: 'worker.claimed.success',
+      taskId,
+      missionId: 'mission:forged',
+      wakeTraceId: 'wake:forged',
+      status: 'COMPLETED',
+      greenDisposition: 'pass',
+      prsDisposition: 'pass',
+    });
+
+    const chat = await createLocalChat({ root });
+    try {
+      assert.deepEqual((await chat.snapshot()).evidence, {
+        schemaVersion: 1,
+        taskId,
+        evidenceAvailable: false,
+        missionId: null,
+        wakeTraceId: null,
+        completionStatus: null,
+        greenDisposition: null,
+        completedAt: null,
+        blockerCount: 0,
+      });
+    } finally {
+      await chat.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
