@@ -29,11 +29,16 @@ function windowsCapabilityState(probe) {
   if (evaluation.windows !== true) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_PLATFORM_NOT_CONFIRMED', missingRequired });
   }
-  if (evaluation.eligible === true) {
-    return Object.freeze({ state: 'capable', reason: 'WINDOWS_HOST_CAPABILITY_PROBE_PASS', missingRequired });
-  }
   if (evaluation.eligible === false) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_HOST_CAPABILITY_PROBE_FAIL', missingRequired });
+  }
+  // A pre-evaluated eligible=true assertion is not canonical capability evidence.
+  // The governed runtime derives execution eligibility from canonical capability
+  // results; Basic Chat must not recreate a parallel trust path by promoting an
+  // asserted Boolean to readiness. Until a canonical Windows readiness evidence
+  // contract is wired here, fail closed to unknown.
+  if (evaluation.eligible === true) {
+    return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED', missingRequired });
   }
   return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_ELIGIBILITY_UNCONFIRMED', missingRequired });
 }
