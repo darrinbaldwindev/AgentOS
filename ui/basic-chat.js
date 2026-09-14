@@ -12,11 +12,49 @@ const STATUS_LABELS = Object.freeze({
   NEEDS_ATTENTION: 'Needs attention',
 });
 
+const ERROR_PRESENTATION = Object.freeze([
+  ['CHAT_PAUSED', 'AgentOS is paused. Resume before sending new work.'],
+  ['CHAT_STOPPED', 'AgentOS is not accepting new work because Stop was requested. Restart the local host before sending another job.'],
+  ['LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED', 'Turn off scheduled checks before using this local chat.'],
+  ['Basic Chat needs scheduled checks turned off before starting.', 'Turn off scheduled checks before using this local chat.'],
+  ['MESSAGE_TOO_LONG', 'That message is too long for this local chat. Shorten it and try again.'],
+  ['REQUEST_TOO_LARGE', 'That request is too large for this local chat. Shorten it and try again.'],
+]);
+
 function statusLabel() {
   if (sending) return 'Working';
   if (state.stopped) return 'Stop requested — no new actions will start; the current action may still finish';
   if (state.paused) return 'Paused — no new actions will start';
   return STATUS_LABELS[state.status] ?? 'Unable to confirm status';
+}
+
+function presentError(error) {
+  const technical = error?.message ?? String(error ?? 'Unknown error');
+  const matched = ERROR_PRESENTATION.find(([needle]) => technical.includes(needle));
+  return {
+    message: matched?.[1] ?? 'AgentOS could not confirm what happened. Review the technical details before retrying.',
+    technical,
+  };
+}
+
+function clearError() {
+  $('error').textContent = '';
+  const details = $('error-details');
+  const technical = $('error-technical');
+  if (technical) technical.textContent = '';
+  if (details) {
+    details.hidden = true;
+    details.open = false;
+  }
+}
+
+function showError(error) {
+  const presented = presentError(error);
+  $('error').textContent = presented.message;
+  const details = $('error-details');
+  const technical = $('error-technical');
+  if (technical) technical.textContent = presented.technical;
+  if (details) details.hidden = false;
 }
 
 async function api(path, body) {
@@ -53,7 +91,7 @@ function render() {
   const message = $('message');
   const send = $('send');
   if (!composer || !form || !message || !send) {
-    $('error').textContent = 'Composer missing from page — layout defect';
+    showError(new Error('Composer missing from page — layout defect'));
     return;
   }
   composer.hidden = false;
@@ -83,13 +121,13 @@ $('chat').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (sending || state.paused || state.stopped) return;
   sending = true;
-  $('error').textContent = '';
+  clearError();
   render();
   try {
     state = await api('/api/send', { text: $('message').value });
     $('message').value = '';
   } catch (error) {
-    $('error').textContent = error.message;
+    showError(error);
     await refresh().catch(() => {});
   } finally {
     sending = false;
@@ -100,12 +138,12 @@ $('chat').addEventListener('submit', async (event) => {
 for (const button of document.querySelectorAll('[data-action]')) {
   button.addEventListener('click', async () => {
     button.disabled = true;
-    $('error').textContent = '';
+    clearError();
     try {
       state = await api('/api/control', { action: button.dataset.action });
       render();
     } catch (error) {
-      $('error').textContent = error.message;
+      showError(error);
     } finally {
       button.disabled = false;
     }
@@ -113,5 +151,5 @@ for (const button of document.querySelectorAll('[data-action]')) {
 }
 
 refresh().catch((error) => {
-  $('error').textContent = error.message;
+  showError(error);
 });
