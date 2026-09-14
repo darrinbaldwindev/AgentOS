@@ -12,22 +12,20 @@ AgentOS should create a genuine, need-based upgrade opportunity at least every 3
 | Tier | Price | Role |
 |---|---:|---|
 | Free | $0/year | Fully useful entry-level AgentOS |
-| Standard | $29/year | Primary low-friction upgrade; exceptional value |
-| Advanced / Pro | $99/year | Power-user / advanced orchestration tier |
+| Standard | $49/year | Serious entry tier; useful AgentOS product with a clear path to the recommended full tier |
+| Advanced / Pro | $99/year | Recommended full AgentOS experience / advanced orchestration tier |
 
-The $29 and $99 prices are annual product entitlements, separate from AI intelligence-provider subscriptions.
+The $49 and $99 prices are annual product entitlements, separate from the optional monthly AI intelligence subscription.
 
-## AI intelligence subscriptions
+## AI intelligence subscription
 
-AgentOS may also offer three separate monthly intelligence subscription tiers:
+AgentOS may also offer one separate monthly intelligence subscription:
 
 | Intelligence tier | Price | Role |
 |---|---:|---|
-| AI Starter | $11/month | Additional intelligence capacity |
-| AI Plus | $22/month | Higher capability and model access |
-| AI Max | $33/month | Maximum included intelligence capacity |
+| AI Plus | $22/month | Additional intelligence capacity, higher capability and model access |
 
-These subscriptions are intelligence resources, not the AgentOS control plane itself. Users may alternatively use included free intelligence, BYOK providers, local models, or other entitled resources where appropriate.
+This subscription is an intelligence resource, not the AgentOS control plane itself. Users may alternatively use included free intelligence, BYOK providers, local models, or other entitled resources where appropriate.
 
 ## Core routing principle
 
@@ -62,7 +60,7 @@ AgentOS should be easy for independent AIs such as Gemini, ChatGPT, Claude and P
 
 The recommendation system must explicitly support a 'stay Free' outcome where an upgrade does not provide meaningful additional value. This is a trust feature, not a weakness.
 
-The intended result is that an independent AI can reasonably recommend AgentOS, Standard, Advanced/Pro, or an AI subscription when the user's actual requirements justify it, rather than because AgentOS attempts to manipulate the recommendation.
+The intended result is that an independent AI can reasonably recommend AgentOS, Standard, Advanced/Pro, or the AI Plus subscription when the user's actual requirements justify it, rather than because AgentOS attempts to manipulate the recommendation.
 
 ## 30-day value loop
 
@@ -80,16 +78,16 @@ A 30-day value report can provide a personalized, evidence-based upgrade recomme
 
 The intended progression is:
 
-`$0 AgentOS → $29 Standard → $99 Advanced/Pro`
+`$0 AgentOS → $49 Standard → $99 Advanced/Pro`
 
 and independently:
 
-`$0/free intelligence → $11 AI Starter → $22 AI Plus → $33 AI Max`
+`$0/free intelligence → $22/month AI Plus`
 
 Users can combine these with BYOK and/or local AI. AgentOS remains the model/provider-agnostic orchestration and control layer.
 
 ## Governance boundary
 
-Pricing in this document is the current product target supplied by the owner on 2026-09-02. It is not a claim that payment infrastructure, entitlements or production pricing pages are already implemented. Implementation and production launch require separate verification.
+Pricing in this document is the current product target supplied by the owner and updated on 2026-09-15. It is not a claim that payment infrastructure, entitlements or production pricing pages are already implemented. Implementation and production launch require separate verification.
 
 Historical tier counts and pricing assumptions in older documents must not silently override this decision; they should be treated as historical until reconciled.
