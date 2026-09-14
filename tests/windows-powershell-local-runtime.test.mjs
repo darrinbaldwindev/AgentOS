@@ -18,6 +18,7 @@ function task() {
     issuer: 'agentos:overseer',
     admitted_by: 'agentos:overseer',
     authority_admitted: true,
+    authority_evidence_id: 'authority-evidence:claimed:1',
     authority: { granted_capabilities: ['shell.powershell.repo.read'] },
     required_capabilities: ['shell.powershell.repo.read'],
     scope: [],
@@ -173,6 +174,7 @@ test('enabled claimed runtime invokes once and a replay cannot invoke twice', as
   assert.equal(first.wake_trace_id, 'wake:claimed:1');
   assert.equal(first.governed.assurance_complete, false);
   assert.equal(first.governed.completion_eligible, false);
+  assert.equal(first.governed.receipt.authority_evidence_id, 'authority-evidence:claimed:1');
   assert.equal(claims.size(), 1);
   assert.equal(getReserveCalls(), 1);
   assert.equal(getAdapterCalls(), 1);
