@@ -72,7 +72,29 @@ Added `tests/basic-chat-control-presentation-static.test.mjs` to guard these rul
 
 Current #111 exact head after implementation: `5dc1551ea0dcbdb3f1c155b04b719215d69a19ef`.
 
-AgentOS Tests #1071 (`34824296320`) was IN PROGRESS when this cycle record was written. No PASS claim is made until exact-head CI concludes.
+## Exact-head CI classification
+
+AgentOS Tests #1071 (`34824296320`) completed **FAILURE** overall at exact head `5dc1551e...`, but the new frontend slice itself passed:
+
+- all new control-presentation static tests PASS;
+- Basic Chat accessibility/live-region tests PASS;
+- Mission C Basic Chat V1 suite PASS;
+- Windows-native Basic Chat lifecycle job PASS.
+
+The sole Ubuntu full-suite failure was the existing timing/signal-sensitive lifecycle assertion:
+
+`closest supported CLI signal path exits only after lock removal`
+
+with actual process signal `SIGINT` versus expected `null` at `tests/basic-chat-lifecycle.test.mjs:251`.
+
+Suite totals: 317 tests, 315 pass, 1 fail, 1 skip. npm audit was skipped because the test step failed.
+
+This is the same host-lifecycle class previously observed on the frontend lineage and is outside the presentation-only control-state changes. No runtime repair was made or masked in this cycle. Therefore:
+
+- **frontend control-presentation assertions: PASS at exact head**;
+- **Windows Basic Chat lifecycle job: PASS at exact head**;
+- **overall exact-head workflow: FAIL**;
+- **no overall PASS/GREEN claim**.
 
 ## Recovery projection boundary carried forward
 
@@ -88,14 +110,14 @@ The privacy-safe append-only recovery event schema remains useful as a presentat
 - Durable authority revoke: not evidenced in Basic Chat.
 - Jack interactive Allow/Revoke: blocked on canonical user-facing authority/mutation contract.
 - Accessibility/live-region baseline: exact-head #1041 PASS at predecessor head `72693c68...`.
-- Control availability slice: current exact-head CI pending at `5dc1551e...`.
+- Control availability slice: exact-head assertions PASS at `5dc1551e...`, while overall #1071 is red from unrelated Linux lifecycle signal assertion.
 - Physical browser/responsive acceptance: not proven.
 - Controlled Windows mutation: still withheld from mainstream frontend while runtime assurance remains AMBER.
 
 ## Replenished next queue
 
-1. Consume exact-head AgentOS Tests #1071 and repair/classify any failure.
-2. Fresh scan #104/#110/#111 after CI because runtime lineage is moving frequently.
+1. Fresh scan #104/#110/#111 because runtime lineage is moving frequently.
+2. Track the Linux CLI-signal lifecycle failure as a runtime acceptance dependency; do not fix it from presentation code.
 3. If a trustworthy browser target becomes available, execute real desktop+narrow acceptance; otherwise retain explicit blocker.
 4. Inspect whether current #104 or subsequent authority work adds expiry/revoke/consequence fields; only then consider a read-only Jack summary adapter or interactive controls.
 5. Identify a canonical read-only recovery-event projection usable by Basic Chat without new persistence; do not bridge by guessing identifiers.
