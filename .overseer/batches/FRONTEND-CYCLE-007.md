@@ -81,18 +81,25 @@ The connected browser automation capability was inspected and is suitable for lo
 
 This execution context cannot materialize the unmerged GitHub branch into the local container because container GitHub DNS/network access is unavailable. No deployed draft URL exists. Therefore physical/browser acceptance remains BLOCKED rather than inferred from static CSS/tests.
 
-## Current exact-head CI
+## Exact-head CI
 
-AgentOS Tests #1095 (`34827244536`) was IN PROGRESS when this cycle record was written for #111 head `b14c5d81f1295ba434d6a6fd9bf5e38e4aa8ffae`.
+AgentOS Tests #1095 (`34827244536`) completed **SUCCESS** on exact #111 head `b14c5d81f1295ba434d6a6fd9bf5e38e4aa8ffae`.
 
-No overall exact-head PASS is claimed until that run concludes. If the known Linux lifecycle assertion repeats while the new projection tests pass, classify precisely and do not hide the lifecycle failure.
+Job evidence:
+
+- `test` job: SUCCESS;
+- full test suite step: SUCCESS;
+- npm dependency audit: SUCCESS;
+- `windows-basic-chat-lifecycle`: SUCCESS.
+
+This exact-head PASS covers the new evidence-projection tests together with the existing frontend/runtime regression suite. It does not prove physical browser responsiveness, Level-2 project-file mutation safety, authority revocation, PRS assurance or overall AgentOS readiness.
 
 ## Claim matrix after action
 
-- Basic Chat status/errors/control availability: draft implementation; frontend regressions proven on recent heads.
+- Basic Chat status/errors/control availability: draft implementation with exact-head CI coverage on current head.
 - `lastTaskId` -> local-wake canonical artifact/event correlation: PROVEN for the exact local-wake record keys described above.
 - Generic `runId` equivalence: NOT PROVEN; prohibited assumption.
-- Basic Chat evidence projection module: IMPLEMENTED, read-only/pure; exact-head CI pending.
+- Basic Chat evidence projection module: IMPLEMENTED, read-only/pure, exact-head CI PASS.
 - Projection wired into live snapshot/UI: NOT YET IMPLEMENTED.
 - Recovery event stream in Basic Chat: NOT LIVE / NOT PROVEN.
 - Green completion state: may be projected only from canonical `green.disposition` and matching response/event records when wiring occurs.
@@ -102,15 +109,14 @@ No overall exact-head PASS is claimed until that run concludes. If the known Lin
 
 ## Replenished next queue
 
-1. Consume exact-head AgentOS Tests #1095 for `b14c5d81...` and classify failures exactly.
-2. Fresh-scan #104/#110/#111 after CI.
-3. If projection tests pass, prepare the smallest runtime-owner wiring proposal: existing persistence lists -> projection -> snapshot, with no new writes.
-4. Do not wire recovery schema events until a real producer/read path exists.
-5. If runtime owner wiring lands, update `What happened` to use canonical Green/completion evidence instead of display-status inference.
-6. Continue watching #104 for authority expiry/revoke/consequence fields and independent SG-08 ownership resolution.
-7. Execute browser acceptance immediately when a trustworthy runnable draft target becomes available.
-8. Prepare Founding-Beta readiness only after Level 2 runtime/governance entry gates independently clear.
-9. Preserve Simple/Essentials/Tech Head as one truth model with progressive disclosure only.
+1. Fresh-scan #104/#110/#111 after exact-head CI.
+2. Prepare the smallest runtime-owner wiring proposal: existing persistence lists -> projection -> snapshot, with no new writes.
+3. Do not wire recovery schema events until a real producer/read path exists.
+4. If runtime owner wiring lands, update `What happened` to use canonical Green/completion evidence instead of display-status inference.
+5. Continue watching #104 for authority expiry/revoke/consequence fields and independent SG-08 ownership resolution.
+6. Execute browser acceptance immediately when a trustworthy runnable draft target becomes available.
+7. Prepare Founding-Beta readiness only after Level 2 runtime/governance entry gates independently clear.
+8. Preserve Simple/Essentials/Tech Head as one truth model with progressive disclosure only.
 
 ## Protected HOLD
 
