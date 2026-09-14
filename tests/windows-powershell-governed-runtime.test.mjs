@@ -18,6 +18,7 @@ function task() {
     issuer: 'agentos:overseer',
     admitted_by: 'agentos:overseer',
     authority_admitted: true,
+    authority_evidence_id: 'authority-evidence:runtime:1',
     authority: { granted_capabilities: ['shell.powershell.repo.read'] },
     required_capabilities: ['shell.powershell.repo.read'],
     environment: 'DRY_RUN',
@@ -131,5 +132,6 @@ test('explicitly enabled composition reaches the existing boundary and remains b
   assert.equal(result.receipt.delivery_id, 'delivery:runtime:1');
   assert.equal(result.receipt.task_id, 'task:runtime:1');
   assert.equal(result.receipt.wake_trace_id, 'wake:runtime:1');
+  assert.equal(result.receipt.authority_evidence_id, 'authority-evidence:runtime:1');
   assert.equal(result.budget.status, 'RECONCILED');
 });
