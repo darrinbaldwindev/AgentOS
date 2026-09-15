@@ -3,18 +3,18 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Frontend Overseer  
-**Cycle:** Frontend vertical cycle 012 — executable identity readiness hardening  
+**Cycle:** Frontend vertical cycle 013 — three-mode shell contract  
 **Reconciled:** 2026-09-15 Australia/Brisbane  
 **Canonical main:** `962cb3820b83506f9e6d90f50e003690dd85a8a1`  
 **Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
-**Current #111 exact head:** `2bd30bc456fdd1f564d0c938b21ed17de001888e`  
-**Current #111 exact-head CI:** AgentOS Tests #1282 (`34915285418`) SUCCESS  
+**Current #111 exact head:** `46ac1c0ccab9262b2df1f64400a8686aea667500`  
+**Current #111 exact-head CI:** AgentOS Tests #1294 (`34930109294`) SUCCESS  
 **Runtime Windows dependency #104:** `4c8bcc3bc2ad2041b0a1871d3004c1db23f3c091`  
 **Read-only host status #101:** `d91abaecf602d7ef223c4888f10fa9361677302e`  
 **Project integration #112:** `d1645450a06d00c49a7a78f176e97b44b9eaa225`  
 **Batch status:** ACTIVE  
-**P0:** Level-2 truthful readiness/evidence/authority and Founding-Beta comprehension.
+**P0:** Level-2 truthful frontend plus one coherent Simple / Essentials / Tech Head product shell.
 
 ## Mission
 
@@ -24,26 +24,41 @@ Translate canonical AgentOS runtime facts into one coherent ordinary-user produc
 
 Evidence > claims. Unknown, stale, mismatched, contradictory or absent state fails closed.
 
+## Product-shell doctrine
+
+The owner-confirmed three mockup modes are now canonical frontend direction:
+
+- **Simple** — large chat, large understandable actions, minimal technical disclosure;
+- **Essentials** — everyday default, focused chat plus the most useful work/status surfaces;
+- **Tech Head** — same AgentOS truth with deeper diagnostics, evidence and advanced surfaces.
+
+These are presentation/disclosure modes over one AgentOS. They are not product tiers, authority levels or separate runtimes.
+
+Changing mode must never:
+
+- grant/revoke permission;
+- start/stop/retry work;
+- change autonomy or execution mode;
+- bypass Jack/Green/PRS;
+- change capability/readiness;
+- manufacture status/evidence;
+- silently alter commercial entitlement.
+
+All modes keep a large primary chat/composer and see the same canonical job, permission, evidence and assurance truth. Simple hides/translates complexity; Tech Head reveals more detail but gains no hidden authority.
+
 ## Hard boundaries
 
 No merge, approval, ready transition, rebase, deployment, credential changes, production writes, unrestricted PowerShell, production autonomy, beta activation, authority bypass, Green/PRS bypass or project-file mutation enablement.
 
 Never create a duplicate scheduler, queue, registry, mission ledger, persistence layer, authority source, worker runtime, Green system, PRS system or frontend-owned readiness source.
 
-Truth rules:
+Truth rules include:
 
-- runtime determines work state;
-- authority determines permission state;
-- canonical evidence determines evidence presentation;
-- Green determines bounded completion-check disposition;
-- PRS/Henry determines independent assurance only from real PRS evidence;
 - `Stop requested` != `Execution stopped` != `Permission revoked`;
-- Local Basic Chat != local-host lifecycle;
-- host lifecycle != Windows capability;
-- Windows capability != physical Windows acceptance;
-- physical acceptance != project-file mutation readiness;
-- a persisted success receipt != safe mutation completion when ownership/recovery evidence contradicts it;
+- Local Basic Chat != host lifecycle != Windows capability != physical acceptance != mutation readiness;
+- persisted success receipt != safe mutation completion when ownership/recovery evidence contradicts it;
 - Boolean tool availability != executable identity evidence;
+- view mode != capability or authority;
 - CI PASS != product/assurance GREEN.
 
 ## Fresh repository truth
@@ -52,130 +67,113 @@ Truth rules:
 
 `main` remains `962cb3820b83506f9e6d90f50e003690dd85a8a1`.
 
-Current canonical commercial model: Free $0/year; Standard $49/year; Advanced/Pro $99/year; AI Plus $22/month as a separate intelligence resource; Commercial/Business pricing TBD for customer-hosted/private-server multi-seat deployment. Older $29 assumptions are historical. Purchase/entitlement/server-seat implementation is not proven.
+Current canonical commercial model: Free $0/year; Standard $49/year; Advanced/Pro $99/year; AI Plus $22/month separately; Commercial/Business pricing TBD. Older $29 assumptions are historical. Do not equate Simple/Essentials/Tech Head with paid tiers unless a future entitlement decision explicitly says so.
 
-### #101 — read-only host lifecycle
+### #101
 
-OPEN/DRAFT at `d91abaecf602d7ef223c4888f10fa9361677302e`. It remains the strongest current read-only lifecycle source. It does not wake, mutate, grant authority, retry, clear locks or promote Green/PRS.
+OPEN/DRAFT at `d91abaecf602d7ef223c4888f10fa9361677302e`; strongest current read-only host lifecycle source. It grants no authority and performs no wake/mutation/recovery action.
 
-### #104 — Level-2 Windows / mutation dependency
+### #104
 
-OPEN/DRAFT at `4c8bcc3bc2ad2041b0a1871d3004c1db23f3c091`; AgentOS Tests #1268 SUCCESS.
+OPEN/DRAFT at `4c8bcc3bc2ad2041b0a1871d3004c1db23f3c091`. SG-08 remains unresolved; false-success fixtures remain controlling negative evidence. Project-file mutation stays UNKNOWN/BLOCKED.
 
-SG-08 remains unresolved. Current negative fixtures reproduce a durable `MUTATED_VERIFIED` success receipt with `recovery_required:false` before later ownership-loss detection. Frontend project-file mutation therefore remains UNKNOWN/BLOCKED regardless of CI, Windows capability or physical acceptance.
+Windows host probe evidence includes path-backed `tool_evidence`; frontend readiness requires that stronger evidence rather than Boolean-only availability.
 
-Current Windows host probing now provides stronger canonical evidence:
+### #112
 
-- fixed `where.exe` discovery for required tools;
-- canonical executable path via realpath;
-- fixed version query where available;
-- `evaluation.tool_evidence` preserves `{available,path,version}`;
-- execution adapter independently resolves executable identity and can compare it against expected probe evidence.
+OPEN/DRAFT at `d1645450a06d00c49a7a78f176e97b44b9eaa225`; project integration spine, still preserving fail-closed capability boundaries.
 
-This evidence exists to prevent probe/execution identity drift. Frontend must not collapse it back to Boolean-only readiness.
+### #111
 
-### #112 — project integration
+OPEN/DRAFT/UNMERGED at exact head `46ac1c0ccab9262b2df1f64400a8686aea667500`.
 
-OPEN/DRAFT at `d1645450a06d00c49a7a78f176e97b44b9eaa225`. It remains the project integration spine and preserves fail-closed capability evaluation/non-physical DRY_RUN compatibility boundaries.
+AgentOS Tests #1294 (`34930109294`) SUCCESS: general suite, npm audit and Windows Basic Chat lifecycle passed.
 
-### #111 — frontend implementation
+## Cycle 013 implementation
 
-OPEN/DRAFT/UNMERGED at exact head `2bd30bc456fdd1f564d0c938b21ed17de001888e`.
+A bounded first three-mode shell contract is now implemented in the existing Basic Chat UI rather than a parallel app.
 
-AgentOS Tests #1282 (`34915285418`) completed SUCCESS on this exact head: general test job, full suite, npm audit and Windows Basic Chat lifecycle all passed.
+- accessible radio controls for Simple / Essentials / Tech Head;
+- Essentials is default;
+- explicit user-facing disclaimer that changing view does not change permissions, work, safety checks or capabilities;
+- mode state is browser presentation state only and makes no API/network mutation;
+- Simple hides technical disclosures and detailed evidence fields while retaining chat/status/job controls/evidence summary/composer;
+- Essentials retains current bounded Basic Chat disclosure;
+- Tech Head retains all current disclosure and allows a wider surface;
+- mobile mode selector stacks with the existing narrow-layout fallback;
+- regression tests guard mode presence, disclaimer, keyboard focus and absence of view-mode API/fetch behavior.
+
+This is intentionally not the full mockup yet. No fake Projects/Inbox/Jobs/Palette/Connectors/Research/analytics/system-health/character/upgrade widget was introduced.
 
 ## Current frontend truth model
 
-### Basic Chat
+### Basic Chat / evidence
 
-Primary scope: `Local Basic Chat · Test actions only · Background work off`.
+Primary scope remains `Local Basic Chat · Test actions only · Background work off`.
 
-Stop remains a future-send/request boundary; it does not prove the in-flight action terminated or authority was revoked.
+Stop is a future-send/request boundary, not proof of immediate termination or revocation.
 
-### What happened
+Canonical `What happened` projection remains wired read-only and requires canonical dispatch-task identity plus exact task/mission/wake correlation. Henry/PRS remains independent and is not inferred.
 
-Canonical evidence projection is wired read-only through existing local persistence. It requires canonical dispatch-task identity and exact task/mission/wake correlation. Raw prompt/objective/worker output/secrets/credentials/arbitrary metadata/PRS/recovery state are excluded. `lastTaskId` is a local-wake task correlation key, not a generic run ID.
+### Readiness
 
-### Readiness projection
+Pure/read-only readiness projection keeps Basic Chat, local-host lifecycle, Windows capability, physical Windows acceptance and mutation readiness separate. Windows capability requires path-backed executable identity. Physical acceptance requires canonical supervised exact-head PASS. Mutation remains `unknown / NO_CANONICAL_MUTATION_READINESS_SOURCE`.
 
-`runtime/basic-chat-readiness-projection.mjs` is pure presentation logic. It performs no probing, persistence, execution, authority mutation, assurance or enablement.
+The readiness adapter remains not live-wired until runtime/project integration supplies one canonical composed read-only snapshot with host identity, freshness, path-backed tool evidence, expected exact head and physical acceptance.
 
-It keeps five concepts separate:
+## Mockup surface integration map
 
-1. Basic Chat availability — supplied canonical chat snapshot only.
-2. Local-host lifecycle — supplied #101-style status only, expected-host and freshness guarded.
-3. Windows capability — explicit platform/tool/workspace facts plus resolved executable identity evidence.
-4. Physical Windows acceptance — canonical schema + supervised safety flags + exact expected-head match only.
-5. Project-file mutation — always `unknown / NO_CANONICAL_MUTATION_READINESS_SOURCE`.
+### Safe to build as presentation scaffolding now
 
-Cycle 012 strengthens Windows capability:
+- shared shell layout;
+- mode switcher;
+- large chat/composer;
+- ordinary-language status labels;
+- evidence summary container;
+- responsive navigation containers with disabled/unavailable treatment when no contract exists;
+- Willow/Isla/Jack/Henry explanatory identity cards if clearly descriptive rather than live-status claims.
 
-- PowerShell/Git/npm Boolean availability remains necessary but insufficient;
-- every required tool must also have canonical `tool_evidence` with `available:true` and non-empty resolved path;
-- Boolean-positive capability without executable identity fails closed to `unknown / WINDOWS_EXECUTABLE_IDENTITY_EVIDENCE_REQUIRED`;
-- raw executable paths are not emitted by the frontend projection;
-- missing one required executable path prevents positive capability;
-- project-file mutation remains unknown even with chat available + fresh host + path-backed Windows capability + physical exact-head PASS.
+### Requires canonical read contract before live status
 
-## Missing runtime composition seam
+- Projects;
+- Jobs/tasks;
+- Inbox/notifications;
+- Connectors;
+- Research history;
+- system health;
+- worker/scheduler status;
+- analytics/cost dashboards;
+- active work progress;
+- capability/readiness cards.
 
-The readiness adapter remains intentionally not live-wired because canonical upstream facts live on separate draft lineages.
+### Requires canonical mutation/authority contract before action
 
-Required runtime/project-integration owned read-only composition must provide:
+- Jack Allow/Revoke/Always Allow;
+- retry/recovery actions;
+- connector credential changes;
+- task cancellation that claims execution termination;
+- project-file mutation;
+- production autonomy;
+- commercial purchase/upgrade/entitlement mutation.
 
-- current host identity;
-- current host-status evidence and freshness;
-- Windows capability probe facts including `tool_evidence` executable identity;
-- expected runtime/code exact head;
-- physical acceptance record if one exists;
-- no synthetic mutation readiness.
+## Recovery / Jack / browser
 
-Do not solve this by importing cross-lineage draft modules into frontend, creating frontend persistence, inventing cross-branch IDs or treating stale evidence as current.
-
-## Jack / authority
-
-Interactive Allow/Revoke remains blocked. Receipt provenance is not enough. Required canonical semantics still include reason, scope, lifetime, expiry, revocation state, durable revoke mutation/receipt, already-running behavior, reversibility and user-facing consequences. No `Always allow`.
-
-## Recovery
-
-Basic Chat recovery remains contract-only. No live canonical recovery producer/read projection has been evidenced. Never synthesize `Recovered` from retry clicks, later success, cleared errors, new tasks or absence of failure evidence.
-
-## Accessibility / browser
-
-Static accessibility/responsive guards remain implemented/tested. Physical 320/360/390px browser/mobile acceptance remains NOT PROVEN without a trustworthy runnable draft target.
-
-## Claim matrix
-
-| Capability | Current treatment |
-|---|---|
-| Main mainstream frontend | NOT SHIPPED |
-| Basic Chat | OPEN/DRAFT bounded local test path |
-| Canonical task evidence | IMPLEMENTED + wired + tested |
-| Local host lifecycle projection | IMPLEMENTED pure/read-only; not live-wired |
-| Windows capability projection | IMPLEMENTED path-backed identity evidence required; not live-wired |
-| Physical Windows acceptance projection | IMPLEMENTED exact-head fail-closed; not live-wired |
-| Project-file mutation | UNKNOWN/BLOCKED; SG-08 false-success evidence controls |
-| Green completion | Bounded completion check only |
-| Henry/PRS | No Basic Chat PASS inference |
-| Durable Revoke | NOT EVIDENCED |
-| Recovery UI | CONTRACT ONLY |
-| Physical browser/mobile acceptance | NOT PROVEN |
-| Commercial pricing | Canonical direction known; purchase/entitlement implementation NOT PROVEN |
+Jack interactive Allow/Revoke remains blocked pending lifetime/expiry/revocation/consequence semantics. Recovery remains contract-only without a live producer/read path. Physical 320/360/390px browser/mobile acceptance remains NOT PROVEN without a trustworthy runnable target.
 
 ## Replenished P0 queue
 
 1. Fresh-scan main/#101/#104/#110/#111/#112 before every action.
-2. Track #104 SG-08 repair on the existing writer lineage; false-success fixtures remain hard blocker.
-3. Require the runtime-owned composed readiness snapshot to preserve `tool_evidence`, not Boolean-only tool availability.
-4. Wire readiness into Basic Chat only after that canonical composition exists; add no frontend persistence.
-5. Keep project-file mutation unknown until a runtime-owned, independently assured readiness source exists.
-6. Continue authority lifetime/expiry/revoke/consequence field detection; no synthetic Allow/Revoke/Always Allow.
-7. Keep recovery contract-only until a live producer/read path exists.
-8. Execute physical browser/mobile acceptance immediately when a trustworthy runnable target becomes available.
-9. Preserve one truth model across Simple / Essentials / Tech Head; disclosure density only.
-10. Reconcile future pricing/upgrade surfaces to $0/$49/$99 + $22 AI Plus + Commercial/Business TBD without speculative checkout claims.
-11. Prepare Founding-Beta readiness only after Level-2 ownership/authority/assurance and frontend trust/control/evidence/browser gates independently clear.
-12. Re-run exact-head CI after every implementation change and consume failures before claims.
+2. Continue SG-08 change detection; mutation false-success remains hard blocker.
+3. Evolve the existing Basic Chat into one shared shell incrementally, never a parallel frontend.
+4. Preserve the large chat/composer in all three modes.
+5. Add only presentation scaffolding where no canonical data contract exists; do not fake live status.
+6. Find the smallest canonical read contracts for Projects, Jobs and Inbox first; these provide highest everyday value for Essentials.
+7. Require runtime-owned readiness composition before live readiness cards.
+8. Continue authority lifetime/expiry/revoke field detection; no synthetic Jack actions.
+9. Keep recovery contract-only until live producer/read path exists.
+10. Execute physical browser/mobile acceptance when a trustworthy runnable target exists.
+11. Keep modes independent of Free/Standard/Pro commercial entitlement unless owner explicitly changes that product rule.
+12. Prepare Founding Beta only after technical and frontend trust gates independently clear.
 
 ## Protected HOLD
 
