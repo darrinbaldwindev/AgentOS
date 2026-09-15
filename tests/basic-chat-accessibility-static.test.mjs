@@ -44,10 +44,23 @@ test('Basic Chat has a narrow-layout fallback without removing the composer', ()
   assert.match(css, /\.row\s*\{[^}]*flex-direction:\s*column/s);
   assert.match(css, /#send\s*\{\s*width:\s*100%/s);
   assert.match(css, /\.controls\s*\{[^}]*flex-wrap:\s*wrap/s);
+  assert.match(css, /\.product-heading\s*\{[^}]*flex-direction:\s*column/s);
 });
 
 test('Basic Chat honors reduced-motion preference', () => {
   assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)/);
   assert.match(css, /animation-iteration-count:\s*1\s*!important/);
   assert.match(css, /scroll-behavior:\s*auto\s*!important/);
+});
+
+test('Simple Essentials and Tech Head are presentation modes rather than capability switches', () => {
+  assert.match(html, /name="view-mode" value="simple"/);
+  assert.match(html, /name="view-mode" value="essentials" checked/);
+  assert.match(html, /name="view-mode" value="tech"/);
+  assert.match(html, /View changes detail only\. It does not change permissions, running work, safety checks, or AgentOS capabilities\./);
+  assert.match(js, /const VIEW_MODES = new Set\(\['simple', 'essentials', 'tech'\]\)/);
+  assert.match(js, /document\.documentElement\.dataset\.viewMode = viewMode/);
+  assert.doesNotMatch(js, /api\([^\n]*view-mode/i);
+  assert.doesNotMatch(js, /fetch\([^\n]*view-mode/i);
+  assert.match(css, /html\[data-view-mode="simple"\] \.tech-disclosure/);
 });
