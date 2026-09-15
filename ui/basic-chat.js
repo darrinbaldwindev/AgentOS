@@ -1,6 +1,9 @@
 const $ = (id) => document.getElementById(id);
 let sending = false;
 let state = { ready: false, history: [], status: 'Loading…' };
+let viewMode = 'essentials';
+
+const VIEW_MODES = new Set(['simple', 'essentials', 'tech']);
 
 const STATUS_LABELS = Object.freeze({
   READY: 'Ready',
@@ -20,6 +23,14 @@ const ERROR_PRESENTATION = Object.freeze([
   ['MESSAGE_TOO_LONG', 'That message is too long for this local chat. Shorten it and try again.'],
   ['REQUEST_TOO_LARGE', 'That request is too large for this local chat. Shorten it and try again.'],
 ]);
+
+function applyViewMode(nextMode) {
+  viewMode = VIEW_MODES.has(nextMode) ? nextMode : 'essentials';
+  document.documentElement.dataset.viewMode = viewMode;
+  for (const input of document.querySelectorAll('input[name="view-mode"]')) {
+    input.checked = input.value === viewMode;
+  }
+}
 
 function statusLabel() {
   if (sending) return 'Working';
@@ -185,6 +196,13 @@ async function refresh() {
   state = await res.json();
   render();
 }
+
+for (const input of document.querySelectorAll('input[name="view-mode"]')) {
+  input.addEventListener('change', () => {
+    if (input.checked) applyViewMode(input.value);
+  });
+}
+applyViewMode('essentials');
 
 $('chat').addEventListener('submit', async (event) => {
   event.preventDefault();
