@@ -55,6 +55,43 @@ test('pure capability assertion fails closed for missing required connectivity',
   );
 });
 
+test('canonical and legacy capability names may agree without changing eligibility', () => {
+  const evaluation = evaluateCapabilityResults({
+    githubRead: true,
+    'github.read': true,
+    continuityRead: true,
+    'continuity.read': true,
+    handoff: true,
+  });
+  assert.equal(evaluation.eligible, true);
+  assert.equal(evaluation.results['github.read'], true);
+  assert.equal(evaluation.results['continuity.read'], true);
+});
+
+test('contradictory legacy alias cannot override canonical capability evidence', () => {
+  assert.throws(
+    () => evaluateCapabilityResults({
+      'github.read': true,
+      githubRead: false,
+      'continuity.read': true,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read',
+  );
+});
+
+test('contradictory canonical capability cannot override legacy alias evidence', () => {
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      'github.read': false,
+      continuityRead: true,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read',
+  );
+});
+
 test('integration shell reuses canonical evaluation for alias-shaped probe results', async () => {
   const workspaceAdapter = { id: 'workspace' };
   const githubAdapter = { id: 'github' };
