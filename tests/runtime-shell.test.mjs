@@ -92,6 +92,46 @@ test('contradictory canonical capability cannot override legacy alias evidence',
   );
 });
 
+test('continuity alias conflict fails closed regardless of otherwise eligible evidence', () => {
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      'continuity.read': false,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'continuity.read',
+  );
+});
+
+test('workspace read alias conflict fails closed instead of preserving local preference', () => {
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      handoff: true,
+      workspaceRead: true,
+      'workspace.read': false,
+      workspaceWrite: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.read',
+  );
+});
+
+test('workspace write alias conflict fails closed instead of preserving local preference', () => {
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      handoff: true,
+      workspaceRead: true,
+      workspaceWrite: false,
+      'workspace.write': true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.write',
+  );
+});
+
 test('integration shell reuses canonical evaluation for alias-shaped probe results', async () => {
   const workspaceAdapter = { id: 'workspace' };
   const githubAdapter = { id: 'github' };
