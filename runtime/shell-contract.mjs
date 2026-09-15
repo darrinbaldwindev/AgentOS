@@ -2,13 +2,35 @@
 // Integration adapters implement probes; canonical eligibility evaluation lives in runtime-shell.mjs.
 
 import { assertCapabilityResults } from './runtime-shell.mjs';
+import { normalizeCapabilities } from './capability-contract.mjs';
 
 function capabilityResults(probe = {}) {
-  return probe.evaluation?.results
-    ?? probe.evaluation?.capabilities
-    ?? probe.results
-    ?? probe.capabilities
-    ?? probe;
+  const candidates = [
+    probe.evaluation?.results,
+    probe.evaluation?.capabilities,
+    probe.results,
+    probe.capabilities,
+  ].filter((candidate) => candidate && typeof candidate === 'object');
+
+  if (candidates.length === 0) return probe;
+
+  const combined = {};
+  for (const candidate of candidates) {
+    const normalized = normalizeCapabilities(candidate);
+    for (const [key, value] of Object.entries(normalized)) {
+      if (
+        Object.prototype.hasOwnProperty.call(combined, key)
+        && combined[key] !== value
+      ) {
+        const error = new Error(`conflicting capability evidence: ${key}`);
+        error.code = 'CAPABILITY_EVIDENCE_CONFLICT';
+        error.capability = key;
+        throw error;
+      }
+      combined[key] = value;
+    }
+  }
+  return combined;
 }
 
 export function createRuntimeShell({ capabilityProbe, workspaceAdapter = null, githubAdapter = null }) {
