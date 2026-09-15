@@ -1,58 +1,59 @@
 # SOP Overseer — Vertical Execution Batch
 
-**Cycle:** 002  
+**Cycle:** 003  
 **Date:** 2026-09-15  
 **Canonical mission:** `darrinbaldwindev/Overseer#49`  
 **Branch:** `docs/sop-overseer-bootstrap`  
 **SOP PR:** #113 — DRAFT / UNMERGED
 
 ## Fresh-scan reconciliation
-- Level 2 remains immediate P0; Level 5 remains strategic end-state.
-- PR #104 remains OPEN / DRAFT / UNMERGED. Current GitHub metadata still exposes the bounded operations `repo.status`, `repo.diff`, `test.run`, `audit.run`, `process.list`, `service.list`.
-- Project-file mutation remains AMBER/BLOCKED because SG-08 continuous ownership through final verification -> publish/prepared recovery -> durable success receipt -> release is not proven.
-- Authenticated actor/canonical grant binding remains incomplete; physical Windows acceptance remains separate; Green and PRS remain gated.
-- SOP PR #113 remains DRAFT / UNMERGED and is the durable documentation workstream.
-- Commercial and frontend/persona terminology contradictions remain open and must not be silently resolved.
+- Level 2 remains immediate P0 and Level 5 the strategic end-state.
+- AgentOS PR #104 remains OPEN / DRAFT / UNMERGED; GitHub PR/ref API reports head `4c8bcc3bc2ad2041b0a1871d3004c1db23f3c091`.
+- Newer Overseer #49 control evidence references PR #104 head `fddca3363925b9acb5ecb05552ae5d82ce7fed32` and records a process-tree timeout containment blocker, `powershell_level1_accepted=false`, with PRS blocked on dependency.
+- The exact-head mismatch is material contradictory evidence. SOPs must not silently select either head as assurance truth.
+- Project-file mutation remains BLOCKED; authenticated identity/grant binding, continuous ownership, recovery, physical Windows acceptance, Green and PRS remain distinct gates.
 
 ## Executed vertically this cycle
-### P0 completed/drafted
-1. `SOP-WIN-001` — bounded Windows worker operation; explicitly excludes unrestricted PowerShell, project-file mutation and physical-Windows claims.
-2. `SOP-FILE-001` — controlled project-file mutation held BLOCKED with explicit authority/ownership/atomicity/idempotency/recovery/receipt/Green/PRS dependencies.
-3. `SOP-REC-001` — interrupted, duplicate and uncertain execution recovery; uncertainty is never completion.
-4. Credential and Secret Handling Policy candidate — credentials are capabilities, never implicit authority.
-5. Capability/MCP Supply-Chain Policy candidate — MCP-first not MCP-only; capability integrations cannot become competing control planes.
-6. `SOP-IR-001` — incident response draft preserving evidence and protected-action boundaries.
-7. Master register advanced to v0.2 with new documents and dependency triggers.
+1. Reconciled the stale 2026-09-12 commercial source by converting it to an explicit historical/superseded document; current pricing now points to Free $0 / Standard $49 / Advanced-Pro $99 / AI Plus $22/month / Business TBD.
+2. Preserved old $39 Co-worker / Operator wording as dated history instead of deleting provenance.
+3. Added `docs/sop/assurance/EVIDENCE-INDEX.md` with exact-head/scope assurance rules and the live #104 head contradiction.
+4. Added `SOP-REC-002` for PowerShell timeout/descendant-process containment. FAILED/timeout does not prove descendants stopped.
+5. Added `SOP-UX-001` defining Simple / Essentials / Tech Head as progressive disclosure over one canonical truth, not authority or pricing tiers.
+6. Recorded persona independence and historical `Everyday` terminology migration.
 
-## Remaining / replenished P0
-1. Reconcile stale `$39 Co-worker` commercial source with an explicit supersession notice to current `$49 Standard / $99 Advanced-Pro / $22 AI Plus` model, preserving dated history.
-2. Map current Green and PRS findings to exact heads/scopes and build an assurance-evidence index usable by SOP revalidation.
-3. Map actual credential/secret storage, redaction, environment/process exposure, rotation and deletion implementation; downgrade any unsupported policy language.
-4. Map actual capability/MCP registry/passport/admission/update/revocation implementation.
-5. Expand recovery family with focused procedures for result-write failure, stale ownership, partial mutation, duplicate/replay and receipt-target mismatch once exact canonical implementation paths are mapped.
-6. Create security/vulnerability disclosure process draft; do not publish externally.
+## New highest-priority blocker discovered
+The current portfolio evidence says a bounded PowerShell timeout may leave descendant process state unproven. Until repaired and independently assured, documentation must not equate parent timeout/FAILED receipt with contained termination or claim Level 1 PowerShell acceptance.
+
+## Replenished P0
+1. Reconcile the PR #104 head discrepancy from authoritative repository/coordination evidence; require exact-ID/exact-head checkpoint before assurance promotion.
+2. Map the process-tree termination implementation and its regressions once the repaired head appears; update SOP-REC-002 only from exact evidence.
+3. Build a durable Green/PRS evidence matrix linking finding -> exact head -> scope -> status -> superseding evidence.
+4. Map actual credential/secret storage/redaction/rotation/deletion mechanisms.
+5. Map actual MCP/capability identity/admission/update/revocation mechanisms.
+6. Add focused recovery SOPs for result-write failure, stale ownership, partial mutation, duplicate/replay and receipt-target mismatch.
+7. Draft internal vulnerability disclosure/security reporting procedure; external publication remains protected.
 
 ## P1
-7. Install/first-run/onboarding SOP from exact current install/doctor/Basic Chat evidence.
-8. Model/provider/local/BYOK SOP with IMPLEMENTED vs PRODUCT DIRECTION labels.
-9. Privacy/data-flow inventory before public Privacy Policy drafting.
-10. Jobs/Autonomy Hours/Night Shift/Morning Brief SOP bounded to current scheduler/autonomy implementation.
-11. Simple/Essentials/Tech Head documentation contract and canonical terminology reconciliation.
-12. User-facing `What happened?` / evidence explanation using the same evidence truth model.
-13. Data export/deletion/uninstall inventory and procedure gaps.
+8. Install/doctor/first-run/onboarding evidence map and SOP.
+9. Provider/model/local/BYOK evidence map and SOP.
+10. Privacy/data-flow inventory before any public Privacy Policy.
+11. Jobs/Autonomy Hours/Night Shift/Morning Brief evidence-bounded SOP.
+12. User-facing `What happened?` evidence explanation aligned to SOP-EVID-001 and SOP-UX-001.
+13. Export/delete/uninstall inventory.
+14. Frontend terminology audit for `Everyday`, `Basic`, Simple, Essentials and Tech Head.
 
 ## P2
-14. Accessibility evidence map.
-15. Education/family/student jurisdiction research plan; LEGAL REVIEW REQUIRED.
-16. Documentation freshness design driven by dependency changes without becoming runtime authority.
-17. User glossary/FAQ from canonical terminology.
-18. Business/admin documentation architecture kept PRODUCT DIRECTION until implementation evidence exists.
+15. Accessibility evidence map.
+16. Education/family/student jurisdiction plan with LEGAL REVIEW REQUIRED.
+17. Documentation freshness dependency design.
+18. User glossary/FAQ.
+19. Business/admin documentation architecture as PRODUCT DIRECTION.
 
-## Verification/post-scan disposition
-New documents deliberately preserve current blockers rather than converting implementation direction into shipped behaviour. No new runtime scheduler, authority, registry, ledger, persistence, memory, Green or PRS system was introduced.
+## Verification disposition
+Cycle 003 reduced one material commercial contradiction but discovered/recorded a more immediate software-assurance contradiction. Fresh evidence was allowed to make the documentation more conservative. No blocker was converted into success.
 
 ## Protected actions preserved
-No merge, approval, ready transition, rebase, deploy, credential change, production write, external publication, legal approval, production autonomy, Green certification or PRS certification is performed or implied.
+No merge, approval, ready transition, rebase, deploy, credential change, production write, external publication, legal approval, production autonomy, Green certification or PRS certification performed or implied.
 
 ## Next cycle gate
-Fresh-scan main, #104, #113, newest #49 comments, CI and assurance evidence again before editing. Fresh evidence outranks this batch.
+Fresh-scan #104 canonical ref, newest #49 exact-ID checkpoint, #113, CI and Green/PRS. If the head discrepancy persists, keep affected claims REVIEW REQUIRED rather than resolving by assumption.
