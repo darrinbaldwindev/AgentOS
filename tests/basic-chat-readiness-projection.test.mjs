@@ -20,6 +20,7 @@ test('Basic Chat availability comes only from the supplied canonical chat snapsh
 
 test('local host lifecycle projects canonical status without becoming readiness', () => {
   const working = projectBasicChatReadiness({
+    expectedHostId: 'host-a',
     localHostStatus: {
       schema_version: 1,
       host_id: 'host-a',
@@ -50,6 +51,55 @@ test('local host lifecycle projects canonical status without becoming readiness'
   });
   assert.equal(malformed.localHostLifecycle.state, 'unknown');
   assert.equal(malformed.localHostLifecycle.reason, 'LOCAL_HOST_STATUS_SCHEMA_INVALID');
+});
+
+test('local host lifecycle fails closed on stale positive state or expected-host mismatch', () => {
+  const staleIdle = projectBasicChatReadiness({
+    expectedHostId: 'host-a',
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'idle',
+      evidence_freshness: 'stale',
+    },
+  });
+  assert.equal(staleIdle.localHostLifecycle.state, 'offline_or_stale');
+  assert.equal(staleIdle.localHostLifecycle.reason, 'LOCAL_HOST_EVIDENCE_STALE');
+
+  const unknownWorking = projectBasicChatReadiness({
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'working',
+      evidence_freshness: 'unknown',
+    },
+  });
+  assert.equal(unknownWorking.localHostLifecycle.state, 'unknown');
+  assert.equal(unknownWorking.localHostLifecycle.reason, 'LOCAL_HOST_FRESHNESS_UNCONFIRMED');
+
+  const wrongHost = projectBasicChatReadiness({
+    expectedHostId: 'host-a',
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-b',
+      lifecycle_state: 'idle',
+      evidence_freshness: 'fresh',
+    },
+  });
+  assert.equal(wrongHost.localHostLifecycle.state, 'blocked');
+  assert.equal(wrongHost.localHostLifecycle.reason, 'LOCAL_HOST_ID_MISMATCH');
+  assert.equal(wrongHost.localHostLifecycle.freshness, 'conflicting');
+
+  const staleRecovery = projectBasicChatReadiness({
+    localHostStatus: {
+      schema_version: 1,
+      host_id: 'host-a',
+      lifecycle_state: 'recovery_required',
+      reason: 'RETAINED_OR_UNCERTAIN_LOCK',
+      evidence_freshness: 'stale',
+    },
+  });
+  assert.equal(staleRecovery.localHostLifecycle.state, 'recovery_required');
 });
 
 test('Windows host capability requires explicit canonical probe facts instead of asserted eligibility', () => {
@@ -117,6 +167,17 @@ test('physical Windows acceptance requires canonical supervised PASS evidence bo
   assert.equal(missingExpectedHead.physicalWindowsAcceptance.state, 'not_established');
   assert.equal(missingExpectedHead.physicalWindowsAcceptance.reason, 'PHYSICAL_ACCEPTANCE_EXPECTED_HEAD_REQUIRED');
 
+  const malformedExpectedHead = projectBasicChatReadiness({ physicalAcceptance: acceptance, expectedExactHead: 'not-a-sha' });
+  assert.equal(malformedExpectedHead.physicalWindowsAcceptance.state, 'not_established');
+  assert.equal(malformedExpectedHead.physicalWindowsAcceptance.reason, 'PHYSICAL_ACCEPTANCE_EXPECTED_HEAD_REQUIRED');
+
+  const malformedEvidenceHead = projectBasicChatReadiness({
+    physicalAcceptance: { ...acceptance, exact_head: 'not-a-sha' },
+    expectedExactHead: head,
+  });
+  assert.equal(malformedEvidenceHead.physicalWindowsAcceptance.state, 'not_established');
+  assert.equal(malformedEvidenceHead.physicalWindowsAcceptance.reason, 'PHYSICAL_ACCEPTANCE_EXACT_HEAD_INVALID');
+
   const stale = projectBasicChatReadiness({
     physicalAcceptance: acceptance,
     expectedExactHead: 'b'.repeat(40),
@@ -139,6 +200,7 @@ test('physical Windows acceptance requires canonical supervised PASS evidence bo
 test('lifecycle capability or physical acceptance never upgrades project-file mutation', () => {
   const head = 'b'.repeat(40);
   const result = projectBasicChatReadiness({
+    expectedHostId: 'host-a',
     expectedExactHead: head,
     chatSnapshot: { ready: true, paused: false, stopped: false },
     localHostStatus: {
