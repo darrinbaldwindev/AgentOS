@@ -132,14 +132,56 @@ describe('Mission C Basic Chat V1', () => {
     }
   });
 
-  it('loopback server serves UI and keeps composer markup', async () => {
+  it('loopback server serves truthful ordinary-user UI and keeps composer markup', async () => {
     const root = await makeRoot();
     const app = await startBasicChat({ root, port: 0 });
     try {
       const html = await (await fetch(`${app.url}/`)).text();
+      const js = await (await fetch(`${app.url}/chat.js`)).text();
       assert.match(html, /id="message"/);
       assert.match(html, /composer-area/);
       assert.match(html, /id="send"/);
+      assert.match(html, /aria-label="Job controls"/);
+      assert.match(html, /Local Basic Chat · Test actions only · Background work off/);
+      assert.match(html, /Physical Windows worker readiness: not established/);
+      assert.doesNotMatch(html, /Physical Windows worker readiness: (ready|verified|passed)/i);
+      assert.match(html, /The action already in progress may finish before AgentOS can stop/);
+      assert.match(html, /AgentOS checks the result before calling this job complete/);
+      assert.match(html, /<summary>Technical details<\/summary>/);
+      assert.match(html, /Mode: DRY_RUN/);
+      assert.match(html, /id="error-details"/);
+      assert.match(html, /<summary>Technical error details<\/summary>/);
+      assert.match(html, /id="error-technical"/);
+      assert.match(html, /id="evidence-summary"/);
+      assert.match(html, />What happened<\/h2>/);
+      assert.match(html, /id="completion-check"/);
+      assert.match(html, /id="independent-assurance">Not shown in Basic Chat/);
+      assert.match(html, /Henry\/PRS is separate independent assurance and is not inferred from Green or worker success/);
+      assert.doesNotMatch(html, /Stop immediately/i);
+      assert.doesNotMatch(html, />VERIFIED</);
+
+      assert.match(js, /COMPLETE: 'Finished — completion check passed'/);
+      assert.match(js, /VERIFYING: 'Checking the result'/);
+      assert.match(js, /BLOCKED: 'Needs attention — work was not marked complete'/);
+      assert.match(js, /Stop requested — no new actions will start; the current action may still finish/);
+      assert.match(js, /Unable to confirm status/);
+      assert.match(js, /if \(sending\) return 'Working'/);
+      assert.match(js, /AgentOS could not confirm what happened\. Review the technical details before retrying\./);
+      assert.match(js, /Turn off scheduled checks before using this local chat\./);
+      assert.match(js, /Restart the local host before sending another job\./);
+      assert.match(js, /details\.hidden = false/);
+      assert.match(js, /The bounded local job finished and its required completion check passed\./);
+      assert.match(js, /completion: 'Passed for this job'/);
+      assert.match(js, /Independent assurance/);
+      assert.match(js, /Not shown in Basic Chat/);
+      assert.match(js, /state\.lastTaskId/);
+      assert.doesNotMatch(js, /Henry PASS/);
+      assert.doesNotMatch(js, /PRS PASS/);
+      assert.doesNotMatch(js, /Status: WORKING/);
+      assert.doesNotMatch(js, / · STOPPED/);
+      assert.doesNotMatch(js, / · PAUSED/);
+      assert.doesNotMatch(js, /Stop immediately/i);
+      assert.doesNotMatch(js, /VERIFIED/);
     } finally {
       await app.close();
       await rm(root, { recursive: true, force: true });

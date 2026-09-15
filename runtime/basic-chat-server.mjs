@@ -191,9 +191,6 @@ async function mainCli() {
     port: Number(process.env.AGENTOS_CHAT_PORT || 4317),
     lifecycleStage: trace,
   });
-  console.log(`Basic Chat: ${app.url}`);
-  console.log('DRY_RUN; autonomy disabled. State:', root);
-  console.log('Listening. Press Ctrl+C to stop.');
 
   let shutdownPromise = null;
   const shutdown = (source) => {
@@ -225,6 +222,14 @@ async function mainCli() {
       // signal may be unsupported on some platforms
     }
   }
+
+  // Readiness is published only after shutdown handlers are installed. Tests
+  // and operators may act immediately on this line, so emitting it earlier
+  // creates a race where POSIX can terminate by default SIGINT before cleanup
+  // has an opportunity to release the Basic Chat lock.
+  console.log(`Basic Chat: ${app.url}`);
+  console.log('DRY_RUN; autonomy disabled. State:', root);
+  console.log('Listening. Press Ctrl+C to stop.');
 
   const beforeExitHandler = (code) => trace('PROCESS_BEFORE_EXIT', { code });
   const exitHandler = (code) => trace('PROCESS_EXIT', { code });

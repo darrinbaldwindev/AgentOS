@@ -1,60 +1,55 @@
 :root { font: 16px/1.5 system-ui, sans-serif; color: #e8edf6; background: #111722; }
 * { box-sizing: border-box; }
-body { margin: 0; height: 100vh; }
-.shell {
-  max-width: 860px;
-  margin: 0 auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 16px 20px;
-}
+body { margin: 0; min-height: 100vh; }
+.shell { max-width: 860px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; padding: 16px 20px; }
 header { flex: 0 0 auto; }
+.product-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 h1 { font-size: 24px; margin: 0 0 4px; }
 h1 span { font-weight: 400; color: #a5b5cb; }
 .sub, .note, small { color: #a5b5cb; }
 #status { font-weight: 600; margin: 8px 0; }
-.controls button { margin: 2px 4px 2px 0; }
-.history {
-  flex: 1 1 auto;
-  min-height: 120px;
-  overflow: auto;
-  border: 1px solid #334157;
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin: 12px 0;
-}
+.mode-switcher { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 0; border: 1px solid #334157; border-radius: 10px; padding: 8px 10px; }
+.mode-switcher legend { padding: 0 4px; color: #a5b5cb; font-size: 13px; }
+.mode-switcher label { display: inline-flex; align-items: center; gap: 6px; margin: 0; min-height: 44px; font-weight: 600; cursor: pointer; }
+.mode-switcher input { min-width: 20px; min-height: 20px; }
+.mode-switcher input:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.controls button { margin: 0; }
+.history { flex: 1 1 auto; min-height: 120px; overflow: auto; border: 1px solid #334157; border-radius: 12px; padding: 12px 16px; margin: 12px 0; }
 article { border-bottom: 1px solid #334157; padding: 10px 0; }
 article p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
-.composer-area {
-  flex: 0 0 auto;
-  border: 1px solid #334157;
-  border-radius: 12px;
-  padding: 12px 16px;
-  background: #151c28;
-}
+#jobs-summary, #evidence-summary { border: 1px solid #334157; border-radius: 12px; padding: 12px 16px; margin: 12px 0; }
+#jobs-summary h2, #evidence-summary h2 { margin-top: 0; font-size: 18px; }
+.jobs-list { list-style: none; padding: 0; margin: 0; }
+.jobs-list li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #334157; }
+.job-meta { color: #a5b5cb; overflow-wrap: anywhere; text-align: right; }
+.composer-area { flex: 0 0 auto; border: 1px solid #334157; border-radius: 12px; padding: 12px 16px; background: #151c28; }
 label { display: block; font-weight: 600; margin-bottom: 6px; }
-textarea {
-  width: 100%;
-  background: #1b2534;
-  color: #fff;
-  border: 1px solid #526784;
-  border-radius: 8px;
-  padding: 10px;
-  font: inherit;
-  resize: vertical;
-  min-height: 72px;
-}
+textarea { width: 100%; background: #1b2534; color: #fff; border: 1px solid #526784; border-radius: 8px; padding: 10px; font: inherit; resize: vertical; min-height: 88px; }
 .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
-button {
-  background: #29374c;
-  color: #fff;
-  border: 1px solid #526784;
-  border-radius: 6px;
-  padding: 9px 14px;
-  cursor: pointer;
-}
+button { min-height: 44px; min-width: 44px; background: #29374c; color: #fff; border: 1px solid #526784; border-radius: 6px; padding: 9px 14px; cursor: pointer; font: inherit; }
 button:disabled { opacity: 0.5; cursor: default; }
+button:focus-visible,
+textarea:focus-visible,
+summary:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
 #send { background: #225fbe; }
 #error { color: #ffb0ad; min-height: 1.2em; margin: 6px 0 0; }
 .note { font-size: 13px; }
+html[data-view-mode="simple"] .tech-disclosure { display: none; }
+html[data-view-mode="simple"] #evidence-summary dl { display: none; }
+html[data-view-mode="simple"] .essentials-surface { display: none; }
+html[data-view-mode="tech"] .shell { max-width: 1040px; }
+@media (max-width: 600px) {
+  .shell { padding: 12px; }
+  .product-heading { flex-direction: column; }
+  .mode-switcher { width: 100%; }
+  .row { align-items: stretch; flex-direction: column; }
+  #send { width: 100%; }
+  .history { padding: 10px 12px; }
+  .composer-area { padding: 10px 12px; }
+  .jobs-list li { flex-direction: column; }
+  .job-meta { text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
