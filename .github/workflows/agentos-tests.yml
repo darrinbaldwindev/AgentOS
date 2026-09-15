@@ -20,3 +20,13 @@ jobs:
         run: npm test
       - name: Audit npm dependency tree
         run: npm audit --audit-level=high --omit=dev
+
+  windows-basic-chat-lifecycle:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Windows-native Basic Chat lifecycle suite
+        run: node --test tests/basic-chat-lifecycle.test.mjs
