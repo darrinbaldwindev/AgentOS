@@ -8,7 +8,15 @@ import {
 import { createRuntimeShell as createIntegrationShell } from '../runtime/shell-contract.mjs';
 
 test('runtime shell normalizes adapter aliases before eligibility evaluation', async () => {
-  const shell = createEligibilityShell({ probes: { githubRead: async () => true, continuityRead: async () => true, handoff: async () => true, workspaceRead: async () => true, workspaceWrite: async () => true } });
+  const shell = createEligibilityShell({
+    probes: {
+      githubRead: async () => true,
+      continuityRead: async () => true,
+      handoff: async () => true,
+      workspaceRead: async () => true,
+      workspaceWrite: async () => true,
+    },
+  });
   const evaluation = await shell.assertExecutionEligible();
   assert.equal(evaluation.eligible, true);
   assert.equal(evaluation.results['github.read'], true);
@@ -17,52 +25,130 @@ test('runtime shell normalizes adapter aliases before eligibility evaluation', a
 });
 
 test('runtime shell blocks when canonical required connectivity is absent', async () => {
-  const shell = createEligibilityShell({ probes: { githubRead: async () => false, continuityRead: async () => true, handoff: async () => true } });
+  const shell = createEligibilityShell({
+    probes: {
+      githubRead: async () => false,
+      continuityRead: async () => true,
+      handoff: async () => true,
+    },
+  });
   await assert.rejects(() => shell.assertExecutionEligible(), (error) => error.code === 'AGENT_NOT_ELIGIBLE');
 });
 
 test('pure capability evaluation normalizes aliases through one canonical helper', () => {
-  const evaluation = evaluateCapabilityResults({ githubRead: true, continuityRead: true, handoff: true, workspaceRead: true, workspaceWrite: true });
+  const evaluation = evaluateCapabilityResults({
+    githubRead: true,
+    continuityRead: true,
+    handoff: true,
+    workspaceRead: true,
+    workspaceWrite: true,
+  });
   assert.equal(evaluation.eligible, true);
   assert.equal(evaluation.localPreferred, true);
   assert.equal(evaluation.results['github.read'], true);
 });
 
 test('pure capability assertion fails closed for missing required connectivity', () => {
-  assert.throws(() => assertCapabilityResults({ githubRead: false, continuityRead: true, handoff: true }), (error) => error.code === 'AGENT_NOT_ELIGIBLE');
+  assert.throws(
+    () => assertCapabilityResults({ githubRead: false, continuityRead: true, handoff: true }),
+    (error) => error.code === 'AGENT_NOT_ELIGIBLE',
+  );
 });
 
 test('canonical and legacy capability names may agree without changing eligibility', () => {
-  const evaluation = evaluateCapabilityResults({ githubRead: true, 'github.read': true, continuityRead: true, 'continuity.read': true, handoff: true });
+  const evaluation = evaluateCapabilityResults({
+    githubRead: true,
+    'github.read': true,
+    continuityRead: true,
+    'continuity.read': true,
+    handoff: true,
+  });
   assert.equal(evaluation.eligible, true);
   assert.equal(evaluation.results['github.read'], true);
   assert.equal(evaluation.results['continuity.read'], true);
 });
 
 test('contradictory legacy alias cannot override canonical capability evidence', () => {
-  assert.throws(() => evaluateCapabilityResults({ 'github.read': true, githubRead: false, 'continuity.read': true, handoff: true }), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read');
+  assert.throws(
+    () => evaluateCapabilityResults({
+      'github.read': true,
+      githubRead: false,
+      'continuity.read': true,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read',
+  );
 });
 
 test('contradictory canonical capability cannot override legacy alias evidence', () => {
-  assert.throws(() => evaluateCapabilityResults({ githubRead: true, 'github.read': false, continuityRead: true, handoff: true }), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read');
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      'github.read': false,
+      continuityRead: true,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read',
+  );
 });
 
 test('continuity alias conflict fails closed regardless of otherwise eligible evidence', () => {
-  assert.throws(() => evaluateCapabilityResults({ githubRead: true, continuityRead: true, 'continuity.read': false, handoff: true }), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'continuity.read');
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      'continuity.read': false,
+      handoff: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'continuity.read',
+  );
 });
 
 test('workspace read alias conflict fails closed instead of preserving local preference', () => {
-  assert.throws(() => evaluateCapabilityResults({ githubRead: true, continuityRead: true, handoff: true, workspaceRead: true, 'workspace.read': false, workspaceWrite: true }), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.read');
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      handoff: true,
+      workspaceRead: true,
+      'workspace.read': false,
+      workspaceWrite: true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.read',
+  );
 });
 
 test('workspace write alias conflict fails closed instead of preserving local preference', () => {
-  assert.throws(() => evaluateCapabilityResults({ githubRead: true, continuityRead: true, handoff: true, workspaceRead: true, workspaceWrite: false, 'workspace.write': true }), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.write');
+  assert.throws(
+    () => evaluateCapabilityResults({
+      githubRead: true,
+      continuityRead: true,
+      handoff: true,
+      workspaceRead: true,
+      workspaceWrite: false,
+      'workspace.write': true,
+    }),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'workspace.write',
+  );
 });
 
 test('integration shell reuses canonical evaluation for alias-shaped probe results', async () => {
   const workspaceAdapter = { id: 'workspace' };
   const githubAdapter = { id: 'github' };
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ githubRead: true, continuityRead: true, handoff: true, workspaceRead: true, workspaceWrite: true }) }, workspaceAdapter, githubAdapter });
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        githubRead: true,
+        continuityRead: true,
+        handoff: true,
+        workspaceRead: true,
+        workspaceWrite: true,
+      }),
+    },
+    workspaceAdapter,
+    githubAdapter,
+  });
+
   const authorization = await shell.authorize('agent-1');
   assert.equal(authorization.evaluation.eligible, true);
   assert.equal(authorization.mode, 'local-preferred');
@@ -70,29 +156,80 @@ test('integration shell reuses canonical evaluation for alias-shaped probe resul
 });
 
 test('integration shell accepts previously evaluated result shape without treating eligible flag as authority', async () => {
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ evaluation: { eligible: true, results: { 'github.read': true, 'continuity.read': true, handoff: true, 'workspace.read': false, 'workspace.write': false } } }) } });
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        evaluation: {
+          eligible: true,
+          results: {
+            'github.read': true,
+            'continuity.read': true,
+            handoff: true,
+            'workspace.read': false,
+            'workspace.write': false,
+          },
+        },
+      }),
+    },
+  });
+
   const authorization = await shell.authorize('agent-2');
   assert.equal(authorization.evaluation.eligible, true);
   assert.equal(authorization.mode, 'github');
 });
 
 test('integration shell rejects an asserted eligible flag when canonical results are missing', async () => {
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ evaluation: { eligible: true } }) } });
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({ evaluation: { eligible: true } }),
+    },
+  });
+
   await assert.rejects(() => shell.authorize('agent-3'), (error) => error.code === 'AGENT_NOT_ELIGIBLE');
 });
 
 test('integration shell rejects conflict between evaluated and top-level result containers', async () => {
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ evaluation: { results: { githubRead: true, continuityRead: true, handoff: true } }, results: { githubRead: false, continuityRead: true, handoff: true } }) } });
-  await assert.rejects(() => shell.authorize('agent-conflict-results'), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read');
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        evaluation: { results: { githubRead: true, continuityRead: true, handoff: true } },
+        results: { githubRead: false, continuityRead: true, handoff: true },
+      }),
+    },
+  });
+
+  await assert.rejects(
+    () => shell.authorize('agent-conflict-results'),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'github.read',
+  );
 });
 
 test('integration shell rejects conflict between results and capabilities containers', async () => {
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ results: { githubRead: true, continuityRead: true, handoff: true }, capabilities: { githubRead: true, continuityRead: false, handoff: true } }) } });
-  await assert.rejects(() => shell.authorize('agent-conflict-capabilities'), (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'continuity.read');
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        results: { githubRead: true, continuityRead: true, handoff: true },
+        capabilities: { githubRead: true, continuityRead: false, handoff: true },
+      }),
+    },
+  });
+
+  await assert.rejects(
+    () => shell.authorize('agent-conflict-capabilities'),
+    (error) => error.code === 'CAPABILITY_EVIDENCE_CONFLICT' && error.capability === 'continuity.read',
+  );
 });
 
 test('integration shell accepts agreeing duplicate capability containers', async () => {
-  const shell = createIntegrationShell({ capabilityProbe: { probe: async () => ({ evaluation: { capabilities: { githubRead: true, continuityRead: true, handoff: true } }, results: { 'github.read': true, 'continuity.read': true, handoff: true } }) } });
+  const shell = createIntegrationShell({
+    capabilityProbe: {
+      probe: async () => ({
+        evaluation: { capabilities: { githubRead: true, continuityRead: true, handoff: true } },
+        results: { 'github.read': true, 'continuity.read': true, handoff: true },
+      }),
+    },
+  });
+
   const authorization = await shell.authorize('agent-agreeing-containers');
   assert.equal(authorization.evaluation.eligible, true);
   assert.equal(authorization.mode, 'github');
