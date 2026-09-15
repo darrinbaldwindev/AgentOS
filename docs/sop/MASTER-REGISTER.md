@@ -3,115 +3,89 @@
 **Document ID:** SOP-REG-001  
 **Owner:** SOP Overseer  
 **Status:** DRAFT  
-**Version:** 0.2.0  
+**Version:** 0.6.0  
 **Last verified:** 2026-09-15  
-**Review cadence:** every substantive AgentOS capability change; full review before beta/release.
+**Review cadence:** every substantive capability/legal-surface change; full review before beta/release/public commercial activation.
 
 ## Evidence baseline
-Cycle 002 re-scanned current AgentOS main/open Level 2 evidence, PR #104, SOP PR #113, and current Overseer #49 comments. This register is documentation coordination only and is not runtime authority.
+Cycles 001–006 reconcile AgentOS/PRS/frontend and portfolio evidence. This register coordinates documentation only; it creates no runtime authority and is not legal advice, legal approval, Green or PRS certification.
 
-## Immediate contradiction / staleness register
+## Core SOP register
+| ID | SOP | Priority | Status |
+|---|---|---:|---|
+| SOP-AUTH-001 | Authority and permissions | P0 | DRAFT / IMPLEMENTATION-DEPENDENT |
+| SOP-CTRL-001 | Stop / Pause / Revoke | P0 | DRAFT / IMPLEMENTATION-DEPENDENT |
+| SOP-EVID-001 | Evidence / Green / PRS | P0 | DRAFT |
+| SOP-WIN-001 | Bounded Windows worker | P0 | DRAFT / IMPLEMENTATION-DEPENDENT |
+| SOP-FILE-001 | Controlled project-file mutation | P0 | BLOCKED / DRAFT |
+| SOP-REC-001 | Interrupted/uncertain/replay recovery | P0 | DRAFT / IMPLEMENTATION-DEPENDENT |
+| SOP-REC-002 | Process-tree timeout | P0 | DRAFT / IMPLEMENTATION-DEPENDENT |
+| SOP-IR-001 | Incident response | P0 | DRAFT / REVIEW REQUIRED |
+| SOP-USER-001 | Simple / Essentials / Tech Head truth contract | P1 | DRAFT |
+| SOP-AGENT-001 | Creating Overseers and Workers | P1 | DRAFT |
+| SOP-AGENT-002 | Worker handoff and acknowledgement | P1 | DRAFT |
+| SOP-PORT-001 | Repository intake and reconciliation | P1 | DRAFT |
+| SOP-PORT-002 | Evidence closure and decision gates | P1 | DRAFT |
+| SOP-PORT-003 | Autonomous vertical execution cycle | P1 | DRAFT |
+| SOP-COM-001 | Product and supplier validation | P1 | DRAFT |
 
-| ID | Finding | Classification | Action |
-|---|---|---|---|
-| DOC-C01 | `docs/COMMERCIAL-PRODUCT-SOURCE-OF-TRUTH-2026-09-12.md` still presents `$39/year Co-worker`, while `docs/COMMERCIAL_PRODUCT_MODEL_2026-09-02.md` now defines Free `$0`, Standard `$49/year`, Advanced/Pro `$99/year`, AI Plus `$22/month`, Commercial/Business TBD. | MATERIAL STALE CANONICAL-LOOKING DOC | Explicit supersession/reconciliation notice required; preserve history. |
-| DOC-C02 | Existing architecture text can read as broadly capable local execution while current Level 2 project-file mutation remains blocked on #104. | OVERSTATEMENT RISK | Bounded Windows SOP and blocked mutation SOP now make this distinction explicit. |
-| DOC-C03 | Character-role material uses Willow/Isla/Jack/Henry as role labels while owner direction separates stable identity/role from replaceable persona. | PRODUCT-DIRECTION DRIFT | Do not claim persona replacement is implemented. |
-| DOC-C04 | Existing documentation uses `Everyday` while current frontend direction uses Simple / Essentials / Tech Head. | TERMINOLOGY CONFLICT | Reconcile before public documentation. |
+## Legal / mandatory operational SOP register
+Classification is obligation-specific: MANDATORY / CONDITIONALLY MANDATORY / RECOMMENDED CONTROL / LEGAL REVIEW REQUIRED / NOT APPLICABLE / UNKNOWN.
 
-## SOP register
-
-| ID | SOP | Priority | Status | Evidence dependency |
-|---|---|---:|---|---|
-| SOP-AUTH-001 | Authority and permissions | P0 | DRAFT / IMPLEMENTATION-DEPENDENT | governance; runtime admission; #104 authority binding |
-| SOP-CTRL-001 | Stop / Pause / Revoke | P0 | DRAFT / IMPLEMENTATION-DEPENDENT | lifecycle; frontend trust contract; worker state |
-| SOP-EVID-001 | Evidence / Green / PRS | P0 | DRAFT | Green gate; mission evidence; PRS independence |
-| SOP-WIN-001 | Bounded Windows worker | P0 | DRAFT / IMPLEMENTATION-DEPENDENT | #104; physical Windows acceptance |
-| SOP-FILE-001 | Controlled project-file mutation | P0 | BLOCKED / DRAFT | #104 SG-08; authority; receipts; recovery |
-| SOP-REC-001 | Interrupted/uncertain/replay recovery | P0 | DRAFT / IMPLEMENTATION-DEPENDENT | recovery state; ownership; idempotency; receipts |
-| SOP-IR-001 | Incident response | P0 | DRAFT / REVIEW REQUIRED | security/recovery controls + escalation ownership |
-| SOP-MOD-001 | Model/provider/local/BYOK selection | P1 | PLANNED | routing implementation; provider contracts; entitlement |
-| SOP-PRIV-001 | Local/cloud/mixed data processing | P1 | PLANNED | actual provider/data flows |
-| SOP-ONB-001 | Install / first run / onboarding | P1 | PLANNED | install/doctor/current frontend |
-| SOP-JOB-001 | Jobs / recurring work / Autonomy Hours / Night Shift | P1 | IMPLEMENTATION-DEPENDENT | scheduler/autonomy evidence |
-| SOP-BRW-001 | Browser operation | P1 | NOT YET SUPPORTABLE AS SHIPPED | Level 3 direction |
-| SOP-COMMS-001 | Email/calendar/external communications | P1 | NOT YET SUPPORTABLE AS SHIPPED | integrations + approval controls |
-| SOP-ADM-001 | Business administration | P1 | PRODUCT DIRECTION | commercial multi-seat architecture |
-| SOP-EDU-001 | School/family/student administration | P2 | PRODUCT DIRECTION / LEGAL REVIEW REQUIRED | controls + jurisdiction review |
-| SOP-DATA-001 | Export / deletion / uninstall | P1 | PLANNED | persistence/storage implementation |
-| SOP-TRB-001 | Troubleshooting | P1 | PLANNED | supported install/runtime paths |
-
-## Policy register
-A policy is not proof of runtime enforcement.
-
-| Policy | Status | Runtime enforcement evidence |
+| ID | SOP | Status |
 |---|---|---|
-| Acceptable Use | RECOMMENDED POLICY / DRAFT NEEDED | UNKNOWN |
-| Privacy / Data Handling | RECOMMENDED POLICY / DRAFT NEEDED | PARTIAL / MUST MAP |
-| AI Use / Responsible AI | RECOMMENDED POLICY / DRAFT NEEDED | PARTIAL / MUST MAP |
-| Security | RECOMMENDED POLICY / DRAFT NEEDED | PARTIAL architecture controls |
-| Credential and Secret Handling | RECOMMENDED POLICY / DRAFT | MUST MAP storage/access/redaction/rotation |
-| Local Files | RECOMMENDED POLICY / DRAFT NEEDED | Level 2 incomplete |
-| Retention and Deletion | RECOMMENDED POLICY / DRAFT NEEDED | UNKNOWN |
-| Permissions and Authority | INTERNAL POLICY / DRAFT NEEDED | partial architecture/runtime evidence |
-| Human Approval | INTERNAL POLICY / DRAFT NEEDED | partial runtime evidence |
-| Autonomous Execution | INTERNAL POLICY / DRAFT NEEDED | production activation not proven |
-| External Communication | RECOMMENDED POLICY / DRAFT NEEDED | NOT YET MAPPED |
-| Purchasing / Financial Action | RECOMMENDED POLICY / DRAFT NEEDED | NOT YET MAPPED |
-| Capability/MCP Supply Chain | RECOMMENDED POLICY / DRAFT | implementation enforcement NOT ESTABLISHED |
-| Incident Response | represented by SOP-IR-001 draft | enforcement varies |
-| Vulnerability Disclosure | RECOMMENDED POLICY / DRAFT NEEDED | process not established |
-| Logging and Evidence | INTERNAL POLICY / DRAFT NEEDED | substantial architecture/runtime evidence |
-| Recovery | represented partly by SOP-REC-001 | Level 2 recovery incomplete |
-| Model and Provider | INTERNAL POLICY / DRAFT NEEDED | architecture direction; implementation varies |
-| BYOK | RECOMMENDED POLICY / DRAFT NEEDED | broad shipped support not established |
-| Business Administration | PRODUCT DIRECTION / DRAFT NEEDED | not established |
-| Education / Child / Student | LEGAL REVIEW REQUIRED | not established |
-| Accessibility | RECOMMENDED POLICY / DRAFT NEEDED | frontend baseline partial |
-| Third-Party Services | RECOMMENDED POLICY / DRAFT NEEDED | integration-specific evidence required |
+| LEGAL-REG-AU | Australian legal compliance register | DRAFT / LEGAL REVIEW REQUIRED |
+| SOP-LEGAL-001 | Affiliate & sponsored disclosure | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-002 | Privacy, data breach & commercial messaging | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-003 | Consumer law: claims, refunds, guarantees & warranties | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-004 | Terms / standard-form contracts / unfair-term gate | DRAFT / LEGAL REVIEW REQUIRED |
+| SOP-LEGAL-005 | Privacy collection notices / APP 5 | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-006 | Reviews, testimonials & endorsements | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-007 | Product safety, recalls & marketplace publication | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-008 | Cookies, tracking, analytics & adtech | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-009 | Pricing, discounts, scarcity & promotions | DRAFT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-010 | Data retention, deletion & legal hold | DRAFT / IMPLEMENTATION-DEPENDENT / JURISDICTION REVIEW REQUIRED |
+| SOP-LEGAL-011 | Jurisdiction applicability matrix | DRAFT / LEGAL REVIEW REQUIRED |
 
-## Legal / notice register
-These are drafting work items, not legal approvals. Jurisdiction must be identified before applicability claims.
+## Mandatory legal-document candidates
+A public document is not approved merely because a SOP exists.
 
-| Document | Baseline | Status |
-|---|---|---|
-| Terms of Service / Use | global baseline + country overlays | LEGAL REVIEW REQUIRED |
-| Privacy Policy | actual data-flow inventory first | LEGAL REVIEW REQUIRED |
-| Cookie notice | implementation/jurisdiction dependent | LEGAL REVIEW REQUIRED |
-| AI disclosures | jurisdiction/use-case dependent | LEGAL REVIEW REQUIRED |
-| Third-party provider notice | provider inventory dependent | DRAFT NEEDED / LEGAL REVIEW REQUIRED |
-| Open-source notices | dependency/license inventory dependent | DRAFT NEEDED / LEGAL REVIEW REQUIRED |
-| Subscription/payment/refund/cancellation notice | billing + jurisdiction dependent | NOT YET SUPPORTABLE / LEGAL REVIEW REQUIRED |
-| Business/DPA/security documentation | business architecture + processing dependent | PRODUCT DIRECTION / LEGAL REVIEW REQUIRED |
-| Vulnerability/security disclosure | security contact/process dependent | DRAFT NEEDED |
-| Copyright/trademark notices | ownership/registration facts dependent | LEGAL REVIEW REQUIRED where claims exceed fact |
-
-## Terminology authority
-
-| Term | Canonical meaning |
+| Document/control | Gate |
 |---|---|
-| Overseer | single user-facing orchestration front door inside AgentOS; provider/model agnostic role |
-| Specialist agent | subordinate role/capability coordinated by Overseer; not an independent competing front door |
-| Persona | replaceable presentation property; replacement is PRODUCT DIRECTION until implemented |
-| Authority | explicit bounded permission; never inferred from model confidence/persona/autonomy level |
-| Evidence | durable information about what happened; not equivalent to Green or PRS |
-| Green | independent verification gate; worker success cannot self-award it |
-| PRS | independent assurance distinct from execution and Green |
-| Stop requested | stop command/request initiated; does not itself prove execution ceased |
-| Execution stopped | evidence confirms execution ceased within bounded runtime semantics |
-| Recovery required | continuation cannot be trusted without recovery/reconciliation |
-| Simple / Essentials / Tech Head | disclosure modes over one truth model; not authority levels or commercial tiers |
+| Terms of Service / Terms of Use | operator + product + jurisdiction + contract model + legal review |
+| Privacy Policy | actual data-flow inventory + APP/privacy applicability + jurisdiction + review |
+| APP 5 / collection notices | collection point + purpose + disclosures + jurisdiction |
+| Affiliate/sponsorship disclosure | actual commercial relationship + destination jurisdiction + surface-specific placement |
+| Cookie/tracking notice & consent controls | tracker inventory + jurisdiction + actual configuration |
+| Refund/returns/consumer-guarantee information | seller model + jurisdiction + actual fulfilment/refund process |
+| Subscription/cancellation notice | billing/entitlement implementation + jurisdiction; NOT YET PROVEN |
+| Product safety/recall procedure | product/seller role + category + jurisdiction |
+| Commercial electronic messaging controls | consent/source + sender identification + unsubscribe + jurisdiction |
+| Data-breach response plan | processing/applicability + incident roles + notification thresholds |
+| Copyright/open-source notices | ownership + dependency/license inventory |
+| Accessibility statement | tested accessibility evidence; do not claim conformance from intent |
 
-## Dependency / revalidation map
-- Authority SOP -> actor identity + canonical grant + capability policy + approval + budget + receipts.
-- Stop SOP -> UI command + worker lifecycle + in-flight action semantics + evidence + recovery.
-- Evidence SOP -> exact correlation + receipt schema + Green + PRS.
-- Windows SOP -> #104 admitted operations + authority + physical Windows acceptance + Green/PRS.
-- File mutation SOP -> authenticated authority + containment + continuous ownership + bounded edit + atomic/recoverable write + idempotency + receipts + recovery + Green/PRS.
-- Recovery SOP -> canonical checkpoints + ownership + target-state reconciliation + idempotency + receipts.
-- Credential policy -> actual secret storage/access/redaction/rotation/deletion mechanisms.
-- Capability/MCP policy -> actual capability registry/passport/admission/update/revocation mechanisms.
-- Privacy/legal docs -> actual data-flow/provider/storage/telemetry inventory + jurisdiction.
-- Commercial docs -> canonical commercial model; billing/entitlement implementation separately proven.
+## Portfolio applicability baseline
+- AgentOS: privacy/data flows, automated decisions, contracts/subscriptions, connected apps, security, communications; global expansion needs overlays.
+- Affiliate Websites AU: affiliate disclosure, tracking/privacy, advertising claims, messaging.
+- Affiliate Websites UK: separate UK advertising/affiliate + privacy/ePrivacy/direct-marketing + consumer annex required.
+- Affiliate Websites USA: federal plus state-specific applicability analysis required.
+- GlobalShopCo / marketplace work: ACL/consumer, pricing, freight/delivery, product safety, privacy/tracking, communications.
+- MyPrimeDelivery: affiliate disclosure, Prime/deal freshness, pricing, privacy/tracking.
+- GhostKitchen: consumer claims/pricing plus food/franchise/local regulation before operation.
+- Marketing / Content360: inherit destination project's jurisdiction and approved factual claims; transformation cannot manufacture authority or facts.
 
-Any changed dependency marks its dependent document REVIEW REQUIRED until revalidated.
+## Critical truth boundaries
+- Documentation describes authority; it does not grant it.
+- Policy is not proof of technical enforcement.
+- Research is not legal approval.
+- Legal draft is not legal advice/certification.
+- Marketplace/program acceptance is not statutory compliance.
+- Consumer verification is not publisher affiliate approval.
+- Credentials/capabilities/schedules do not create consent or authority.
+- UNKNOWN remains UNKNOWN.
+- Fresh runtime/repository/primary-source evidence outranks stale prose.
+- Project-file mutation remains blocked until current Level-2 gates are independently satisfied.
+
+## Revalidation triggers
+Revalidate affected SOP/legal controls when operator, jurisdiction, audience, product, price, data flow, provider, tracker, supplier, marketplace, affiliate program, billing, entitlement, communication channel, law/regulator guidance, repository head or runtime behavior materially changes.
