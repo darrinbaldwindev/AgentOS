@@ -4,6 +4,7 @@
 
 const HOST_LIFECYCLE_STATES = new Set(['idle', 'working', 'blocked', 'recovery_required', 'offline_or_stale']);
 const HOST_FRESHNESS_STATES = new Set(['fresh', 'stale', 'unknown', 'conflicting']);
+const EXACT_HEAD_RE = /^[a-f0-9]{40}$/u;
 
 function basicChatState(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') {
@@ -21,22 +22,38 @@ function basicChatState(snapshot) {
   return Object.freeze({ state: 'unknown', reason: 'BASIC_CHAT_STATE_UNCONFIRMED' });
 }
 
-function localHostLifecycleState(status) {
+function localHostLifecycleState(status, expectedHostId) {
   if (!status || typeof status !== 'object') {
     return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_STATUS_UNAVAILABLE', freshness: 'unknown', hostId: null });
   }
   if (status.schema_version !== 1 || typeof status.host_id !== 'string' || !status.host_id.trim()) {
     return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_STATUS_SCHEMA_INVALID', freshness: 'unknown', hostId: null });
   }
+  const hostId = status.host_id.trim();
+  const expected = typeof expectedHostId === 'string' && expectedHostId.trim() ? expectedHostId.trim() : null;
+  if (expected && hostId !== expected) {
+    return Object.freeze({ state: 'blocked', reason: 'LOCAL_HOST_ID_MISMATCH', freshness: 'conflicting', hostId });
+  }
   const lifecycle = typeof status.lifecycle_state === 'string' ? status.lifecycle_state : '';
   const freshness = HOST_FRESHNESS_STATES.has(status.evidence_freshness) ? status.evidence_freshness : 'unknown';
   if (!HOST_LIFECYCLE_STATES.has(lifecycle)) {
-    return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_LIFECYCLE_UNCONFIRMED', freshness, hostId: status.host_id });
+    return Object.freeze({ state: 'unknown', reason: 'LOCAL_HOST_LIFECYCLE_UNCONFIRMED', freshness, hostId });
   }
   if (freshness === 'conflicting') {
-    return Object.freeze({ state: 'blocked', reason: status.reason ?? 'LOCAL_HOST_EVIDENCE_CONFLICT', freshness, hostId: status.host_id });
+    return Object.freeze({ state: 'blocked', reason: status.reason ?? 'LOCAL_HOST_EVIDENCE_CONFLICT', freshness, hostId });
   }
-  return Object.freeze({ state: lifecycle, reason: status.reason ?? null, freshness, hostId: status.host_id });
+  // Positive/operational lifecycle claims must be fresh. Canonical blocked and
+  // recovery-required states remain conservative even when their evidence ages,
+  // while stale/unknown idle or working evidence cannot be presented as current.
+  if ((lifecycle === 'idle' || lifecycle === 'working') && freshness !== 'fresh') {
+    return Object.freeze({
+      state: freshness === 'stale' ? 'offline_or_stale' : 'unknown',
+      reason: freshness === 'stale' ? 'LOCAL_HOST_EVIDENCE_STALE' : 'LOCAL_HOST_FRESHNESS_UNCONFIRMED',
+      freshness,
+      hostId,
+    });
+  }
+  return Object.freeze({ state: lifecycle, reason: status.reason ?? null, freshness, hostId });
 }
 
 function windowsCapabilityState(probe) {
@@ -87,8 +104,11 @@ function physicalAcceptanceState(acceptance, expectedExactHead) {
     acceptance.production_autonomy_enabled === false &&
     acceptance.owner_supervision_required === true;
 
-  if (!expectedHead) {
+  if (!expectedHead || !EXACT_HEAD_RE.test(expectedHead)) {
     return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_EXPECTED_HEAD_REQUIRED', exactHead });
+  }
+  if (!exactHead || !EXACT_HEAD_RE.test(exactHead)) {
+    return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_EXACT_HEAD_INVALID', exactHead });
   }
   if (exactHead !== expectedHead) {
     return Object.freeze({ state: 'not_established', reason: 'PHYSICAL_ACCEPTANCE_HEAD_MISMATCH', exactHead });
@@ -98,7 +118,6 @@ function physicalAcceptanceState(acceptance, expectedExactHead) {
     acceptance.platform === 'win32' &&
     acceptance.pass === true &&
     acceptance.disposition === 'PHYSICAL_POWERSHELL_ACCEPTANCE_PASS' &&
-    exactHead &&
     safeBoundary
   ) {
     return Object.freeze({ state: 'passed_for_exact_head', reason: 'PHYSICAL_ACCEPTANCE_PASS', exactHead });
@@ -112,6 +131,7 @@ function physicalAcceptanceState(acceptance, expectedExactHead) {
 export function projectBasicChatReadiness({
   chatSnapshot = null,
   localHostStatus = null,
+  expectedHostId = null,
   windowsHostProbe = null,
   physicalAcceptance = null,
   expectedExactHead = null,
@@ -119,7 +139,7 @@ export function projectBasicChatReadiness({
   return Object.freeze({
     schemaVersion: 1,
     basicChat: basicChatState(chatSnapshot),
-    localHostLifecycle: localHostLifecycleState(localHostStatus),
+    localHostLifecycle: localHostLifecycleState(localHostStatus, expectedHostId),
     windowsHostCapability: windowsCapabilityState(windowsHostProbe),
     physicalWindowsAcceptance: physicalAcceptanceState(physicalAcceptance, expectedExactHead),
     projectFileMutation: Object.freeze({
