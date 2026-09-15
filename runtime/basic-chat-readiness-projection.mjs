@@ -5,6 +5,7 @@
 const HOST_LIFECYCLE_STATES = new Set(['idle', 'working', 'blocked', 'recovery_required', 'offline_or_stale']);
 const HOST_FRESHNESS_STATES = new Set(['fresh', 'stale', 'unknown', 'conflicting']);
 const EXACT_HEAD_RE = /^[a-f0-9]{40}$/u;
+const WINDOWS_REQUIRED_TOOLS = Object.freeze(['powershell.exe', 'git.exe', 'npm.cmd']);
 
 function basicChatState(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') {
@@ -42,9 +43,6 @@ function localHostLifecycleState(status, expectedHostId) {
   if (freshness === 'conflicting') {
     return Object.freeze({ state: 'blocked', reason: status.reason ?? 'LOCAL_HOST_EVIDENCE_CONFLICT', freshness, hostId });
   }
-  // Positive/operational lifecycle claims must be fresh. Canonical blocked and
-  // recovery-required states remain conservative even when their evidence ages,
-  // while stale/unknown idle or working evidence cannot be presented as current.
   if ((lifecycle === 'idle' || lifecycle === 'working') && freshness !== 'fresh') {
     return Object.freeze({
       state: freshness === 'stale' ? 'offline_or_stale' : 'unknown',
@@ -69,13 +67,25 @@ function windowsCapabilityState(probe) {
   }
 
   const tools = evaluation.tools && typeof evaluation.tools === 'object' ? evaluation.tools : null;
+  const toolEvidence = evaluation.tool_evidence && typeof evaluation.tool_evidence === 'object' ? evaluation.tool_evidence : null;
   const workspace = evaluation.workspace && typeof evaluation.workspace === 'object' ? evaluation.workspace : null;
+  const explicitToolAvailability = Boolean(
+    tools && WINDOWS_REQUIRED_TOOLS.every((tool) => tools[tool] === true)
+  );
+  const executableIdentityEvidence = Boolean(
+    toolEvidence && WINDOWS_REQUIRED_TOOLS.every((tool) => {
+      const evidence = toolEvidence[tool];
+      return evidence &&
+        typeof evidence === 'object' &&
+        evidence.available === true &&
+        typeof evidence.path === 'string' &&
+        evidence.path.trim().length > 0;
+    })
+  );
   const explicitCapabilityEvidence = Boolean(
-    tools &&
+    explicitToolAvailability &&
+    executableIdentityEvidence &&
     workspace &&
-    tools['powershell.exe'] === true &&
-    tools['git.exe'] === true &&
-    tools['npm.cmd'] === true &&
     workspace.readable === true &&
     workspace.writable === true
   );
@@ -88,7 +98,13 @@ function windowsCapabilityState(probe) {
     return Object.freeze({ state: 'not_capable', reason: 'WINDOWS_HOST_CAPABILITY_PROBE_FAIL', missingRequired });
   }
 
-  return Object.freeze({ state: 'unknown', reason: 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED', missingRequired });
+  return Object.freeze({
+    state: 'unknown',
+    reason: explicitToolAvailability && !executableIdentityEvidence
+      ? 'WINDOWS_EXECUTABLE_IDENTITY_EVIDENCE_REQUIRED'
+      : 'WINDOWS_CAPABILITY_CANONICAL_EVIDENCE_REQUIRED',
+    missingRequired,
+  });
 }
 
 function physicalAcceptanceState(acceptance, expectedExactHead) {
