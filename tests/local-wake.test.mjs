@@ -5,6 +5,25 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal, DEFAULT_CONFIG } from '../scripts/install-local.mjs';
 import { main, wakeLocal } from '../runtime/local-wake.mjs';
+import { schedulerTick } from '../scripts/scheduler-tick.mjs';
+
+test('chat guard fails closed while scheduler-enabled safe wake and scheduler tick remain valid', async t => {
+  const root = await makeInstall();
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const configPath = join(root, 'config.json');
+  const statePath = join(root, DEFAULT_CONFIG.stateFile);
+  const before = await readFile(statePath, 'utf8');
+  for (const scheduler of [{ enabled: true }, {}, undefined]) {
+    await writeFile(configPath, JSON.stringify({ ...DEFAULT_CONFIG, scheduler }));
+    await assert.rejects(wakeLocal({ root, requireSchedulerDisabled: true }), /LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED/);
+    assert.equal(await readFile(statePath, 'utf8'), before);
+  }
+  await writeFile(configPath, JSON.stringify({ ...DEFAULT_CONFIG, scheduler: { ...DEFAULT_CONFIG.scheduler, enabled: true } }));
+  assert.equal((await wakeLocal({ root })).status, 'COMPLETED');
+  assert.equal((await schedulerTick({ root, objective: 'scheduler compatibility fixture' })).status, 'COMPLETED');
+  await writeFile(configPath, JSON.stringify(DEFAULT_CONFIG));
+  assert.equal((await wakeLocal({ root, requireSchedulerDisabled: true })).status, 'COMPLETED');
+});
 
 async function makeInstall() {
   const root = await mkdtemp(join(tmpdir(), 'agentos-wake-'));
