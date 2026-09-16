@@ -24,6 +24,7 @@ async function acquireHostLock(lockPath) {
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
+const PROJECT_ID = 'agentos-local';
 
 async function releaseHostLock({ lock, lockPath, unlinkLock, lifecycleStage }) {
   try { await lock.close(); lifecycleStage('LOCK_HANDLE_CLOSE_DONE'); }
@@ -73,7 +74,7 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
     const artifacts = await persistence.list('artifact');
     let evidence = null;
     if (lastTaskId) { const events = await persistence.list('event'); evidence = projectBasicChatEvidence({ taskId: lastTaskId, artifacts, events }); }
-    const jobs = projectBasicChatJobs({ artifacts, limit: 5 });
+    const jobs = projectBasicChatJobs({ artifacts, limit: 5, projectId: PROJECT_ID });
     return { ready: !control.paused && !control.stopped, paused: Boolean(control.paused), stopped: Boolean(control.stopped), status: visible, history: hist, lastTaskId, evidence, jobs, note: 'Local · DRY_RUN · Autonomy disabled · Scheduler must stay disabled for chat' };
   }
 
