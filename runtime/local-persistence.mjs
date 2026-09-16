@@ -28,12 +28,47 @@ export async function createLocalPersistence({ filePath }) {
     }
     return state;
   }
+  async function lockContention(error) {
+    if (error?.code === 'EEXIST') return true;
+    // Windows can report EPERM for mkdir while another handle owns or is
+    // retiring the lock directory. Treat it as contention only when the lock
+    // is still observable; if it disappeared in the race, retry acquisition.
+    if (process.platform !== 'win32' || error?.code !== 'EPERM') return false;
+    try {
+      return (await fs.stat(lock)).isDirectory();
+    } catch (statError) {
+      if (statError?.code === 'ENOENT') return true;
+      throw statError;
+    }
+  }
+  async function replaceStateFile(temp) {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      try {
+        await fs.rename(temp, target);
+        return;
+      } catch (error) {
+        // Windows may transiently deny replacement while a concurrent reader
+        // is closing its handle. The mutation lock is still held here, so a
+        // bounded retry preserves single-writer ordering without weakening
+        // recovery semantics or permitting a competing writer to proceed.
+        const transientWindowsReplace = process.platform === 'win32'
+          && ['EPERM', 'EACCES', 'EBUSY'].includes(error?.code);
+        if (!transientWindowsReplace) throw error;
+        if (attempt === 39) {
+          const replacementError = new Error('LOCAL_STATE_ATOMIC_REPLACE_FAILED');
+          replacementError.cause = error;
+          throw replacementError;
+        }
+        await new Promise((done) => setTimeout(done, 10));
+      }
+    }
+  }
   async function mutate(fn) {
     let acquired = false;
     for (let attempt = 0; attempt < 200; attempt++) {
       try { await fs.mkdir(lock); acquired = true; break; }
       catch (e) {
-        if (e.code !== 'EEXIST') throw e;
+        if (!(await lockContention(e))) throw e;
         await new Promise((done) => setTimeout(done, 5));
       }
     }
@@ -47,7 +82,7 @@ export async function createLocalPersistence({ filePath }) {
       const handle = await fs.open(temp, 'w', 0o600);
       try { await handle.writeFile(`${JSON.stringify(state, null, 2)}\n`); await handle.sync(); }
       finally { await handle.close(); }
-      await fs.rename(temp, target);
+      await replaceStateFile(temp);
       return result;
     } finally {
       await fs.rm(temp, { force: true });
