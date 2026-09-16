@@ -362,3 +362,52 @@ test('verification failure after side effect can never return VERIFIED', async (
     await fixture.cleanup();
   }
 });
+
+for (const [name, recorder] of [
+  ['negative acknowledgement', async () => ({ persisted: false })],
+  ['string acknowledgement', async () => ({ persisted: 'true' })],
+  ['empty object', async () => ({})],
+  ['bare true', async () => true],
+  ['array', async () => []],
+  ['unrelated artifact', async ({ receipt }) => ({ id: 'remote-receipt:other', artifactType: 'remote.execution.receipt', payload: receipt })],
+  ['conflicting task', async ({ receipt }) => ({ id: `remote-receipt:${receipt.delivery_id}`, artifactType: 'remote.execution.receipt', payload: { ...receipt, task_id: 'other-task' } })],
+  ['contradictory positive acknowledgement', async ({ receipt }) => ({ persisted: true, id: 'wrong', artifactType: 'remote.execution.receipt', payload: receipt })],
+  ['contradictory negative acknowledgement', async ({ receipt }) => ({ persisted: false, id: `remote-receipt:${receipt.delivery_id}`, artifactType: 'remote.execution.receipt', payload: receipt })],
+]) {
+  test(`claimed composition rejects ${name}, retains claim and prevents replay`, async () => {
+    let invokeCalls = 0;
+    let verifierCalls = 0;
+    const fixture = await buildBoundary({ recordReceipt: recorder, verify: async () => { verifierCalls += 1; return { passed: true }; } });
+    try {
+      const { guarded, claims } = await fixture.createClaimGuard();
+      const input = { actorContext, task: fixture.task, async invoke() { invokeCalls += 1; return executionResult(); } };
+      await assert.rejects(guarded.execute(input), { code: 'EXECUTION_RECEIPT_PERSISTENCE_REQUIRED' });
+      assert.equal(invokeCalls, 1);
+      assert.equal(verifierCalls, 0);
+      assert.ok(await claims.get(fixture.task.delivery_id));
+      await assert.rejects(guarded.execute(input), /GOVERNED_EXECUTION_DUPLICATE_DELIVERY/);
+      assert.equal(invokeCalls, 1);
+    } finally { await fixture.cleanup(); }
+  });
+}
+
+test('canonical persisted receipt artifact is accepted and reloads with identical correlation', async () => {
+  const { createLocalPersistence } = await import('../runtime/local-persistence.mjs');
+  const { createRemoteExecutionReceiptPersistence } = await import('../runtime/remote-execution-receipt-persistence.mjs');
+  let recorder;
+  const fixture = await buildBoundary({ recordReceipt: (input) => recorder.record(input) });
+  try {
+    const statePath = join(fixture.dir, 'state.json');
+    recorder = createRemoteExecutionReceiptPersistence({ persistence: await createLocalPersistence({ filePath: statePath }) });
+    const { guarded } = await fixture.createClaimGuard();
+    const outcome = await guarded.execute({ actorContext, task: fixture.task, invoke: async () => executionResult() });
+    assert.equal(outcome.status, 'VERIFIED');
+    assert.equal(outcome.assurance_complete, false);
+    assert.equal(outcome.completion_eligible, false);
+    const reloaded = createRemoteExecutionReceiptPersistence({ persistence: await createLocalPersistence({ filePath: statePath }) });
+    const packet = await reloaded.evidencePacketForCorrelation({ deliveryId: fixture.task.delivery_id, missionId: fixture.task.mission_id, taskId: fixture.task.task_id, wakeTraceId: fixture.task.wake_trace_id });
+    assert.equal(packet.code_identity, 'fixture:exact-head');
+    assert.equal(packet.status, 'AWAITING_GREEN');
+    assert.deepEqual((await reloaded.listForDelivery(fixture.task.delivery_id))[0], outcome.receipt);
+  } finally { await fixture.cleanup(); }
+});
