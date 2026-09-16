@@ -112,6 +112,38 @@ test('runner cannot report completion when verification-state persistence fails'
   assert.equal(executions, 1);
   assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'verification', 'escalated']);
   assert.equal(writes.at(-1).task_id, 'runner-001');
+  assert.equal(writes.at(-1).mission_id, task.mission_id);
+  assert.match(writes.at(-1).error.message, /persistence failure: runner-001/);
+  assert.equal(writes.some(x => x.status === 'completed'), false);
+});
+
+test('runner preserves the original failure and exact correlation when escalation persistence also fails', async () => {
+  const writes = [];
+  let writeCount = 0;
+  const store = {
+    writeTask: async value => {
+      writes.push(structuredClone(value));
+      writeCount += 1;
+      if (writeCount === 3) return { written: false, error: 'verification persistence unavailable' };
+      if (writeCount === 4) return { written: false, error: 'escalation persistence unavailable' };
+      return { written: true, sha: `write-${writeCount}` };
+    },
+  };
+
+  await assert.rejects(() => runNextTask({
+    tasks: [task], receiver: 'AgentOS Overseer Project', authorityPolicy: policy, store,
+    execute: async current => ({ task: current.task_id, ok: true }),
+  }), error => {
+    assert.match(error.message, /persistence failure: runner-001/);
+    assert.equal(error.outcome.task_id, task.task_id);
+    assert.match(error.persistenceError.message, /persistence failure: runner-001/);
+    assert.equal(error.persistenceOutcome.task_id, task.task_id);
+    return true;
+  });
+
+  assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'verification', 'escalated']);
+  assert.equal(writes.at(-1).task_id, task.task_id);
+  assert.equal(writes.at(-1).mission_id, task.mission_id);
   assert.match(writes.at(-1).error.message, /persistence failure: runner-001/);
   assert.equal(writes.some(x => x.status === 'completed'), false);
 });
