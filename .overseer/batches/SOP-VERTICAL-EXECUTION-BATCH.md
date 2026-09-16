@@ -1,6 +1,6 @@
 # SOP Overseer — Maximum Vertical Execution Batch
 
-**Cycle:** 009  
+**Cycle:** 010  
 **Date:** 2026-09-16  
 **Canonical mission:** `darrinbaldwindev/Overseer#49`  
 **Branch:** `docs/sop-overseer-bootstrap`  
@@ -11,47 +11,49 @@ Owner `cont`, `continue`, `continue autonomously`, or `continue autonomously ver
 `FRESH REPO SCAN -> RECONCILE -> CREATE/REPLENISH MAXIMUM SAFE BATCH -> EXECUTE DEEPLY -> VERIFY -> POST-SCAN -> RECORD -> REPLENISH -> HANDOFF`.
 
 ## Fresh reconciliation
-- Cycle-008 exact SOP head `e28bf4e5e7d19bfd92f9725576cc9718ab4fe88c` subsequently completed AgentOS Tests #1449 SUCCESS and Project Overseer Wake #489 SUCCESS. Scope: workflow execution on that documentation head only.
-- AgentOS #104 has moved beyond stale Cycle-008 references; its current PR description reports exact head `b0281960...` while #120 is a separate stacked hardening lineage based on a later #104 head. Exact lineages remain separate.
-- PRS #17 description remains at its own exact challenged AgentOS target `83a58b8...`; its reproduced continuous-ownership and admission findings remain historical/current negative evidence for that challenged head, not certification of later heads.
-- Project-file mutation remains fail-closed pending repair + exact-head independent challenge + physical owner-Windows gates.
+- Cycle-009 exact SOP head `569034f9a3713c9fbb98453ada348ec53e2f4107` subsequently completed AgentOS Tests #1467 SUCCESS and Project Overseer Wake #496 SUCCESS. Scope is workflow execution on that documentation head only.
+- Overseer #49 remains open with Level 2 immediate P0 / Level 5 strategic end-state and unchanged hard boundaries.
+- Current active implementation/assurance lineages remain separate; documentation does not repair or certify project-file ownership, authenticated transport/canonical grant provenance, physical Windows acceptance, Green or PRS.
+- UK legal research used current 2026 ICO guidance; Data (Use and Access) Act changes mean stale cookie/direct-marketing summaries must not be copied forward without revalidation.
 
-## Cycle-009 executed
-1. SOP-REC-003 — result-write/receipt persistence failure.
-2. SOP-REC-004 — ownership/replay/receipt-target recovery.
-3. SOP-DATA-001 — data classification/handling.
-4. SOP-COST-001 — budget/cost control.
-5. SOP-REPORT-001 — Morning Brief/status.
-6. MASTER-REGISTER reconciled from v0.6 to v0.9, including Cycle-008/009 operational SOPs and LEGAL-012 through LEGAL-016.
+## Cycle-010 executed
+1. SOP-ONBOARD-001 — install/doctor/first-run evidence contract.
+2. SOP-PROVIDER-001 — provider/model/local/BYOK configuration.
+3. SOP-DATA-002 — export/delete/disconnect/uninstall separation.
+4. SOP-RETIRE-001 — worker/project retirement.
+5. SOP-EVID-002 — user-facing `What happened?` truth contract.
+6. SOP-MKT-001 — Marketing truth -> Content360 transformation handoff.
+7. SOP-LEGAL-017 — UK affiliate/privacy/tracking/direct-marketing annex based on current ICO guidance.
 
 ## Replenished maximum queue
-### P0
-1. Install/doctor/first-run evidence map and onboarding SOP from actual supported paths.
-2. Provider/model/local/BYOK evidence map and SOP.
-3. Export/delete/uninstall SOP distinguishing local deletion, access revocation, connector/provider deletion and retained evidence.
-4. Worker/project retirement SOP.
-5. Documentation freshness/revalidation dependency design.
-6. `What happened?` user-facing evidence explanation aligned to receipt -> Green -> PRS.
+### P0 documentation/governance
+1. Documentation freshness/revalidation dependency design.
+2. Glossary/FAQ for authority, evidence, Green, PRS, stop semantics, modes and UNKNOWN/BLOCKED.
+3. Cross-project SOP applicability map.
+4. Vulnerability/security external-publication gate.
+5. Business/admin documentation architecture as PRODUCT DIRECTION unless implementation proves otherwise.
 
 ### P1 legal/commercial
-7. Environmental/sustainability claims SOP.
-8. GhostKitchen/Franchise legal applicability gate.
-9. UK affiliate/privacy/ePrivacy/direct-marketing annex from current official sources.
-10. US affiliate/privacy/consumer annex from current official sources with state applicability.
-11. Vulnerability/security external-publication gate.
-12. Cross-project legal/applicability map bound to operator/jurisdiction/activity.
+6. Environmental/sustainability claims SOP using current official sources.
+7. GhostKitchen/Franchise legal applicability gate.
+8. US affiliate/privacy/consumer annex using FTC + current state/federal applicability evidence.
+9. UK annex follow-up: current ASA/CAP affiliate disclosure review before launch.
+10. Prime/deal freshness and affiliate destination revalidation SOP.
+11. Marketplace listing publication gate integrating supplier/safety/claims/authority evidence.
+12. Subscription/cancellation/billing evidence gate once implementation exists.
 
-### P1/P2 product documentation
-13. Glossary/FAQ.
-14. Cross-project SOP applicability map.
-15. Content360/Marketing claim-verification handoff SOP.
-16. Prime/deal freshness and affiliate destination revalidation SOP.
-17. Documentation architecture for Business/admin surfaces as PRODUCT DIRECTION.
+### P1/P2 user/admin
+13. Troubleshooting/support evidence SOP.
+14. Update/upgrade/rollback SOP.
+15. Backup/restore SOP separating app state, mission state and user/project files.
+16. Admin/team/organization role documentation gate.
+17. Release notes/changelog truth procedure.
 
 ## Stable blockers
 - Physical owner-Windows Level-2 acceptance requires real owner-machine evidence; do not simulate.
-- Authenticated transport/canonical grant provenance remains implementation evidence, not a documentation repair.
-- Green/PRS must remain independent and exact-head scoped.
+- Authenticated transport/canonical grant provenance remains an implementation evidence gap.
+- Green/PRS remain independent and exact-head scoped.
+- Public legal documents require operator/jurisdiction/actual implementation plus human legal review.
 
 ## Protected actions
 No merge/approval/ready/rebase/deploy, credentials, production writes, external communications/publication, purchases/spend, physical Windows action, legal approval, Green/PRS certification or production autonomy.
