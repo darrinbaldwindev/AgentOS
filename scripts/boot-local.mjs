@@ -9,6 +9,14 @@ import { DEFAULT_CONFIG, resolveInstallRoot } from './install-local.mjs';
 import { createLocalPersistence } from '../runtime/local-persistence.mjs';
 import { bootAgentOS } from '../runtime/agentos-boot.mjs';
 
+const DRY_RUN_BOOT_CAPABILITIES = Object.freeze({
+  githubRead: true,
+  continuityRead: true,
+  handoff: true,
+  workspaceRead: true,
+  workspaceWrite: true,
+});
+
 export async function bootLocal({ root = resolveInstallRoot() } = {}) {
   const installRoot = resolve(root);
   const configPath = join(installRoot, 'config.json');
@@ -20,7 +28,7 @@ export async function bootLocal({ root = resolveInstallRoot() } = {}) {
   const result = await bootAgentOS({
     persistence,
     continuityCheck: async () => ({ ok: true }),
-    capabilityProbe: { probe: async () => ({ evaluation: { eligible: true, mode: 'local-dry-run' } }) },
+    capabilityProbe: { probe: async () => ({ results: DRY_RUN_BOOT_CAPABILITIES, mode: 'local-dry-run', evidenceClass: 'fixture' }) },
     modelRegistry: { listAvailable: async () => [] },
     now: () => new Date().toISOString(),
   });

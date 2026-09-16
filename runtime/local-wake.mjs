@@ -22,6 +22,35 @@ const ISSUER = 'agentos:overseer';
 const CAPABILITY = 'repository:read';
 const WORKER_ID = 'agentos:deterministic-skill-agent';
 
+export function createLocalWakeDryRunCapabilityProbe({
+  githubRead = true,
+  continuityRead = true,
+  handoff = true,
+} = {}) {
+  const results = Object.freeze({
+    'github.read': githubRead === true,
+    'github.write': false,
+    'workspace.read': false,
+    'workspace.write': false,
+    'continuity.read': continuityRead === true,
+    'continuity.write': false,
+    handoff: handoff === true,
+  });
+  return Object.freeze({
+    classification: 'legacy-dry-run-fixture',
+    physical: false,
+    async probe(agentId) {
+      return Object.freeze({
+        agentId,
+        mode: 'DRY_RUN',
+        classification: 'legacy-dry-run-fixture',
+        physical: false,
+        evaluation: Object.freeze({ results }),
+      });
+    },
+  });
+}
+
 async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
 }
@@ -70,15 +99,20 @@ function createLocalWorkerRegistry() {
   return registry;
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
+export async function wakeLocal({
+  root,
+  objective = 'perform one bounded local AgentOS control-cycle action',
+  capabilityProbe = createLocalWakeDryRunCapabilityProbe(),
+} = {}) {
   if (!root) throw new TypeError('root is required');
+  if (!capabilityProbe || typeof capabilityProbe.probe !== 'function') throw new TypeError('capabilityProbe.probe is required');
   const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
   const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
   const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
 
   const boot = await bootAgentOS({
     persistence,
-    capabilityProbe: { probe: async () => ({ evaluation: { eligible: true }, mode: 'DRY_RUN' }) },
+    capabilityProbe,
     modelRegistry: { listAvailable: async () => [] },
     continuityCheck: async () => ({ ok: true }),
   });
@@ -161,7 +195,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     const completedAt = new Date().toISOString();
     const executionEvidence = completedTask.evidence ?? {};
     const response = {
-      mission_id: completedTask.task_id,
+      mission_id: completedTask.mission_id,
       source_agent: executionEvidence.source_agent ?? WORKER_ID,
       wake_trace_id: completedTask.wake_trace_id,
       status: 'COMPLETED',

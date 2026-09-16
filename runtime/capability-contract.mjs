@@ -12,7 +12,18 @@ const ALIASES = Object.freeze({
 export function normalizeCapabilities(probeResults = {}) {
   const normalized = {};
   for (const [key, value] of Object.entries(probeResults)) {
-    normalized[ALIASES[key] ?? key] = value === true;
+    const canonicalKey = ALIASES[key] ?? key;
+    const canonicalValue = value === true;
+    if (
+      Object.prototype.hasOwnProperty.call(normalized, canonicalKey)
+      && normalized[canonicalKey] !== canonicalValue
+    ) {
+      const error = new Error(`conflicting capability evidence: ${canonicalKey}`);
+      error.code = 'CAPABILITY_EVIDENCE_CONFLICT';
+      error.capability = canonicalKey;
+      throw error;
+    }
+    normalized[canonicalKey] = canonicalValue;
   }
   return Object.freeze(normalized);
 }
