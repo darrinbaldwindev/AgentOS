@@ -16,7 +16,8 @@ test('Basic Chat snapshot exposes bounded canonical Jobs without private objecti
     assert.ok(snapshot.jobs.length >= 1 && snapshot.jobs.length <= 5);
     assert.equal(snapshot.jobs[0].taskId, snapshot.lastTaskId);
     assert.equal(snapshot.jobs[0].missionId, `mission:${snapshot.lastTaskId}`);
-    assert.deepEqual(Object.keys(snapshot.jobs[0]).sort(), ['createdAt', 'missionId', 'priority', 'schemaVersion', 'status', 'taskId', 'updatedAt'].sort());
+    assert.equal(snapshot.jobs[0].projectId, 'agentos-local');
+    assert.deepEqual(Object.keys(snapshot.jobs[0]).sort(), ['createdAt', 'missionId', 'priority', 'projectId', 'schemaVersion', 'status', 'taskId', 'updatedAt'].sort());
     assert.doesNotMatch(JSON.stringify(snapshot.jobs), /private objective that must not appear in jobs/i);
   } finally {
     await chat.close();
