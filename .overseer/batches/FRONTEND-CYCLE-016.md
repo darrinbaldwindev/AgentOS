@@ -35,7 +35,15 @@ Implementation commits:
 - `3976413d9efd4960ad89bc6df9e5cf07eff1ef6c` — canonical-state regressions;
 - `df148157d241fa5577260da95606d9b33b9eec90` — truthful UI labels.
 
-Fresh exact-head CI for `df148157...` is required. Predecessor CI is not borrowed.
+## Exact-head verification
+
+AgentOS Tests #1584 / run `35047224549` completed SUCCESS on exact implementation head `df148157d241fa5577260da95606d9b33b9eec90`:
+
+- general test job / full test suite SUCCESS;
+- npm dependency audit SUCCESS;
+- Windows-native Basic Chat lifecycle SUCCESS.
+
+This validates the bounded frontend repair on that exact head. It does not establish physical browser/mobile acceptance, SG-08 mutation safety, physical Level-2 Windows-worker acceptance, authority revocation, PRS assurance, mainline shipping or overall GREEN.
 
 ## Runtime blockers unchanged
 
@@ -43,12 +51,11 @@ Fresh exact-head CI for `df148157...` is required. Predecessor CI is not borrowe
 
 ## Next vertical actions
 
-1. Consume exact-head CI for #111 `df148157...` and repair failures without weakening canonical lifecycle semantics.
-2. Continue #104 SG-08 change detection.
-3. Continue runtime-owned readiness composition search; never synthesize it in frontend state.
-4. Keep dispatch execution completion separate from Green completion and Henry/PRS assurance in every Jobs surface.
-5. Expand Projects/Inbox/Connectors only from canonical read contracts.
-6. Run physical browser/mobile acceptance only when a trustworthy runnable target exists.
+1. Continue #104 SG-08 change detection.
+2. Continue runtime-owned readiness composition search; never synthesize it in frontend state.
+3. Audit Recent Jobs correlation and freshness boundaries against any stronger canonical task metadata that appears; do not infer Green/PRS from dispatch status.
+4. Expand Projects/Inbox/Connectors only from canonical read contracts.
+5. Run physical browser/mobile acceptance only when a trustworthy runnable target exists.
 
 ## Protected HOLD
 
