@@ -3,9 +3,8 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical portfolio coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Project Overseer  
-**Cycle:** Project vertical cycle 009 — executed and replenished  
-**Fresh scan:** 2026-09-15 Australia/Brisbane  
-**Canonical main observed:** `6e94e00fc5d81f9de9fc03ff6efc929a2a7ddcc1`  
+**Cycle:** Project vertical cycle 010 — executed and replenished  
+**Fresh scan:** 2026-09-16 Australia/Brisbane  
 **Batch branch:** `agent/overseer/project-vertical-batch-001`  
 **Draft PR:** #112  
 **Batch status:** ACTIVE  
@@ -15,81 +14,69 @@
 
 Do not merge, approve, mark ready, rebase protected work, deploy, change credentials, enable production autonomy, perform production writes, enable unrestricted PowerShell, bypass Green/PRS, or create duplicate scheduler/queue/authority/registry/persistence/memory/Green/PRS systems. Evidence controls completion. Exact-head evidence does not transfer across SHAs.
 
-## Cycle 009 fresh-scan reconciliation
+## Cycle 010 fresh-scan reconciliation
 
-- PR #104 remains OPEN/DRAFT/UNMERGED on `agent/overseer/windows-worker-bridge`; SG-08 continuous project-file ownership remains the controlling mutation blocker.
-- Existing remote authority admission already persists a source-backed `authority_evidence_id` on the admitted `dispatch.task` and request marker.
-- `runtime/windows-powershell-receipt-evidence.mjs` consumed the admitted task but previously dropped that authority evidence before the persisted execution receipt.
-- Generic `createRemoteExecutionReceipt()` has legacy/generic callers, including computer-use evidence; therefore a global schema mandate would be broader than the proven seam.
-- No canonical authentication-evidence source/schema was found. No such field was invented.
+- PR #104 remains OPEN/DRAFT/UNMERGED on the existing `agent/overseer/windows-worker-bridge` lineage.
+- A deterministic same-key concurrency harness was added at `bae44534d6d11b967fdac09bd734f8c073f23f2f`; AgentOS Tests #1415 passed Ubuntu/Node22 and Windows/Node26. This consumed a test-harness arrival-order ambiguity without changing production ownership semantics.
+- A distinct SG-08 false-success window was then reproduced at `235c73a4c450607abab5e09cdf740f4ab6e04724`: POSIX ownership can be displaced after post-write verification but immediately before success-receipt persistence. The writer persists `MUTATED_VERIFIED` with `recovery_required:false`; release detects ownership loss only afterwards and rejects.
+- AgentOS Tests #1477 passed on the exact reproduction head across Ubuntu/Node22 and Windows/Node26; the POSIX displacement case is intentionally skipped on Windows.
+- Current writer inspection confirms Windows retains an open temporary handle through receipt persistence, whereas POSIX directory ownership is pathname-based and `namespace-guard` covers only acquire/retire, not the full success-critical section.
+- Repository package metadata contains no external dependencies, and a targeted source scan found no existing flock/advisory-lock/proper-lockfile or equivalent cross-platform ownership primitive to reuse.
+- Therefore no production ownership patch was made. Inventing a new lock subsystem would violate the single-threaded A-AG-01 boundary without an independently reviewed primitive.
 
-## Cycle 009 consumed work
+## Cycle 010 consumed work
 
 | ID | State | Result | Evidence |
 |---|---|---|---|
-| V009-01 | VERIFIED_CALLER_MAP | Classified the receipt path. The admitted Windows PowerShell binder is a bounded source-backed seam; the generic receipt contract has broader callers and remains unchanged. | PR #104 receipt/admission files and tests |
-| V009-02 | VERIFIED_AFTER_FAILURE | Patched only the admitted PowerShell binder. If `authority_admitted === true`, exact `task.authority_evidence_id` must exist and is copied to the receipt. Non-admitted receipts synthesize nothing. First hardened head `6228ae761db88c7a91f7afa7db7d33e85b7f3966` exposed four stale fixtures; the production rule was kept and fixtures repaired. Final exact head `b0281960b529e121a900463c818b8a425a9d1b11` passed AgentOS Tests #1185 (`34856946245`) on Ubuntu/Node22 and Windows/Node26, including npm audit. | `runtime/windows-powershell-receipt-evidence.mjs`; `tests/windows-powershell-receipt-evidence.test.mjs`; governed/claimed runtime tests |
-| V009-03 | VERIFIED_NO_MOVEMENT | No new SG-08 ownership primitive was introduced by this cycle; no competing writer was created. | #104 remains single-threaded ownership lane |
-| V009-04 | VERIFIED_NOT_PRESENT | No real authenticated actor/session producer or canonical durable grant resolver was evidenced during this cycle. | SG-01/02 remain source-blocked |
-| V009-05 | PRESERVED | No Basic Chat evidence rule was weakened or reused as execution authority. | #111 remains separate presentation/evidence lane |
-| V009-06 | NO_DUPLICATE_PATCH | No second completion authority or overlapping Green/PRS path was added. | existing remote/Green completion lineage retained |
-| V009-07 | HOLD | General project-file mutation / physical Windows promotion remains blocked. | SG-08 + physical + Green/PRS gates |
+| V010-01 | REPRODUCED_BLOCKER | Reproduced SG-08 ownership loss immediately before durable success-receipt persistence. | `tests/project-file-writer-sg08-receipt-window.test.mjs`; head `235c73a4...`; CI #1477 SUCCESS |
+| V010-02 | CONSUMED_ADJACENT | Separated prior same-key cancellation from production SG-08: deterministic arrival-order harness passes 25 repetitions. | `tests/project-file-writer-concurrency-harness.test.mjs`; head `bae44534...`; CI #1415 SUCCESS |
+| V010-03 | VERIFIED_NO_SAFE_EXISTING_PRIMITIVE | Inspected current writer, package metadata and targeted repository source. No existing kernel-backed POSIX/cross-platform ownership primitive was evidenced for safe reuse. | `runtime/project-file-writer.mjs`; `package.json`; targeted source search |
+| V010-04 | DESIGN_RECORDED | Recorded the exact continuous-ownership invariant, acceptable repair shape, acceptance gates and non-solutions. | `docs/overseer/SG08-CONTINUOUS-OWNERSHIP-REPAIR-DESIGN-2026-09-16.md`; head `5bb27bb4...`; CI #1479 SUCCESS |
+| V010-05 | PRESERVED | SG-01/02 remain source-blocked; no authentication/grant source invented. | existing authority-admission disposition retained |
+| V010-06 | HOLD | General project-file mutation / physical Windows promotion remains blocked. | SG-08 + physical + Green/PRS gates |
 
-## Authority receipt-continuity repair
+## Exact SG-08 defect now controlling
 
-The safe rule is now:
+The reportable-success interval is not continuously fenced on POSIX:
 
-1. a task not marked `authority_admitted: true` keeps legacy receipt behavior and gains no synthetic authority field;
-2. an admitted task must already contain its source-backed `authority_evidence_id`;
-3. the PowerShell evidence binder copies that exact ID into the execution receipt;
-4. missing, null or empty authority evidence on an admitted task fails before receipt construction;
-5. generic remote receipt and persistence ownership remain unchanged;
-6. no authentication evidence, expiry, revocation, nonce or grant source is invented.
+`final target verification -> publish/recovery -> post-write verification -> durable success receipt -> ownership release`
 
-This closes one evidence-continuity defect only. It does **not** prove that the actor was authenticated by a real transport, that a canonical grant source exists, or that project-file mutation is safe.
+A final pathname ownership check is not sufficient because it only moves the race. The repair must use one kernel-held, crash-releasing ownership token continuously across that entire interval and must prevent successor acquisition until after success-receipt persistence completes.
 
-## Exact CI failure consumed
+## Repair disposition
 
-Head `6228ae761db88c7a91f7afa7db7d33e85b7f3966` correctly caused four existing runtime tests to fail because their fixtures asserted `authority_admitted: true` while omitting `authority_evidence_id`. The new focused continuity tests themselves passed. Rather than weakening fail-closed production behavior, the governed-runtime and claimed-runtime fixtures were repaired to carry deterministic source-backed authority evidence and assert its receipt propagation.
-
-Final PR #104 head `b0281960b529e121a900463c818b8a425a9d1b11` then passed AgentOS Tests #1185 (`34856946245`) on both Ubuntu/Node22 and Windows/Node26 with dependency audit success.
+- **Windows:** existing temporary open-handle lifetime is materially closer to the required invariant, but hosted CI is not physical acceptance and independent assurance remains required.
+- **POSIX:** current directory lock + owner metadata + namespace guard cannot prove continuous ownership. External rename/replacement can invalidate the pathname while the writer proceeds.
+- **Existing reusable primitive:** NOT EVIDENCED in current repo/dependencies.
+- **Production patch:** HOLD rather than inventing a second lock/persistence subsystem.
 
 ## Security disposition
 
 - **SG-01 actor authentication:** BLOCKED — no canonical runtime authentication source evidenced.
-- **SG-02 authority/grant provenance:** PARTIAL/BLOCKED end-to-end — admitted PowerShell receipt continuity is now preserved, but canonical actor-authentication and grant-source production remain absent.
-- **SG-08 project-file continuous ownership:** BLOCKED — no ownership primitive movement in this cycle.
-- **PowerShell authority-evidence receipt continuity:** VERIFIED by exact-head CI #1185 on `b0281960...`.
+- **SG-02 authority/grant provenance:** PARTIAL/BLOCKED end-to-end.
+- **SG-08 project-file continuous ownership:** BLOCKED / REPRODUCED FALSE-SUCCESS WINDOW.
 - **Physical Windows Level 2 acceptance:** NOT PROVEN by hosted Windows CI.
 - **General project-file mutation:** HOLD.
-- **Green/PRS:** independent and still required where applicable.
+- **Green/PRS:** independent and still required.
 - **No overall GREEN.**
-
-## Protected HOLDs / UNKNOWNs
-
-- Keep A-AG-01/SG-08 single-threaded on #104; do not create a competing project-file writer or ownership primitive.
-- Do not turn role/provider/session identity into authentication evidence.
-- Do not invent a grant registry/source merely to remove SG-02 from BLOCKED.
-- Do not broaden `authority_evidence_id` into generic receipt callers unless their provenance semantics are independently proven.
-- Hosted Windows CI is not physical owner-laptop acceptance.
-- Worker/runtime verification cannot self-certify Green or PRS.
 
 ## Replenished queue
 
 | ID | State | Task | Acceptance evidence |
 |---|---|---|---|
-| V010-01 | PENDING | Fresh-scan #104 for a real SG-08 continuous-ownership primitive delta. Evaluate only if ownership spans verification → publish/prepared recovery → durable success receipt → release. | exact code/test delta; no competing writer |
-| V010-02 | PENDING | Inspect the #104 PowerShell runtime path for whether `authority_evidence_id` survives persistence/reload/recovery after receipt creation, without changing generic receipt authority. | exact persistence/recovery negative test if reproducible |
-| V010-03 | PENDING | Re-scan current lineages for an actual authenticated actor/session producer and canonical grant resolver before any SG-01/02 source work. | exact source evidence or bounded NOT_PRESENT |
-| V010-04 | PENDING | Reconcile #111/#112 current heads and exact CI; preserve task-bound presentation evidence and project-integration separation. | exact current heads + workflow evidence |
-| V010-05 | PENDING | Inspect completion/Green receipt identity only for a newly reproduced gap not covered by existing task/mission/wake/authority tests. | reproduce before patch |
-| V010-06 | HOLD | General project-file mutation / physical Windows promotion. | SG-08 repaired + exact Windows CI + physical acceptance + independent Green + PRS as required |
+| V011-01 | PENDING | Inspect Node/runtime and already-present platform facilities for a kernel-backed ownership primitive that can strengthen the existing writer without adding a dependency or second lock subsystem. | exact API/platform evidence; fail closed if absent |
+| V011-02 | PENDING | If and only if V011-01 identifies a valid existing primitive, prototype the smallest #104-lineage repair and flip the pre-receipt false-success regression to fail-closed while preserving O1–O18. | exact code delta + focused regressions |
+| V011-03 | PENDING | Extend the same continuous-fence analysis to prepared recovery/finalizePreparedReceipt; reproduce any distinct receipt-window case before patching. | deterministic recovery reproduction or bounded no-gap evidence |
+| V011-04 | PENDING | Re-scan authenticated actor/session and canonical grant sources; do no SG-01/02 production work unless a real source appears. | exact source evidence or NOT_PRESENT |
+| V011-05 | PENDING | Reconcile #111/#112 current heads and exact CI; preserve presentation/evidence separation. | exact current heads + workflows |
+| V011-06 | HOLD | General project-file mutation / physical Windows promotion. | SG-08 repaired + exact Windows CI + physical acceptance + independent Green + PRS as required |
 
 ## Next `cont` cycle
 
 1. fresh-scan main, #104, #111, #112 and Overseer #49;
-2. prioritise SG-08 movement if and only if a real ownership primitive delta exists;
-3. otherwise execute V010-02 persistence/recovery authority-evidence continuity;
-4. keep SG-01/02 source work blocked unless a real source appears;
-5. consume exact-head CI failures without weakening negative tests;
-6. replenish this same batch and log material evidence to Overseer #49.
+2. execute V011-01 before any production ownership change;
+3. reproduce prepared-recovery receipt-window behavior if distinct;
+4. patch only on the existing #104 lineage and only if an existing kernel-backed primitive can satisfy continuous ownership;
+5. otherwise preserve HOLD and record the missing platform primitive rather than creating a competing subsystem;
+6. consume exact-head CI failures without weakening adversarial tests;
+7. replenish this same batch and log material evidence to Overseer #49.
