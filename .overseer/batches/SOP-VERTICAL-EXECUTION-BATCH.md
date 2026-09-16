@@ -12,42 +12,56 @@ Owner `cont`, `continue`, `continue autonomously`, or `continue autonomously ver
 
 ## Fresh reconciliation
 - Cycle-012 exact head `9b98d42816dc69ed09ce67f485f171cb4d2d8101` completed AgentOS Tests #1554 SUCCESS and Project Overseer Wake #530 SUCCESS; documentation/workflow scope only.
-- Overseer #49 remains OPEN with Level 2 immediate P0 and Level 5 strategic end-state. No weakening of canonical authority/policy/budget/approval/Green/PRS/scheduler/mission-ledger/registry/persistence is permitted.
-- Stable Level-2 blockers remain physical owner-Windows evidence, authenticated authority provenance, continuous mutation ownership/recovery, and independent Green/PRS exact-head assurance.
+- Overseer #49 remains OPEN with Level 2 immediate P0 and Level 5 strategic end-state.
+- Stable Level-2 blockers remain physical owner-Windows evidence, authenticated authority provenance, continuous mutation ownership/recovery and independent Green/PRS exact-head assurance.
 
-## Cycle-013 maximum execution tranche
-### P0 governance/user truth
-1. Business/admin/team role and permission documentation gate.
-2. Support escalation and incident-to-user-communication boundary.
-3. Accessibility testing evidence procedure.
-4. Open-source dependency/license notice procedure.
-5. Documentation information architecture/user-doc map.
-6. User permission/approval UX truth contract across Simple/Essentials/Tech Head.
-7. Local-files/indexing privacy and zero-cloud evidence procedure.
-8. Connector disconnection/residual-data UX contract.
+## Cycle-013 executed
+1. SOP-ADMIN-001 — team roles and permissions.
+2. SOP-SUPPORT-002 — incident escalation and user communications.
+3. SOP-ACCESS-001 — accessibility testing evidence.
+4. SOP-LEGAL-023 — open-source dependencies/notices.
+5. Documentation information architecture.
+6. SOP-USER-002 — permission/approval UX truth contract.
+7. SOP-DATA-002 — local-files/indexing/zero-cloud evidence.
+8. SOP-CONNECTOR-001 — disconnection and residual data.
+9. SOP-COM-005 — subscription/billing/cancellation evidence gate.
+10. MASTER-REGISTER reconciled to v1.3.
 
-### P1 commercial/legal/operations
-9. Subscription/cancellation/billing evidence gate; implementation-dependent and fail-closed.
-10. Returns/refunds operational workflow linked to statutory-rights gate.
-11. Supplier/product-safety evidence expiry and recall-monitoring procedure.
-12. Provider outage/fallback/cost-routing user communication SOP.
+## Replenished maximum queue
+### P0/P1 governance and product truth
+1. Provider outage/fallback/cost-routing user communication.
+2. Permission/approval evidence examples and negative-state matrix.
+3. Audit-log/user-history truth contract.
+4. Notification delivery/acknowledgement truth contract.
+5. Workspace/project membership and sharing boundary.
+6. Local-file symlink/junction/exclusion threat model documentation.
+7. Connector write/send/delete protected-action matrix.
+8. Documentation test/checklist automation design.
+
+### P1 commerce/legal
+9. Returns/refunds operational workflow linked to statutory rights.
+10. Supplier/product-safety evidence expiry and recall monitoring.
+11. Marketplace account/policy intake gate.
+12. Affiliate disclosure surface-placement checklist.
 13. Business/Commercial tier documentation gate; TBD remains TBD.
-14. Marketplace account/policy intake gate.
-15. Affiliate disclosure surface-placement checklist.
-16. US state privacy applicability matrix template without invented state applicability.
-17. UK privacy/affiliate cross-link/revalidation table.
-18. GhostKitchen food-business/local-regulation intake gate distinct from franchise gate.
+14. US state privacy applicability matrix template.
+15. UK privacy/affiliate cross-link/revalidation table.
+16. GhostKitchen food-business/local-regulation intake gate distinct from franchise gate.
+17. Product provenance/certification evidence gate.
+18. Marketplace price/stock/freight synchronization truth procedure.
 
-### P2 verification/quality
-19. Documentation test/checklist automation design without claiming runtime enforcement.
-20. Reconcile MASTER-REGISTER after substantive tranche.
-21. Reconcile PR #113 body/current exact head.
-22. Fresh exact-head CI post-scan.
-23. Durable checkpoint to Overseer #49.
-24. Replenish next executable tranche.
+### P2 release/support
+19. Support diagnostic bundle privacy/redaction SOP.
+20. Crash/telemetry collection disclosure gate.
+21. Release migration evidence checklist.
+22. Restore-drill evidence template.
+23. Reconcile PR #113 body/current exact head.
+24. Fresh exact-head CI post-scan.
+25. Durable checkpoint to Overseer #49.
+26. Replenish again.
 
-## Execution rule
-Execute top-down until useful safe work is exhausted. Another active implementation owner means read-only evidence consumption, not competing code/control-plane work. Documentation commits prove documentation only.
+## Stable blockers
+Physical owner-Windows acceptance cannot be simulated. Authenticated transport/canonical grant provenance remains implementation evidence. Green/PRS remain independent/exact-head scoped. Public legal documents require operator/jurisdiction/implementation plus authorised human/legal review.
 
 ## Protected actions
 No merge/approval/ready/rebase/deploy, credentials, production writes, external communications/publication, purchases/spend, physical Windows action, legal approval, Green/PRS certification or production autonomy.
