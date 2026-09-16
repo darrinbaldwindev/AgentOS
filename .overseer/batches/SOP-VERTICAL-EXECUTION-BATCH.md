@@ -1,66 +1,65 @@
 # SOP Overseer — Maximum Vertical Execution Batch
 
-**Cycle:** 015  
+**Cycle:** 016  
 **Date:** 2026-09-16  
 **Canonical mission:** `darrinbaldwindev/Overseer#49`  
 **Branch:** `docs/sop-overseer-bootstrap`  
 **SOP PR:** #113 — DRAFT / UNMERGED
 
-## Standing trigger
-Owner `cont`, `continue`, `continue autonomously`, or `continue autonomously vertically` executes:
-`FRESH REPO SCAN -> RECONCILE -> CREATE/REPLENISH MAXIMUM SAFE BATCH -> EXECUTE DEEPLY -> VERIFY -> POST-SCAN -> RECORD -> REPLENISH -> HANDOFF`.
+## Strategic pivot
+The broad SOP foundation now exists. Cycle 016 changes the optimization target from document count to **enforced, tested, independently verified requirements**.
+
+Target chain:
+`SOP REQUIREMENT -> CANONICAL ENFORCEMENT -> AUTOMATED TEST -> RUNTIME EVIDENCE -> GREEN -> PRS`
 
 ## Fresh reconciliation
-- Cycle-014 exact head `5ef73cde94ebe7d05b19f5fa0bfdcee7ac946eed` completed AgentOS Tests #1614 SUCCESS and Project Overseer Wake #556 SUCCESS; documentation/workflow scope only.
-- Fresh Overseer #49 remains OPEN: Level 2 immediate P0, Level 5 strategic end-state. Completion still requires repository/runtime evidence, durable receipts and independent Green/PRS.
+- Cycle-015 exact head `6a8b9a98e16f214ebed256d93df12733fddf64ed`: AgentOS Tests #1636 SUCCESS; Project Overseer Wake #567 SUCCESS; documentation/workflow scope only.
+- PR #113 remained OPEN / DRAFT / UNMERGED / mergeable at fresh scan.
+- Overseer #49 remains Level-2 immediate P0. Its execution order still requires controlled mutation, inspect->edit->test->verify, recovery/idempotency/concurrency and independent Green/PRS.
 
-## Cycle-015 executed
-1. SOP-APPROVAL-002 — permission/approval negative-state matrix.
-2. SOP-WORKSPACE-001 — membership/sharing boundary.
-3. SOP-SUPPORT-003 — diagnostic bundle privacy/redaction.
-4. SOP-PRIVACY-001 — crash/telemetry disclosure gate.
-5. SOP-RELEASE-003 — migration/restore evidence checklist.
-6. SOP-SEC-003 — secret rotation/revocation evidence procedure; no credential mutation.
-7. SOP-PROVIDER-003 — provider data-residency/retention evidence matrix.
-8. SOP-MKTPLACE-002 — price/stock/freight synchronization truth.
-9. SOP-COM-008 — product provenance/certification evidence gate.
-10. MASTER-REGISTER reconciled to v1.5.
+## Cycle-016 executed
+1. SOP-ACCEPT-001 — Level-2 golden mission acceptance contract and negative variants.
+2. SOP-ACCEPT-002 — SOP-to-enforcement traceability contract.
+3. SOP-ACCEPT-003 — machine-readable policy candidate schema; design input only, no second authority.
+4. SOP-ACCEPT-004 — canonical evidence envelope; projection only, no second ledger.
+5. SOP-ACCEPT-005 — capability registry evidence contract; capability != permission.
+6. SOP-ONBOARD-002 — AgentOS Doctor evidence contract.
+7. SOP-ASSURE-001 — failure-injection catalogue for CI/PRS challenge.
+8. SOP-DOC-002 — maintenance-mode/new-SOP gate.
+9. MASTER-REGISTER v1.6 — maturity metric pivot to UNMAPPED/MAPPED/TESTED/INDEPENDENTLY VERIFIED.
 
-## Replenished maximum queue
-### P0/P1 governance
-1. Documentation test/checklist automation design.
-2. Workspace invite/remove/role-change receipt semantics.
-3. Model-quality fallback acceptance criteria.
-4. Offline/local-only degradation UX.
-5. First-run privacy/permission disclosure checklist.
-6. Release compatibility/deprecation truth.
-7. User data portability evidence format.
-8. Local-worker capability discovery/doctor truth matrix.
+## Next maximum vertical batch — implementation-facing
+### P0 Level-2
+1. Fresh-map existing AgentOS #104/#112/#120 code/tests against SOP-ACCEPT-001.
+2. Build first traceability matrix rows for authority, controlled mutation, ownership, recovery, receipt persistence, exact correlation and stop/revoke.
+3. Identify exact existing enforcement points; mark gaps UNMAPPED rather than inventing replacements.
+4. Convert failure catalogue into implementation-ready test cases for the owning lineages without duplicating them.
+5. Define golden fixture repository/task payload and expected evidence packet.
+6. Reconcile current PRS #17/#24 evidence against the golden acceptance contract.
+7. Reconcile Green acceptance against exact current AgentOS head.
+8. Identify minimum physical Windows owner acceptance runbook derived from existing contract.
 
-### P1 legal/commerce
-9. UK privacy/affiliate cross-link/revalidation table.
-10. US state privacy applicability matrix template.
-11. GhostKitchen food-business/local-regulation intake gate distinct from franchise.
-12. Franchise disclosure-document evidence packet template.
-13. Supplier incident/recall escalation handoff.
-14. Customer-review moderation/fraud evidence workflow.
-15. Marketplace returns/disputes synchronization boundary.
-16. Product claim evidence-expiry cadence.
+### P1 productization
+9. Doctor UI/CLI information architecture derived from evidence, not implementation claim.
+10. Capability registry integration map to existing worker/provider/tool identity sources.
+11. Evidence-envelope mapping to Morning Brief / What Happened? / Simple / Essentials / Tech Head.
+12. Offline/local-only degradation UX.
+13. Model-quality fallback acceptance criteria.
+14. First-run permission/privacy disclosure checklist.
 
-### P1/P2 support/release
-17. User-facing recovery-state vocabulary.
-18. Approval receipt retention/export semantics.
-19. Provider outage incident handoff to Morning Brief.
-20. Connector capability drift/revalidation.
-21. Documentation supersession/archive workflow.
-22. Portfolio SOP release-readiness checklist.
-23. Reconcile PR #113 body/current exact head.
-24. Fresh exact-head CI post-scan.
-25. Durable checkpoint to Overseer #49.
-26. Replenish again.
+### P1 remaining closure docs
+15. UK privacy/affiliate cross-link table.
+16. US state privacy applicability template.
+17. GhostKitchen food/local-regulation intake.
+18. Franchise disclosure evidence packet.
+19. Release compatibility/deprecation truth.
+20. User data portability evidence.
+
+## Maintenance rule
+New SOPs after the closure set require a genuinely new control domain. Prefer implementation mapping, tests, consolidation and revalidation.
 
 ## Stable blockers
-Physical owner-Windows acceptance cannot be simulated. Authenticated transport/canonical grant provenance and continuous ownership/recovery remain implementation evidence. Green/PRS remain independent/exact-head scoped. Public legal documents require operator/jurisdiction/implementation plus authorised human/legal review.
+Physical owner-Windows acceptance cannot be simulated. Authenticated transport/canonical grant provenance and continuous ownership/recovery require implementation evidence. Green/PRS remain independent/exact-head scoped.
 
 ## Protected actions
 No merge/approval/ready/rebase/deploy, credentials, production writes, external communications/publication, purchases/spend, physical Windows action, legal approval, Green/PRS certification or production autonomy.
