@@ -34,8 +34,17 @@ export async function runNextTask({ tasks, receiver, authorityPolicy, store, exe
     current = advanceTask(current, 'verify');
     expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
+    const verification = current;
     current = advanceTask(current, { type: 'complete', evidence: result });
-    await persist(store, current, expectedSha);
+    try {
+      await persist(store, current, expectedSha);
+    } catch (error) {
+      // The completed state was not durably written. Keep the last durable
+      // verification state so the failure can still be persisted as an
+      // escalation instead of becoming trapped behind a local terminal state.
+      current = verification;
+      throw error;
+    }
     return current;
   } catch (error) {
     try {
