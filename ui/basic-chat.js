@@ -16,8 +16,9 @@ const STATUS_LABELS = Object.freeze({
 });
 
 const JOB_STATUS_LABELS = Object.freeze({
-  queued: 'Queued', claimed: 'Claimed', working: 'Working', verifying: 'Checking result',
-  complete: 'Complete', failed: 'Failed', blocked: 'Needs attention', cancelled: 'Cancelled', unknown: 'Unable to confirm',
+  queued: 'Queued', claimed: 'Claimed', working: 'Working',
+  verification: 'Checking result', completed: 'Execution completed', escalated: 'Escalated — needs attention',
+  verifying: 'Checking result', complete: 'Execution completed', failed: 'Failed', blocked: 'Needs attention', cancelled: 'Cancelled', unknown: 'Unable to confirm',
 });
 
 const ERROR_PRESENTATION = Object.freeze([
