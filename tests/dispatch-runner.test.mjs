@@ -212,3 +212,38 @@ test('runner cannot return success when the completed-state write fails', async 
   assert.equal(writes.at(-1).mission_id, task.mission_id);
   assert.match(writes.at(-1).error.message, /persistence failure: runner-001/);
 });
+
+test('runner preserves completion persistence failure when escalation persistence also fails', async () => {
+  const writes = [];
+  let executions = 0;
+  let writeCount = 0;
+  const store = {
+    writeTask: async value => {
+      writes.push(structuredClone(value));
+      writeCount += 1;
+      if (writeCount === 4) return { written: false, error: 'completion persistence unavailable' };
+      if (writeCount === 5) return { written: false, error: 'escalation persistence unavailable' };
+      return { written: true, sha: `write-${writeCount}` };
+    },
+  };
+
+  await assert.rejects(() => runNextTask({
+    tasks: [task], receiver: 'AgentOS Overseer Project', authorityPolicy: policy, store,
+    execute: async current => { executions += 1; return { task: current.task_id, ok: true }; },
+  }), error => {
+    assert.match(error.message, /persistence failure: runner-001/);
+    assert.equal(error.outcome.task_id, task.task_id);
+    assert.match(error.persistenceError.message, /persistence failure: runner-001/);
+    assert.equal(error.persistenceOutcome.task_id, task.task_id);
+    return true;
+  });
+
+  assert.equal(executions, 1);
+  assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'verification', 'completed', 'escalated']);
+  assert.equal(writes[3].task_id, task.task_id);
+  assert.equal(writes[3].mission_id, task.mission_id);
+  assert.equal(writes[3].evidence.task, task.task_id);
+  assert.equal(writes.at(-1).task_id, task.task_id);
+  assert.equal(writes.at(-1).mission_id, task.mission_id);
+  assert.match(writes.at(-1).error.message, /persistence failure: runner-001/);
+});
