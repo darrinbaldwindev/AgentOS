@@ -97,7 +97,25 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
     });
   }
 
-  async function control(action) { const a=String(action||'').toLowerCase(); if(a==='pause') await setControl({paused:true,lastUserStatus:USER_STATES.PAUSED}); else if(a==='resume') await setControl({paused:false,stopped:false,lastUserStatus:USER_STATES.READY,status:'ready'}); else if(a==='stop') await setControl({stopped:true,paused:false,lastUserStatus:USER_STATES.NEEDS_ATTENTION}); else throw new Error('UNKNOWN_CONTROL_ACTION'); return snapshot(); }
+  async function control(action) {
+    const a = String(action || '').toLowerCase();
+    const current = await getControl();
+    if (a === 'pause') {
+      if (current.stopped) throw new Error('CHAT_STOPPED');
+      await setControl({ paused:true, lastUserStatus:USER_STATES.PAUSED });
+    } else if (a === 'resume') {
+      // Stop is sticky for this host lifetime. A UI/API caller must not be able to
+      // reinterpret Resume as clearing a prior Stop request; host restart is the
+      // explicit boundary advertised by Basic Chat.
+      if (current.stopped) throw new Error('CHAT_STOPPED');
+      await setControl({ paused:false, lastUserStatus:USER_STATES.READY, status:'ready' });
+    } else if (a === 'stop') {
+      await setControl({ stopped:true, paused:false, lastUserStatus:USER_STATES.NEEDS_ATTENTION });
+    } else {
+      throw new Error('UNKNOWN_CONTROL_ACTION');
+    }
+    return snapshot();
+  }
   let closePromise=null; function close(){ if(!closePromise) closePromise=releaseHostLock({lock,lockPath,unlinkLock,lifecycleStage}); return closePromise; }
   return Object.freeze({ send, control, snapshot, history, close, THREAD });
 }
