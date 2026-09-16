@@ -25,6 +25,32 @@ test('runner claims, executes, verifies and completes one task', async () => {
   assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'verification', 'completed']);
 });
 
+test('runner chains exact persistence sha across every successful state transition', async () => {
+  const writes = [];
+  const expectedShas = [];
+  let writeCount = 0;
+  const store = {
+    writeTask: async (value, expectedSha) => {
+      writes.push(structuredClone(value));
+      expectedShas.push(expectedSha);
+      writeCount += 1;
+      return { written: true, sha: `durable-${writeCount}` };
+    },
+  };
+  const seededTask = { ...task, dispatch_sha: 'dispatch-seed' };
+
+  const completed = await runNextTask({
+    tasks: [seededTask], receiver: 'AgentOS Overseer Project', authorityPolicy: policy, store,
+    execute: async current => ({ task: current.task_id, ok: true }),
+  });
+
+  assert.equal(completed.status, 'completed');
+  assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'verification', 'completed']);
+  assert.deepEqual(expectedShas, ['dispatch-seed', 'durable-1', 'durable-2', 'durable-3']);
+  assert.equal(writes.every(x => x.task_id === task.task_id), true);
+  assert.equal(writes.every(x => x.mission_id === task.mission_id), true);
+});
+
 test('runner escalates execution failures', async () => {
   const writes = [];
   await assert.rejects(() => runNextTask({
