@@ -18,9 +18,11 @@ function timeOf(artifact, payload) {
   return text(payload.updated_at) ?? text(payload.completed_at) ?? text(artifact.updatedAt) ?? text(payload.created_at) ?? text(artifact.createdAt);
 }
 
-export function projectBasicChatJobs({ artifacts = [], limit = 5 } = {}) {
+export function projectBasicChatJobs({ artifacts = [], limit = 5, projectId = null } = {}) {
   if (!Array.isArray(artifacts)) throw new TypeError('artifacts must be an array');
   if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new TypeError('limit must be an integer from 1 to 20');
+  const expectedProjectId = projectId === null ? null : text(projectId);
+  if (projectId !== null && !expectedProjectId) throw new TypeError('projectId must be a non-empty string or null');
 
   const jobs = [];
   for (const artifact of artifacts) {
@@ -31,7 +33,9 @@ export function projectBasicChatJobs({ artifacts = [], limit = 5 } = {}) {
     if (!taskId || artifact.id !== taskId) continue;
     const missionId = text(payload.mission_id);
     const wakeTraceId = text(payload.wake_trace_id);
-    if (!missionId || !wakeTraceId) continue;
+    const taskProjectId = text(payload.project_id);
+    if (!missionId || !wakeTraceId || !taskProjectId) continue;
+    if (expectedProjectId && taskProjectId !== expectedProjectId) continue;
 
     const rawStatus = text(payload.status)?.toLowerCase() ?? null;
     const status = rawStatus && ALLOWED_STATUSES.has(rawStatus) ? rawStatus : 'unknown';
@@ -39,6 +43,7 @@ export function projectBasicChatJobs({ artifacts = [], limit = 5 } = {}) {
       schemaVersion: 1,
       taskId,
       missionId,
+      projectId: taskProjectId,
       status,
       priority: text(payload.priority),
       createdAt: text(payload.created_at) ?? text(artifact.createdAt),
