@@ -1,6 +1,6 @@
 # SOP Overseer — Maximum Vertical Execution Batch
 
-**Cycle:** 010  
+**Cycle:** 011  
 **Date:** 2026-09-16  
 **Canonical mission:** `darrinbaldwindev/Overseer#49`  
 **Branch:** `docs/sop-overseer-bootstrap`  
@@ -11,49 +11,52 @@ Owner `cont`, `continue`, `continue autonomously`, or `continue autonomously ver
 `FRESH REPO SCAN -> RECONCILE -> CREATE/REPLENISH MAXIMUM SAFE BATCH -> EXECUTE DEEPLY -> VERIFY -> POST-SCAN -> RECORD -> REPLENISH -> HANDOFF`.
 
 ## Fresh reconciliation
-- Cycle-009 exact SOP head `569034f9a3713c9fbb98453ada348ec53e2f4107` subsequently completed AgentOS Tests #1467 SUCCESS and Project Overseer Wake #496 SUCCESS. Scope is workflow execution on that documentation head only.
-- Overseer #49 remains open with Level 2 immediate P0 / Level 5 strategic end-state and unchanged hard boundaries.
-- Current active implementation/assurance lineages remain separate; documentation does not repair or certify project-file ownership, authenticated transport/canonical grant provenance, physical Windows acceptance, Green or PRS.
-- UK legal research used current 2026 ICO guidance; Data (Use and Access) Act changes mean stale cookie/direct-marketing summaries must not be copied forward without revalidation.
+- Cycle-010 exact head `1f67fa2f726a7d284c5bba0ef8a4b1c2f4e20030` completed AgentOS Tests #1501 SUCCESS. Exact-head workflow evidence remains scoped to documentation/workflow execution only.
+- Overseer #49 remains canonical: Level 2 immediate P0; Level 5 end-state; no weakening existing authority/policy/budget/approval/Green/PRS/scheduler/mission-ledger/registry/persistence.
+- Current legal refresh: FTC guidance continues to require truthful/evidence-based advertising and clear/conspicuous disclosure of material endorsement/affiliate connections; current ASA/CAP guidance treats commission-linked affiliate content as advertising requiring obvious identification.
 
-## Cycle-010 executed
-1. SOP-ONBOARD-001 — install/doctor/first-run evidence contract.
-2. SOP-PROVIDER-001 — provider/model/local/BYOK configuration.
-3. SOP-DATA-002 — export/delete/disconnect/uninstall separation.
-4. SOP-RETIRE-001 — worker/project retirement.
-5. SOP-EVID-002 — user-facing `What happened?` truth contract.
-6. SOP-MKT-001 — Marketing truth -> Content360 transformation handoff.
-7. SOP-LEGAL-017 — UK affiliate/privacy/tracking/direct-marketing annex based on current ICO guidance.
+## Cycle-011 executed
+1. SOP-DOC-001 — documentation freshness/revalidation.
+2. Governance/evidence glossary.
+3. SOP-SEC-002 — external vulnerability disclosure gate.
+4. SOP-LEGAL-018 — environmental/sustainability claims.
+5. SOP-LEGAL-019 — US affiliate/privacy/consumer annex; explicitly requires state applicability rather than false one-size-fits-all US compliance.
+6. SOP-LEGAL-020 — UK affiliate advertising annex based on current ASA/CAP evidence.
+7. SOP-AFF-001 — Prime/deal/destination freshness and affiliate-commercial-state separation.
+8. SOP-COM-003 — marketplace listing publication gate.
 
 ## Replenished maximum queue
 ### P0 documentation/governance
-1. Documentation freshness/revalidation dependency design.
-2. Glossary/FAQ for authority, evidence, Green, PRS, stop semantics, modes and UNKNOWN/BLOCKED.
-3. Cross-project SOP applicability map.
-4. Vulnerability/security external-publication gate.
-5. Business/admin documentation architecture as PRODUCT DIRECTION unless implementation proves otherwise.
+1. Cross-project SOP applicability matrix.
+2. Business/admin/team documentation architecture as PRODUCT DIRECTION unless implementation proves otherwise.
+3. Troubleshooting/support evidence SOP.
+4. Update/upgrade/rollback SOP.
+5. Backup/restore SOP separating app state, mission state and user/project files.
+6. Release-note/changelog truth procedure.
+7. Reconcile MASTER-REGISTER to Cycle 011.
 
 ### P1 legal/commercial
-6. Environmental/sustainability claims SOP using current official sources.
-7. GhostKitchen/Franchise legal applicability gate.
-8. US affiliate/privacy/consumer annex using FTC + current state/federal applicability evidence.
-9. UK annex follow-up: current ASA/CAP affiliate disclosure review before launch.
-10. Prime/deal freshness and affiliate destination revalidation SOP.
-11. Marketplace listing publication gate integrating supplier/safety/claims/authority evidence.
-12. Subscription/cancellation/billing evidence gate once implementation exists.
+8. GhostKitchen/Franchise legal applicability gate using current Australian official sources before substantive legal claims.
+9. Subscription/cancellation/billing evidence gate once implementation evidence is reconciled.
+10. AU environmental claims annex using current ACCC guidance.
+11. US state privacy matrix template with no invented state applicability.
+12. UK privacy/affiliate annex cross-link/revalidation table.
+13. Affiliate program intake/approval SOP distinct from consumer referral verification.
+14. Supplier onboarding SOP distinct from supplier research.
 
 ### P1/P2 user/admin
-13. Troubleshooting/support evidence SOP.
-14. Update/upgrade/rollback SOP.
-15. Backup/restore SOP separating app state, mission state and user/project files.
-16. Admin/team/organization role documentation gate.
-17. Release notes/changelog truth procedure.
+15. Support/escalation and incident-to-user-communication boundary.
+16. Admin/team/organization role and permission documentation gate.
+17. Data backup/restore verification and disaster-recovery documentation.
+18. Accessibility testing evidence procedure.
+19. Open-source dependency/license notice procedure.
+20. Documentation information architecture / user-doc map for install -> configure -> use -> authorise -> execute -> monitor -> verify -> recover -> update -> troubleshoot -> administer -> audit -> retire/delete.
 
 ## Stable blockers
-- Physical owner-Windows Level-2 acceptance requires real owner-machine evidence; do not simulate.
-- Authenticated transport/canonical grant provenance remains an implementation evidence gap.
-- Green/PRS remain independent and exact-head scoped.
-- Public legal documents require operator/jurisdiction/actual implementation plus human legal review.
+- Physical owner-Windows Level-2 acceptance requires real owner-machine evidence; never simulate.
+- Authenticated transport/canonical grant provenance remains implementation evidence.
+- Green/PRS remain independent/exact-head scoped.
+- Public legal documents require operator/jurisdiction/actual implementation plus authorised human/legal review.
 
 ## Protected actions
 No merge/approval/ready/rebase/deploy, credentials, production writes, external communications/publication, purchases/spend, physical Windows action, legal approval, Green/PRS certification or production autonomy.
