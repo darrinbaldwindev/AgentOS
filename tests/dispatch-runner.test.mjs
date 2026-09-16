@@ -76,12 +76,15 @@ test('runner never executes when the claimed-state write fails', async () => {
     execute: async () => { executions += 1; return { ok: true }; },
   }), error => {
     assert.match(error.message, /persistence failure: runner-001/);
-    assert.equal(error.outcome.task_id, 'runner-001');
+    assert.equal(error.outcome.task_id, task.task_id);
+    assert.equal(error.outcome.mission_id, task.mission_id);
     return true;
   });
 
   assert.equal(executions, 0);
   assert.deepEqual(writes.map(x => x.status), ['claimed']);
+  assert.equal(writes[0].task_id, task.task_id);
+  assert.equal(writes[0].mission_id, task.mission_id);
 });
 
 test('runner cannot execute when working-state persistence fails and preserves exact correlation', async () => {
