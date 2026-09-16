@@ -2,7 +2,13 @@
 // This module does not read or mutate persistence and deliberately excludes objectives,
 // worker output, authority payloads, credentials, evidence payloads and PRS/recovery claims.
 
-const ALLOWED_STATUSES = new Set(['queued', 'claimed', 'working', 'verifying', 'complete', 'failed', 'blocked', 'cancelled']);
+// Keep canonical runner states intact. Presentation code may translate labels, but the
+// projection must not turn `verification` into completion or hide an `escalated` task.
+const ALLOWED_STATUSES = new Set([
+  'queued', 'claimed', 'working', 'verification', 'completed', 'blocked', 'escalated',
+  // Retain bounded compatibility with persisted task producers that may use these states.
+  'verifying', 'complete', 'failed', 'cancelled',
+]);
 
 function text(value) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
