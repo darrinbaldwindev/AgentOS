@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { projectBasicChatJobs } from '../runtime/basic-chat-jobs-projection.mjs';
 
-function task(id, status, createdAt) {
+function task(id, status, createdAt, projectId = 'agentos-local') {
   return {
     id,
     artifactType: 'dispatch.task',
@@ -12,6 +12,7 @@ function task(id, status, createdAt) {
       task_id: id,
       mission_id: `mission:${id}`,
       wake_trace_id: `wake:${id}`,
+      project_id: projectId,
       status,
       priority: 'high',
       created_at: createdAt,
@@ -49,11 +50,21 @@ test('preserves canonical runner verification completed and escalated states', (
   assert.deepEqual(jobs.map((job) => job.status), ['escalated', 'completed', 'verification']);
 });
 
+test('requires canonical project correlation and can scope the Jobs surface', () => {
+  const local = task('task-local', 'working', '2026-09-15T03:00:00.000Z', 'agentos-local');
+  const other = task('task-other', 'working', '2026-09-15T04:00:00.000Z', 'other-project');
+  const missing = task('task-missing-project', 'working', '2026-09-15T05:00:00.000Z');
+  delete missing.payload.project_id;
+  const jobs = projectBasicChatJobs({ artifacts: [local, other, missing], projectId: 'agentos-local' });
+  assert.deepEqual(jobs.map((job) => job.taskId), ['task-local']);
+  assert.equal(jobs[0].projectId, 'agentos-local');
+});
+
 test('does not project objective authority credentials worker output PRS or recovery', () => {
   const jobs = projectBasicChatJobs({ artifacts: [task('task-sensitive', 'completed', '2026-09-15T03:00:00.000Z')] });
   const encoded = JSON.stringify(jobs);
   assert.doesNotMatch(encoded, /private objective|secret-authority|secret-credential|private-worker-output|prs|recovery/i);
-  assert.deepEqual(Object.keys(jobs[0]).sort(), ['createdAt', 'missionId', 'priority', 'schemaVersion', 'status', 'taskId', 'updatedAt'].sort());
+  assert.deepEqual(Object.keys(jobs[0]).sort(), ['createdAt', 'missionId', 'priority', 'projectId', 'schemaVersion', 'status', 'taskId', 'updatedAt'].sort());
 });
 
 test('fails closed on forged identity or incomplete canonical correlation', () => {
@@ -76,4 +87,5 @@ test('enforces bounded list limits and input types', () => {
   assert.equal(projectBasicChatJobs({ artifacts, limit: 3 }).length, 3);
   assert.throws(() => projectBasicChatJobs({ artifacts: null }), /artifacts must be an array/);
   assert.throws(() => projectBasicChatJobs({ artifacts: [], limit: 0 }), /limit must be an integer/);
+  assert.throws(() => projectBasicChatJobs({ artifacts: [], projectId: '' }), /projectId must be a non-empty string or null/);
 });
