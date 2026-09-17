@@ -234,6 +234,7 @@ test('runner cannot return success when the completed-state write fails', async 
   }), error => {
     assert.match(error.message, /persistence failure: runner-001/);
     assert.equal(error.outcome.task_id, 'runner-001');
+    assert.equal(error.outcome.mission_id, task.mission_id);
     return true;
   });
 
