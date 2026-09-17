@@ -285,3 +285,38 @@ test('runner preserves completion persistence failure when escalation persistenc
   assert.equal(writes.at(-1).mission_id, task.mission_id);
   assert.match(writes.at(-1).error.message, /persistence failure: runner-001/);
 });
+
+test('runner rejects conflicting executor task correlation before verification or completion', async () => {
+  const writes = [];
+  let executions = 0;
+
+  await assert.rejects(() => runNextTask({
+    tasks: [task], receiver: 'AgentOS Overseer Project', authorityPolicy: policy,
+    store: storeFrom(writes), execute: async () => {
+      executions += 1;
+      return { task: 'runner-other', ok: true };
+    },
+  }), /executor result task correlation mismatch: runner-001/);
+
+  assert.equal(executions, 1);
+  assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'escalated']);
+  assert.equal(writes.at(-1).task_id, task.task_id);
+  assert.equal(writes.at(-1).mission_id, task.mission_id);
+  assert.match(writes.at(-1).error.message, /task correlation mismatch/);
+  assert.equal(writes.some(x => x.status === 'verification' || x.status === 'completed'), false);
+});
+
+test('runner rejects conflicting executor mission correlation before verification or completion', async () => {
+  const writes = [];
+
+  await assert.rejects(() => runNextTask({
+    tasks: [task], receiver: 'AgentOS Overseer Project', authorityPolicy: policy,
+    store: storeFrom(writes), execute: async current => ({ task: current.task_id, mission_id: 'mission:other', ok: true }),
+  }), /executor result mission correlation mismatch: mission:runner-001/);
+
+  assert.deepEqual(writes.map(x => x.status), ['claimed', 'working', 'escalated']);
+  assert.equal(writes.at(-1).task_id, task.task_id);
+  assert.equal(writes.at(-1).mission_id, task.mission_id);
+  assert.match(writes.at(-1).error.message, /mission correlation mismatch/);
+  assert.equal(writes.some(x => x.status === 'verification' || x.status === 'completed'), false);
+});
