@@ -105,7 +105,8 @@ test('runner cannot execute when working-state persistence fails and preserves e
     execute: async () => { executions += 1; return { ok: true }; },
   }), error => {
     assert.match(error.message, /persistence failure: runner-001/);
-    assert.equal(error.outcome.task_id, 'runner-001');
+    assert.equal(error.outcome.task_id, task.task_id);
+    assert.equal(error.outcome.mission_id, task.mission_id);
     return true;
   });
 
