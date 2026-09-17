@@ -64,3 +64,10 @@ test('Simple Essentials and Tech Head are presentation modes rather than capabil
   assert.doesNotMatch(js, /fetch\([^\n]*view-mode/i);
   assert.match(css, /html\[data-view-mode="simple"\] \.tech-disclosure/);
 });
+
+test('Recent Jobs keeps project and mission correlation in Tech Head disclosure only', () => {
+  assert.match(js, /viewMode === 'tech' \? `Project \$\{job\.projectId\} · Task \$\{job\.taskId\} · Mission \$\{job\.missionId\}` : `Task \$\{job\.taskId\}`/);
+  assert.match(css, /html\[data-view-mode="simple"\] \.essentials-surface\s*\{\s*display:\s*none/);
+  assert.doesNotMatch(js, /api\([^\n]*projectId/i);
+  assert.doesNotMatch(js, /fetch\([^\n]*projectId/i);
+});
