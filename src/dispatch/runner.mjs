@@ -22,6 +22,9 @@ function assertResultCorrelation(task, result) {
   if (resultTaskId != null && resultTaskId !== task.task_id) {
     throw new Error(`executor result task correlation mismatch: ${task.task_id}`);
   }
+  if (result.task_id != null && result.mission_id == null) {
+    throw new Error(`executor result mission correlation required: ${task.mission_id}`);
+  }
   if (result.mission_id != null && result.mission_id !== task.mission_id) {
     throw new Error(`executor result mission correlation mismatch: ${task.mission_id}`);
   }
