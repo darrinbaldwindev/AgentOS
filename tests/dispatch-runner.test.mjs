@@ -137,8 +137,10 @@ test('runner preserves the working persistence failure when escalation persisten
   }), error => {
     assert.match(error.message, /persistence failure: runner-001/);
     assert.equal(error.outcome.task_id, task.task_id);
+    assert.equal(error.outcome.mission_id, task.mission_id);
     assert.match(error.persistenceError.message, /persistence failure: runner-001/);
     assert.equal(error.persistenceOutcome.task_id, task.task_id);
+    assert.equal(error.persistenceOutcome.mission_id, task.mission_id);
     return true;
   });
 
