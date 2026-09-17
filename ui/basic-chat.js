@@ -77,7 +77,7 @@ function renderJobs() {
     title.textContent = JOB_STATUS_LABELS[job.status] ?? 'Unable to confirm';
     const meta = document.createElement('span');
     meta.className = 'job-meta';
-    meta.textContent = viewMode === 'tech' ? `Task ${job.taskId} · Mission ${job.missionId}` : `Task ${job.taskId}`;
+    meta.textContent = viewMode === 'tech' ? `Project ${job.projectId} · Task ${job.taskId} · Mission ${job.missionId}` : `Task ${job.taskId}`;
     li.append(title, meta);
     ul.append(li);
   }
