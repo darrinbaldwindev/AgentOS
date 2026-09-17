@@ -56,7 +56,21 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
   let persistence = await createLocalPersistence({ filePath: stateFilePath });
   async function refreshPersistence() { persistence = await createLocalPersistence({ filePath: stateFilePath }); return persistence; }
 
-  if (!(await persistence.get('artifact', CONTROL))) await persistence.create('artifact', { id: CONTROL, artifactType: 'chat.control', status: 'ready', paused: false, stopped: false });
+  const existingControl = await persistence.get('artifact', CONTROL);
+  if (!existingControl) {
+    await persistence.create('artifact', { id: CONTROL, artifactType: 'chat.control', status: 'ready', paused: false, stopped: false });
+  } else if (existingControl.paused === true || existingControl.stopped === true) {
+    // Pause/Stop are controls for one Basic Chat host lifetime, not durable
+    // authority or execution state. A successfully acquired new host resets only
+    // those transient gates; task/evidence/history fields remain untouched.
+    await persistence.update('artifact', CONTROL, {
+      ...existingControl,
+      status: 'ready',
+      paused: false,
+      stopped: false,
+      lastUserStatus: USER_STATES.READY,
+    });
+  }
   for (const run of await persistence.list('run')) if (run.threadId === THREAD && run.status === 'running') await persistence.update('run', run.id, { status: 'failed', error: 'INTERRUPTED_BEFORE_RESPONSE' });
 
   let queue = Promise.resolve();
