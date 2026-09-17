@@ -50,4 +50,29 @@ describe('Basic Chat Stop is sticky for the current host lifetime', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('clears only transient Stop state after a clean host close and new host acquisition', async () => {
+    const root = await makeRoot();
+    const first = await createLocalChat({ root });
+    try {
+      await first.control('stop');
+      const stopped = await first.snapshot();
+      assert.equal(stopped.stopped, true);
+      assert.equal(stopped.ready, false);
+      await first.close();
+
+      const restarted = await createLocalChat({ root });
+      try {
+        const snapshot = await restarted.snapshot();
+        assert.equal(snapshot.stopped, false);
+        assert.equal(snapshot.paused, false);
+        assert.equal(snapshot.ready, true);
+      } finally {
+        await restarted.close();
+      }
+    } finally {
+      await first.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
