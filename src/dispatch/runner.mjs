@@ -15,6 +15,9 @@ async function persist(store, task, expectedSha = null) {
 
 function assertResultCorrelation(task, result) {
   if (!result || typeof result !== 'object') return;
+  if (result.task_id != null && result.task != null && result.task_id !== result.task) {
+    throw new Error(`executor result task aliases conflict: ${task.task_id}`);
+  }
   const resultTaskId = result.task_id ?? result.task;
   if (resultTaskId != null && resultTaskId !== task.task_id) {
     throw new Error(`executor result task correlation mismatch: ${task.task_id}`);
