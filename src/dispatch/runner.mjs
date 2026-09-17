@@ -13,6 +13,17 @@ async function persist(store, task, expectedSha = null) {
   return result.result;
 }
 
+function assertResultCorrelation(task, result) {
+  if (!result || typeof result !== 'object') return;
+  const resultTaskId = result.task_id ?? result.task;
+  if (resultTaskId != null && resultTaskId !== task.task_id) {
+    throw new Error(`executor result task correlation mismatch: ${task.task_id}`);
+  }
+  if (result.mission_id != null && result.mission_id !== task.mission_id) {
+    throw new Error(`executor result mission correlation mismatch: ${task.mission_id}`);
+  }
+}
+
 export async function runNextTask({ tasks, receiver, authorityPolicy, store, execute }) {
   if (!Array.isArray(tasks)) throw new Error('tasks must be an array');
   if (!store?.writeTask) throw new Error('store.writeTask is required');
@@ -30,6 +41,7 @@ export async function runNextTask({ tasks, receiver, authorityPolicy, store, exe
     expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
     const result = await execute(current);
+    assertResultCorrelation(current, result);
 
     current = advanceTask(current, 'verify');
     expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
