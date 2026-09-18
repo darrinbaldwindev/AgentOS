@@ -168,3 +168,18 @@ Core invariant: **NO MODEL DECIDES ITS OWN AUTHORITY.** Functional verification,
 6. Continue adjacent Everyday frontend / Night Shift / Morning Brief / upgrade-boundary work only where it does not widen authority.
 
 No overall AgentOS GREEN is implied by this batch.
+## Owner-start continuation — 2026-09-16 receipt prerequisite
+
+- Candidate branch: `work/powershell-receipt-proof`, based on fresh #104 `bae44534d6d11b967fdac09bd734f8c073f23f2f`; isolated draft change, no rebase/merge of #104.
+- W-AG-02 / A-AG-05B: execution integration remains BLOCKED. A genuinely uncovered receipt prerequisite was repaired: arbitrary truthy recorder results (including `{persisted:false}`) could promote the execution boundary to VERIFIED. The canonical adapter now requires explicit acknowledgement or an exactly matching canonical artifact; contradictory acknowledgement/artifact evidence fails closed. Existing claim retention, budget reconciliation and replay denial remain owned by their canonical primitives.
+- Targeted evidence: nine new negative cases fail against original adapter, pass with repair; canonical persisted artifact reload preserves exact receipt. Independent worker review reports 43 targeted tests passing on implementation blobs. This is not Jess/Michael/PRS approval, not full-suite/Windows evidence.
+- Receipt acknowledgement remains a trusted-recorder contract, not independent proof of disk durability. The positive integration test exercises actual local persistence and reload. No new persistence plane.
+- A-AG-01 SG-08 and A-AG-02 SG-01/02 remain BLOCKED_STABLE. No local-wake enablement, project-file mutation, physical acceptance or overall GREEN.
+- Security gates: SG-09/10/11/18/19; risk S2 bounded non-production patch. Independent Jess and Michael exact-candidate review remain required before PRS eligibility.
+
+Next executable order:
+1. Resolve candidate full-suite/Ubuntu/Windows CI on its exact committed head; do not borrow predecessor CI.
+2. Independent Jess functional and Michael security challenge on identical unchanged candidate.
+3. Bind authenticated actor and canonical grant dependencies before bounded local-wake execution; no injected authority substitute.
+4. Repair one existing SG-08 kernel ownership lifecycle before mutation; preserve prepared-recovery/receipt ordering obligations.
+5. Keep physical five-minute acceptance downstream; no owner laptop action currently closes these software gates.

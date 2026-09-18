@@ -4,6 +4,7 @@
 // method contracts. They do not create a second authority, policy, approval,
 // verification, worker, scheduler, persistence, budget, receipt, Green or PRS system.
 
+import { isDeepStrictEqual } from 'node:util';
 import { validateTaskContext } from '../src/dispatch/canonical-context.mjs';
 import { authoriseDispatch } from '../src/dispatch/authority.mjs';
 import { evaluateWindowsPowerShellRemotePickup } from './windows-powershell-remote-gate.mjs';
@@ -154,8 +155,25 @@ export function createCanonicalPowerShellReceiptGate({
         createdAt,
       });
       if (!receipt || typeof receipt !== 'object') throw codedError('EXECUTION_RECEIPT_EVIDENCE_REQUIRED');
+      const expectedReceipt = structuredClone(receipt);
       const persisted = await recordReceipt({ actorContext, task, result, reservation, riskDecision, receipt });
-      if (!persisted) throw codedError('EXECUTION_RECEIPT_PERSISTENCE_REQUIRED');
+      // The recorder contract permits an explicit acknowledgement or the existing
+      // local-persistence artifact. Arbitrary truthy values are not write proof.
+      // If artifact evidence is supplied, it must describe this exact receipt;
+      // an acknowledgement cannot override contradictory artifact evidence.
+      const objectResult = persisted && typeof persisted === 'object' && !Array.isArray(persisted);
+      const artifactResult = objectResult && ['id', 'artifactType', 'payload'].some((key) => key in persisted);
+      const acknowledged = objectResult && persisted.persisted === true;
+      const matchedArtifact = artifactResult &&
+        persisted.id === `remote-receipt:${expectedReceipt.delivery_id}` &&
+        persisted.artifactType === 'remote.execution.receipt' &&
+        isDeepStrictEqual(persisted.payload, expectedReceipt);
+      if (!objectResult ||
+          ('persisted' in persisted && persisted.persisted !== true) ||
+          (artifactResult ? !matchedArtifact : !acknowledged) ||
+          !isDeepStrictEqual(receipt, expectedReceipt)) {
+        throw codedError('EXECUTION_RECEIPT_PERSISTENCE_REQUIRED');
+      }
       return receipt;
     },
   });

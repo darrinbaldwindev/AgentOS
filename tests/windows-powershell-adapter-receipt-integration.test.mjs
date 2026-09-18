@@ -4,6 +4,12 @@ import path from 'node:path';
 import { createWindowsPowerShellAdapter } from '../runtime/windows-powershell-adapter.mjs';
 import { createWindowsPowerShellReceiptEvidence } from '../runtime/windows-powershell-receipt-evidence.mjs';
 
+// This suite composes synthetic adapter results with receipts; host probing belongs
+// to the executable-identity and physical-acceptance suites.
+function fixtureToolResolver(tool) {
+  return { path: `C:/fixture-tools/${tool}`, version: 'fixture-version' };
+}
+
 function task() {
   return {
     delivery_id: 'delivery-adapter-receipt-1',
@@ -26,6 +32,7 @@ test('actual bounded adapter result feeds canonical PowerShell intermediate rece
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
     pathModule: path.win32,
+    toolResolver: fixtureToolResolver,
     now: deterministicClock(1_000, 1_125),
     executor: async () => ({ stdout: '## main\n', stderr: '', exitCode: 0 }),
   });
@@ -66,6 +73,7 @@ test('adapter timeout remains failed evidence and cannot be mistaken for success
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
     pathModule: path.win32,
+    toolResolver: fixtureToolResolver,
     now: deterministicClock(2_000, 2_500),
     executor: async () => {
       const error = new Error('timed out');
@@ -90,6 +98,7 @@ test('adapter max-buffer failure is explicit truncation evidence rather than suc
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
     pathModule: path.win32,
+    toolResolver: fixtureToolResolver,
     now: deterministicClock(3_000, 3_010),
     executor: async () => {
       const error = new Error('stdout maxBuffer length exceeded');
@@ -111,6 +120,7 @@ test('resolved executor result without integer exit code fails closed instead of
     allowedRoots: ['C:/agentos'],
     pathResolver: (input) => input,
     pathModule: path.win32,
+    toolResolver: fixtureToolResolver,
     now: deterministicClock(4_000, 4_020),
     executor: async () => ({ stdout: 'ambiguous', stderr: '' }),
   });
