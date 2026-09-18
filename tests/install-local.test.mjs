@@ -38,3 +38,18 @@ test('local installer fails closed when an existing install has lost canonical s
   const config = JSON.parse(await readFile(result.configPath, 'utf8'));
   assert.deepEqual(config, DEFAULT_CONFIG);
 });
+
+test('local installer fails closed when canonical state exists without config', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-install-missing-config-test-'));
+  const result = await installLocal({ root });
+  const stateBefore = await readFile(result.statePath, 'utf8');
+  await rm(result.configPath);
+
+  await assert.rejects(
+    installLocal({ root }),
+    /LOCAL_INSTALL_INCOMPLETE: canonical state exists but config is missing/,
+  );
+
+  await assert.rejects(readFile(result.configPath, 'utf8'), /ENOENT/);
+  assert.equal(await readFile(result.statePath, 'utf8'), stateBefore);
+});

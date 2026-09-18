@@ -60,10 +60,13 @@ export async function installLocal({ root = resolveInstallRoot(), force = false 
   const statePath = join(root, DEFAULT_CONFIG.stateFile);
   const configExists = await exists(configPath);
   const stateExists = await exists(statePath);
-  if (configExists && !force) {
-    if (!stateExists) {
+  if (!force && configExists !== stateExists) {
+    if (configExists) {
       throw new Error(`LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing (${statePath}); preserve existing files and repair explicitly`);
     }
+    throw new Error(`LOCAL_INSTALL_INCOMPLETE: canonical state exists but config is missing (${configPath}); preserve existing files and repair explicitly`);
+  }
+  if (configExists && !force) {
     return { root, configPath, statePath, created: false };
   }
 
