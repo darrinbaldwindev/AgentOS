@@ -54,3 +54,4 @@ target/
 
 # Root ZIP archives are intentionally versioned at the owner's instruction.
 # Do not add a blanket archive ignore rule without renewed owner approval.
+.basic-chat/
