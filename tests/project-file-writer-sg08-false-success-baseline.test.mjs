@@ -83,7 +83,7 @@ test('SG-08 baseline: ownership loss during retirement rejects execution but cur
   }
 });
 
-test('SG-08 repair fixture: successor installed after publish still permits false durable success before release detects ownership loss', { skip: process.platform === 'win32' }, async () => {
+test('SG-08 repair fixture: successor installed after publish forbids durable success', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'agentos-sg08-after-publish-'));
   const target = path.join(root, 'fixture.txt');
   const displaced = `${target}.agentos-write-lock.displaced`;
@@ -115,7 +115,7 @@ test('SG-08 repair fixture: successor installed after publish still permits fals
 
     assert.equal(injected, true);
     assert.equal(await readFile(target, 'utf8'), 'published-before-successor-check\n');
-    assert.equal(successReceipts(persistence).length, 1);
+    assert.equal(successReceipts(persistence).length, 0);
     assert.equal(successReceipts(persistence)[0].recovery_required, false);
   } finally {
     await rm(root, { recursive: true, force: true });

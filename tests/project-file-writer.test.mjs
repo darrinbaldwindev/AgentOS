@@ -63,6 +63,51 @@ function artifactByKind(artifacts, kind) {
   return [...artifacts.values()].find((artifact) => artifact.artifact_kind === kind);
 }
 
+test('published prepared recovery cannot finalize success while another writer owns target', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness({ failReceiptCount: 1 });
+    const target = path.join(f.root, 'recovery.txt');
+    const args = { task, targetPath: target, content: 'published', idempotencyKey: 'recovery-held-lock' };
+    const first = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api });
+    await assert.rejects(first.execute(args), { code: 'PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED' });
+    let entered;
+    let release;
+    const enteredGate = new Promise(resolve => { entered = resolve; });
+    const releaseGate = new Promise(resolve => { release = resolve; });
+    const holder = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api,
+      hooks: { afterLockAcquired: async () => { entered(); await releaseGate; } } });
+    const holding = holder.execute({ ...args, content: 'successor', expectedPreimageSha256: hash('published'), idempotencyKey: 'successor' });
+    // Attach the handler before any assertion can fail and ensure the holder is released.
+    const settled = holding.then(value => ({ value }), error => ({ error }));
+    try {
+      await enteredGate;
+      await assert.rejects(first.execute(args), { code: 'PROJECT_FILE_LIVE_CONTENTION' });
+      assert.equal(artifactByKind(p.artifacts, 'project.file.write.receipt'), undefined);
+      assert.equal(await readFile(target, 'utf8'), 'published');
+    } finally { release(); await settled; }
+    assert.equal((await settled).error, undefined);
+  } finally { await f.cleanup(); }
+});
+
+test('ownership metadata loss after publish forbids a success receipt', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const target = path.join(f.root, 'ownership.txt');
+    const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api,
+      hooks: { afterPublish: async () => {
+        const lock = `${target}.agentos-write-lock`;
+        await writeFile(process.platform === 'win32' ? lock : path.join(lock, 'owner.json'), '{}');
+      } } });
+    await assert.rejects(writer.execute({ task, targetPath: target, content: 'published', idempotencyKey: 'lost-metadata' }),
+      error => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED' && error.recovery_required);
+    assert.equal(await readFile(target, 'utf8'), 'published');
+    assert.equal(artifactByKind(p.artifacts, 'project.file.write.receipt'), undefined);
+    assert.ok(artifactByKind(p.artifacts, 'project.file.write.prepared'));
+  } finally { await f.cleanup(); }
+});
+
 test('creates a bounded file and records prepared intent plus exact correlated mutation receipt', async () => {
   const f = await fixture();
   try {
