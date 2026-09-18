@@ -44,7 +44,7 @@ Therefore frontend project-file mutation remains `unknown / NO_CANONICAL_MUTATIO
 
 ## Durable coordination
 
-The canonical frontend vertical batch was replenished through Cycle 021 on PR #110's documentation lineage; latest batch update commit `778dfd48e95c4dfed2943aeec9db56263e508e7f`. PR #110 and #111 remain DRAFT / OPEN / UNMERGED. The next cycle must consume exact-head CI for #111 `3ac4d306...` before claiming this repair validated.
+The canonical frontend vertical batch was replenished through Cycle 021 on PR #110's documentation lineage; batch checkpoint commit `4147de495520600ba200c695f3e62feece7bb648`. PR #110 and #111 remain DRAFT / OPEN / UNMERGED. The next cycle must consume exact-head CI for #111 `3ac4d306...` before claiming this repair validated.
 
 ## Protected boundaries
 
