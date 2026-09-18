@@ -39,6 +39,15 @@ function initialRuntimeState() {
   };
 }
 
+async function exists(path) {
+  try {
+    await fs.access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function installLocal({ root = resolveInstallRoot(), force = false } = {}) {
   assertSupportedNode();
   await fs.mkdir(root, { recursive: true });
@@ -49,14 +58,18 @@ export async function installLocal({ root = resolveInstallRoot(), force = false 
 
   const configPath = join(root, 'config.json');
   const statePath = join(root, DEFAULT_CONFIG.stateFile);
-  try {
-    await fs.access(configPath);
-    if (!force) return { root, configPath, statePath, created: false };
-  } catch {}
+  const configExists = await exists(configPath);
+  const stateExists = await exists(statePath);
+  if (configExists && !force) {
+    if (!stateExists) {
+      throw new Error(`LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing (${statePath}); preserve existing files and repair explicitly`);
+    }
+    return { root, configPath, statePath, created: false };
+  }
 
   await fs.writeFile(configPath, `${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`, { mode: 0o600 });
   try { await fs.chmod(configPath, 0o600); } catch {}
-  try { await fs.access(statePath); } catch {
+  if (!stateExists) {
     await fs.writeFile(statePath, `${JSON.stringify(initialRuntimeState(), null, 2)}\n`, { mode: 0o600 });
   }
   return { root, configPath, statePath, created: true };
