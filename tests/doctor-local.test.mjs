@@ -13,6 +13,7 @@ test('local doctor reports GREEN for a fresh safe installation', async () => {
   assert.equal(result.status, 'GREEN');
   assert.equal(result.failedChecks, 0);
   assert.ok(result.checks.length >= 7);
+  assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'PASS');
 });
 
 test('local doctor fails closed when state is missing', async () => {
@@ -38,4 +39,16 @@ test('local doctor fails closed when installed state/workspace paths drift from 
   assert.equal(result.status, 'FAILED');
   assert.equal(result.checks.find(({ name }) => name === 'state-file-config')?.status, 'FAIL');
   assert.equal(result.checks.find(({ name }) => name === 'workspace-root-config')?.status, 'FAIL');
+});
+
+test('local doctor fails closed when scheduler is enabled before explicit acceptance', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-scheduler-enabled-'));
+  const installed = await installLocal({ root });
+  const config = JSON.parse(await readFile(installed.configPath, 'utf8'));
+  config.scheduler.enabled = true;
+  await writeFile(installed.configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'FAIL');
 });
