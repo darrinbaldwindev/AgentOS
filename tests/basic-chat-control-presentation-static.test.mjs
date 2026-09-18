@@ -20,10 +20,9 @@ test('Basic Chat does not restore a clicked control to enabled blindly after the
 });
 
 test('control failures refresh canonical state before controls are rendered again', () => {
-  assert.match(
-    js,
-    /\[data-action\][\s\S]*?catch \(error\) \{ showError\(error\); await refresh\(\)\.catch\(\(\) => \{\}\); \} finally \{ render\(\); \}/,
-  );
+  const controlHandler = js.slice(js.indexOf("for (const button of document.querySelectorAll('[data-action]'))"));
+  assert.match(controlHandler, /catch \(error\) \{ showError\(error\); await refresh\(\)\.catch\(\(\) => \{\}\); \}/);
+  assert.match(controlHandler, /finally \{ render\(\); \}/);
 });
 
 test('Stop remains available during an active send because it is a request, not a termination claim', () => {
