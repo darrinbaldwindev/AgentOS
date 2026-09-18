@@ -27,6 +27,21 @@ test('local installer creates durable safe defaults without enabling autonomy', 
   assert.equal(second.created, false);
 });
 
+test('local installer refuses force overwrite of a complete existing install', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-install-force-existing-test-'));
+  const result = await installLocal({ root });
+  const configBefore = await readFile(result.configPath, 'utf8');
+  const stateBefore = await readFile(result.statePath, 'utf8');
+
+  await assert.rejects(
+    installLocal({ root, force: true }),
+    /LOCAL_INSTALL_FORCE_UNSAFE: refusing to overwrite an existing installation/,
+  );
+
+  assert.equal(await readFile(result.configPath, 'utf8'), configBefore);
+  assert.equal(await readFile(result.statePath, 'utf8'), stateBefore);
+});
+
 test('local installer fails closed when an existing install has lost canonical state', async () => {
   const root = await mkdtemp(join(tmpdir(), 'agentos-install-incomplete-test-'));
   const result = await installLocal({ root });
@@ -36,9 +51,14 @@ test('local installer fails closed when an existing install has lost canonical s
     installLocal({ root }),
     /LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing/,
   );
+  await assert.rejects(
+    installLocal({ root, force: true }),
+    /LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing/,
+  );
 
   const config = JSON.parse(await readFile(result.configPath, 'utf8'));
   assert.deepEqual(config, DEFAULT_CONFIG);
+  await assert.rejects(readFile(result.statePath, 'utf8'), /ENOENT/);
 });
 
 test('local installer fails closed when canonical state exists without config', async () => {
@@ -49,6 +69,10 @@ test('local installer fails closed when canonical state exists without config', 
 
   await assert.rejects(
     installLocal({ root }),
+    /LOCAL_INSTALL_INCOMPLETE: canonical state exists but config is missing/,
+  );
+  await assert.rejects(
+    installLocal({ root, force: true }),
     /LOCAL_INSTALL_INCOMPLETE: canonical state exists but config is missing/,
   );
 
