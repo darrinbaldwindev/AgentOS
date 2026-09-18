@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal } from '../scripts/install-local.mjs';
@@ -24,4 +24,18 @@ test('local doctor fails closed when state is missing', async () => {
   const result = await doctorLocal({ root });
   assert.equal(result.status, 'FAILED');
   assert.ok(result.failedChecks >= 1);
+});
+
+test('local doctor fails closed when installed state/workspace paths drift from safe defaults', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-path-drift-'));
+  const installed = await installLocal({ root });
+  const config = JSON.parse(await readFile(installed.configPath, 'utf8'));
+  config.stateFile = '../borrowed-state.json';
+  config.workspaceRoot = '../borrowed-workspace';
+  await writeFile(installed.configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'state-file-config')?.status, 'FAIL');
+  assert.equal(result.checks.find(({ name }) => name === 'workspace-root-config')?.status, 'FAIL');
 });
