@@ -27,6 +27,7 @@ test('actual bounded adapter result feeds canonical PowerShell intermediate rece
     pathResolver: (input) => input,
     pathModule: path.win32,
     now: deterministicClock(1_000, 1_125),
+    toolResolver: async (tool) => ({ path: tool, version: null }),
     executor: async () => ({ stdout: '## main\n', stderr: '', exitCode: 0 }),
   });
   const result = await adapter.execute({ operation: 'repo.status', cwd: 'C:/agentos/AgentOS' });
