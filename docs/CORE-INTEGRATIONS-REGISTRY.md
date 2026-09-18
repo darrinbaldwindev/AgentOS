@@ -27,6 +27,36 @@ AgentOS remains provider/model/tool agnostic and free-first. External capability
 | AgentMail | AgentMail | CORE | APPROVED FOR CATALOGUE + BOUNDED CAPABILITY EVIDENCE |
 | Tavily | Tavily | CORE | APPROVED FOR CATALOGUE + BOUNDED CAPABILITY EVIDENCE |
 
+## Core product capability roles
+
+The core set is intentionally complementary rather than twelve interchangeable providers. AgentOS sits above these products and routes work according to capability, health, entitlement, policy, cost and authority.
+
+| Core product | Primary function | Practical AgentOS role |
+|---|---|---|
+| ChatGPT / OpenAI | General-purpose reasoning, writing, coding, analysis, multimodal work and tool use | Broad all-rounder worker for planning, drafting, coding, analysis and orchestration support |
+| Claude / Anthropic | Long-context reasoning, document analysis, coding and careful instruction following | Deep review, large-document/codebase analysis, structured reasoning and independent second-opinion work |
+| Gemini / Google AI | General reasoning, multimodal capabilities and Google-ecosystem integration | Google-oriented, multimodal and research-capable worker where its connected capabilities are healthy and authorised |
+| Perplexity | Research-focused AI using current web information and citations | Fresh public-information research and source-backed synthesis |
+| Manus | Multi-step autonomous digital task execution | Higher-autonomy worker for bounded missions while AgentOS retains authority and governance |
+| OpenAI Codex | Software-engineering-focused code understanding, change, testing and debugging | Specialist coding worker for repository implementation and verification tasks |
+| Cursor | AI-first code editor and codebase-aware development environment | Interactive developer execution surface for repository editing, refactoring and coding workflows |
+| Devin | Autonomous software-engineering agent | Specialist worker for longer engineering missions under AgentOS governance |
+| Replit | Cloud development, application execution and AI-assisted building | Rapid development, prototyping and cloud execution environment |
+| Base44 | Natural-language application and UI building | Rapid prototype, UI and application-scaffolding capability; never an AgentOS control plane |
+| AgentMail | Agent-focused email inbox and email actions | Governed communications capability for receiving, sending, replying to and managing agent email workflows |
+| Tavily | Search and web-retrieval API for AI agents | Machine-oriented fresh web research and retrieval capability |
+
+### Functional grouping
+
+- **General intelligence:** ChatGPT, Claude, Gemini
+- **Research and retrieval:** Perplexity, Tavily
+- **Autonomous execution:** Manus
+- **Software engineering:** Codex, Cursor, Devin, Replit
+- **Rapid app building:** Base44
+- **Communications:** AgentMail
+
+A single mission may use multiple core products where justified. Example pattern: research via Perplexity/Tavily, synthesis via ChatGPT/Claude/Gemini, prototype via Base44, implementation via Codex/Cursor/Devin/Replit, and governed communication via AgentMail. AgentOS remains responsible for routing, authority, policy, budget, evidence, verification and assurance.
+
 ## Core does not mean unrestricted use
 
 For every program, the following states remain independent:
