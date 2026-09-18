@@ -59,7 +59,7 @@ Fresh inspection found that failed `/api/control` requests displayed an error bu
 
 A static regression pins the control handler to this rule. Exact implementation head `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` passed AgentOS Tests #1753 / run `35302954832`: general test suite SUCCESS, npm dependency audit SUCCESS and Windows-native Basic Chat lifecycle SUCCESS.
 
-Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md`. Documentation commits are intentionally not recursively self-referenced; repository head is the source of truth.
+Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md`. Documentation files deliberately contain no self-referential documentation commit SHA; the live branch head is authoritative.
 
 ## Current frontend truth model
 
