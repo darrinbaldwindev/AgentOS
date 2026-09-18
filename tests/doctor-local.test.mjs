@@ -53,7 +53,7 @@ test('local doctor fails closed when scheduler is enabled before explicit accept
   assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'FAIL');
 });
 
-test('local doctor fails closed when canonical state is redirected through a symlink', async () => {
+test('local doctor fails closed when canonical state is redirected through a symlink', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-link-'));
   const outside = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-target-'));
   const installed = await installLocal({ root });
