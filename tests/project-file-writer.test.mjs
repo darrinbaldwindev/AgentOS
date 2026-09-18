@@ -41,13 +41,17 @@ function twoCallLockBarrier() {
   let arrivals = 0;
   let releaseFirst;
   let releaseSecond;
+  let signalFirstArrival;
+  const firstArrival = new Promise((resolve) => { signalFirstArrival = resolve; });
   const firstGate = new Promise((resolve) => { releaseFirst = resolve; });
   const secondGate = new Promise((resolve) => { releaseSecond = resolve; });
   return {
+    firstArrival,
     releaseSecond: () => releaseSecond(),
     hook: async () => {
       arrivals += 1;
       if (arrivals === 1) {
+        signalFirstArrival();
         await firstGate;
         return;
       }
@@ -62,6 +66,51 @@ function twoCallLockBarrier() {
 function artifactByKind(artifacts, kind) {
   return [...artifacts.values()].find((artifact) => artifact.artifact_kind === kind);
 }
+
+test('published prepared recovery cannot finalize success while another writer owns target', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness({ failReceiptCount: 1 });
+    const target = path.join(f.root, 'recovery.txt');
+    const args = { task, targetPath: target, content: 'published', idempotencyKey: 'recovery-held-lock' };
+    const first = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api });
+    await assert.rejects(first.execute(args), { code: 'PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED' });
+    let entered;
+    let release;
+    const enteredGate = new Promise(resolve => { entered = resolve; });
+    const releaseGate = new Promise(resolve => { release = resolve; });
+    const holder = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api,
+      hooks: { afterLockAcquired: async () => { entered(); await releaseGate; } } });
+    const holding = holder.execute({ ...args, content: 'successor', expectedPreimageSha256: hash('published'), idempotencyKey: 'successor' });
+    // Attach the handler before any assertion can fail and ensure the holder is released.
+    const settled = holding.then(value => ({ value }), error => ({ error }));
+    try {
+      await enteredGate;
+      await assert.rejects(first.execute(args), { code: 'PROJECT_FILE_LIVE_CONTENTION' });
+      assert.equal(artifactByKind(p.artifacts, 'project.file.write.receipt'), undefined);
+      assert.equal(await readFile(target, 'utf8'), 'published');
+    } finally { release(); await settled; }
+    assert.equal((await settled).error, undefined);
+  } finally { await f.cleanup(); }
+});
+
+test('ownership metadata loss after publish forbids a success receipt', async () => {
+  const f = await fixture();
+  try {
+    const p = persistenceHarness();
+    const target = path.join(f.root, 'ownership.txt');
+    const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api,
+      hooks: { afterPublish: async () => {
+        const lock = `${target}.agentos-write-lock`;
+        await writeFile(process.platform === 'win32' ? lock : path.join(lock, 'owner.json'), '{}');
+      } } });
+    await assert.rejects(writer.execute({ task, targetPath: target, content: 'published', idempotencyKey: 'lost-metadata' }),
+      error => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED' && error.recovery_required);
+    assert.equal(await readFile(target, 'utf8'), 'published');
+    assert.equal(artifactByKind(p.artifacts, 'project.file.write.receipt'), undefined);
+    assert.ok(artifactByKind(p.artifacts, 'project.file.write.prepared'));
+  } finally { await f.cleanup(); }
+});
 
 test('creates a bounded file and records prepared intent plus exact correlated mutation receipt', async () => {
   const f = await fixture();
@@ -112,6 +161,9 @@ test('concurrent same-key same-intent duplicate resolves as one mutation plus de
     const target = path.join(f.root, 'fixture.txt');
     const args = { task, targetPath: target, content: 'concurrent-same\n', idempotencyKey: 'idem-concurrent-same' };
     const firstPromise = writer.execute(args).then((result) => { barrier.releaseSecond(); return result; });
+    // Filesystem observation can reorder execute calls before the hook. Bind the
+    // first gate to the intended winner before admitting the competing call.
+    await barrier.firstArrival;
     const secondPromise = writer.execute(args);
     const [first, second] = await Promise.all([firstPromise, secondPromise]);
     assert.equal(first.replayed, false);
@@ -144,6 +196,7 @@ test('concurrent same-key different-intent duplicate fails closed under the targ
     const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api, hooks: { beforeLock: barrier.hook } });
     const target = path.join(f.root, 'fixture.txt');
     const firstPromise = writer.execute({ task, targetPath: target, content: 'winner\n', idempotencyKey: 'idem-concurrent-conflict' }).then((result) => { barrier.releaseSecond(); return result; });
+    await barrier.firstArrival;
     const secondPromise = writer.execute({ task, targetPath: target, content: 'conflict\n', idempotencyKey: 'idem-concurrent-conflict' });
     const first = await firstPromise;
     assert.equal(first.replayed, false);
@@ -575,4 +628,5 @@ test('missing or malformed owner metadata requires recovery without mutation', a
     } finally { await f.cleanup(); }
   }
 });
+
 

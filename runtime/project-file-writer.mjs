@@ -180,6 +180,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     }
 
     async function finalizePreparedReceipt(prepared, result, recoveryEvidenceId = null) {
+      await assertOwnLock();
       const receipt = receiptFromPrepared(prepared, result, recoveryEvidenceId);
       try {
         await persistence.create('artifact', receipt);
@@ -227,6 +228,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_RECOVERY_STATE_MISMATCH', { prepared_id: preparedId, path: target.canonical, recovery_required: true });
       }
       if (typeof hooks.beforeRecoveryPublish === 'function') await hooks.beforeRecoveryPublish({ target: target.canonical, temp: tempPath, intent });
+      await assertOwnLock();
       const recheckBeforeRecoveryPublish = await readState(target.canonical);
       if (recheckBeforeRecoveryPublish.exists !== current.exists ||
           recheckBeforeRecoveryPublish.hash !== current.hash ||
@@ -247,8 +249,8 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
 
     const priorReceipt = await receiptIfPresent();
     if (priorReceipt) return priorReceipt;
-    const priorRecovery = await recoverPreparedIfPresent({ allowPublish: false });
-    if (priorRecovery) return priorRecovery;
+    // Recovery may create a new success receipt, so it must run under the same
+    // target ownership as a fresh mutation. Only existing-receipt replay is read-only.
 
     const lock = `${target.canonical}.agentos-write-lock`;
     const lockNamespaceGuard = `${lock}.namespace-guard`;
@@ -501,6 +503,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
       const receipt = { ...receiptFromPrepared(prepared), recovered_from_prepared_intent: false };
+      await assertOwnLock();
       try { await persistence.create('artifact', receipt); }
       catch (error) { throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true }); }
       return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
