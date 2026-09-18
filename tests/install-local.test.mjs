@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DEFAULT_CONFIG, MIN_NODE_MAJOR, assertSupportedNode, installLocal } from '../scripts/install-local.mjs';
@@ -23,4 +23,18 @@ test('local installer creates durable safe defaults without enabling autonomy', 
 
   const second = await installLocal({ root });
   assert.equal(second.created, false);
+});
+
+test('local installer fails closed when an existing install has lost canonical state', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-install-incomplete-test-'));
+  const result = await installLocal({ root });
+  await rm(result.statePath);
+
+  await assert.rejects(
+    installLocal({ root }),
+    /LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing/,
+  );
+
+  const config = JSON.parse(await readFile(result.configPath, 'utf8'));
+  assert.deepEqual(config, DEFAULT_CONFIG);
 });
