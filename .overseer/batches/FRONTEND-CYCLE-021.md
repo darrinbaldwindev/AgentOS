@@ -42,6 +42,10 @@ Therefore frontend project-file mutation remains `unknown / NO_CANONICAL_MUTATIO
 
 #112 still does not evidence the composed read-only frontend readiness snapshot needed to live-wire host lifecycle + Windows capability + expected exact head + physical acceptance.
 
+## Durable coordination
+
+The canonical frontend vertical batch was replenished through Cycle 021 on PR #110's documentation lineage. PR #110 and #111 remain DRAFT / OPEN / UNMERGED. The next cycle must consume exact-head CI for #111 `3ac4d306...` before claiming this repair validated.
+
 ## Protected boundaries
 
 Projects and Inbox remain unwired pending canonical read contracts. Interactive Jack Allow/Revoke remains blocked pending canonical lifetime/expiry/revoke/consequence and durable action semantics. Recovery remains contract-only. Physical browser/mobile acceptance remains unproven.
