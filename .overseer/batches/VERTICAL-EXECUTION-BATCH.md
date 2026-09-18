@@ -6,7 +6,7 @@
 **Cycle:** Frontend vertical cycle 021 — control-error truth refresh  
 **Reconciled:** 2026-09-18 Australia/Brisbane  
 **Canonical main:** `962cb3820b83506f9e6d90f50e003690dd85a8a1`  
-**Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
+**Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED / CURRENTLY NOT MERGEABLE  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
 **Current validated #111 exact head:** `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` — AgentOS Tests #1753 (`35302954832`) SUCCESS  
 **Runtime Windows dependency #104:** `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a` — AgentOS Tests #1745 (`35297751947`) SUCCESS  
@@ -61,6 +61,10 @@ A static regression pins the control handler to this rule. Exact implementation 
 
 Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md`. Documentation files deliberately contain no self-referential documentation commit SHA; the live branch head is authoritative.
 
+## Documentation-lineage integration note
+
+Fresh PR metadata reports #110 `mergeable: false` while main is still `962cb382...`. No merge/rebase/force update is authorized, so this cycle records the conflict and does not attempt to rewrite history. The implementation lane #111 remains separately open/draft and its exact-head CI result is unaffected by this documentation-lineage conflict.
+
 ## Current frontend truth model
 
 Basic Chat scope remains `Local Basic Chat · Test actions only · Background work off`. Stop is future-action prevention/request state, not proof an already-running action terminated. Canonical `What happened` evidence requires dispatch-task identity and exact task/mission/wake correlation. Henry/PRS remains independent.
@@ -71,15 +75,16 @@ Recent Jobs is safe as a read-only canonical task projection. Projects, Inbox, C
 
 ## Replenished P0 queue
 
-1. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
-2. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
-3. Inspect Basic Chat HTTP error/status semantics for remaining cases where transport status or stale client state could imply a false action result.
-4. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
-5. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
-6. Keep recovery contract-only until a live canonical producer/read path exists.
-7. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
-8. Keep Simple/Essentials/Tech Head independent of commercial entitlement unless explicitly changed.
-9. Prepare Founding Beta only after technical and frontend trust gates independently clear.
+1. Preserve #110 conflict evidence and reconcile only through an authorized integration path; do not force/rebase autonomously.
+2. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
+3. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
+4. Inspect Basic Chat HTTP error/status semantics for remaining cases where transport status or stale client state could imply a false action result.
+5. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
+6. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
+7. Keep recovery contract-only until a live canonical producer/read path exists.
+8. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
+9. Keep Simple/Essentials/Tech Head independent of commercial entitlement unless explicitly changed.
+10. Prepare Founding Beta only after technical and frontend trust gates independently clear.
 
 ## Protected HOLD
 
