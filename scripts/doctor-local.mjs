@@ -49,7 +49,7 @@ export async function doctorLocal({ root = resolveInstallRoot() } = {}) {
       `stateFile=${config.stateFile}`);
     check('workspace-root-config', config.workspaceRoot === DEFAULT_CONFIG.workspaceRoot,
       `workspaceRoot=${config.workspaceRoot}`);
-    check('scheduler-config', config.scheduler?.enabled === true && config.scheduler?.cadenceMinutes === 5,
+    check('scheduler-config', config.scheduler?.enabled === false && config.scheduler?.cadenceMinutes === 5,
       `enabled=${config.scheduler?.enabled}, cadenceMinutes=${config.scheduler?.cadenceMinutes}`);
     check('github-canonical-sync', config.github?.canonicalSync === true, `canonicalSync=${config.github?.canonicalSync}`);
   }
