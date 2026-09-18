@@ -19,6 +19,9 @@ function assertResultCorrelation(task, result) {
     throw new Error(`executor result task aliases conflict: ${task.task_id}`);
   }
   const resultTaskId = result.task_id ?? result.task;
+  if (result.mission_id != null && resultTaskId == null) {
+    throw new Error(`executor result task correlation required: ${task.task_id}`);
+  }
   if (resultTaskId != null && resultTaskId !== task.task_id) {
     throw new Error(`executor result task correlation mismatch: ${task.task_id}`);
   }
