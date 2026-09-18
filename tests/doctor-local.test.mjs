@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal } from '../scripts/install-local.mjs';
@@ -51,4 +51,20 @@ test('local doctor fails closed when scheduler is enabled before explicit accept
   const result = await doctorLocal({ root });
   assert.equal(result.status, 'FAILED');
   assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'FAIL');
+});
+
+test('local doctor fails closed when canonical state is redirected through a symlink', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-link-'));
+  const outside = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-target-'));
+  const installed = await installLocal({ root });
+  const state = await readFile(installed.statePath, 'utf8');
+  const target = join(outside, 'borrowed-state.json');
+  await writeFile(target, state);
+  const { unlink } = await import('node:fs/promises');
+  await unlink(installed.statePath);
+  await symlink(target, installed.statePath, 'file');
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'state-local-artifact')?.status, 'FAIL');
 });
