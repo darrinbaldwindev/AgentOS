@@ -19,6 +19,13 @@ test('Basic Chat does not restore a clicked control to enabled blindly after the
   assert.match(js, /finally\s*\{\s*render\(\);\s*\}/s);
 });
 
+test('control failures refresh canonical state before controls are rendered again', () => {
+  assert.match(
+    js,
+    /\[data-action\][\s\S]*?catch \(error\) \{ showError\(error\); await refresh\(\)\.catch\(\(\) => \{\}\); \} finally \{ render\(\); \}/,
+  );
+});
+
 test('Stop remains available during an active send because it is a request, not a termination claim', () => {
   assert.match(js, /state\.ready \|\| state\.paused \|\| state\.stopped \|\| sending/);
   assert.doesNotMatch(js, /stop\.disabled\s*=\s*sending/);
