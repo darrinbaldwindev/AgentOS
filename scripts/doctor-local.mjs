@@ -18,27 +18,48 @@ export async function doctorLocal({ root = resolveInstallRoot() } = {}) {
   const statePath = join(root, DEFAULT_CONFIG.stateFile);
   const workspacePath = join(root, DEFAULT_CONFIG.workspaceRoot);
 
+  const checkNotSymlink = async (name, path) => {
+    try {
+      const stat = await fs.lstat(path);
+      check(name, !stat.isSymbolicLink(), path);
+      return !stat.isSymbolicLink();
+    } catch (error) {
+      check(name, false, `${error.code ?? 'LSTAT_FAILED'}: ${error.message}`);
+      return false;
+    }
+  };
+
+  const configLocal = await checkNotSymlink('config-local-artifact', configPath);
+  const stateLocal = await checkNotSymlink('state-local-artifact', statePath);
+  const workspaceLocal = await checkNotSymlink('workspace-local-artifact', workspacePath);
+
   let config = null;
   let state = null;
-  try {
-    config = JSON.parse(await fs.readFile(configPath, 'utf8'));
-    check('config-readable', true, configPath);
-  } catch (error) {
-    check('config-readable', false, `${error.code ?? 'CONFIG_READ_FAILED'}: ${error.message}`);
+  if (configLocal) {
+    try {
+      config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      check('config-readable', true, configPath);
+    } catch (error) {
+      check('config-readable', false, `${error.code ?? 'CONFIG_READ_FAILED'}: ${error.message}`);
+    }
   }
 
-  try {
-    state = JSON.parse(await fs.readFile(statePath, 'utf8'));
-    check('state-readable', true, statePath);
-  } catch (error) {
-    check('state-readable', false, `${error.code ?? 'STATE_READ_FAILED'}: ${error.message}`);
+  if (stateLocal) {
+    try {
+      state = JSON.parse(await fs.readFile(statePath, 'utf8'));
+      check('state-readable', true, statePath);
+    } catch (error) {
+      check('state-readable', false, `${error.code ?? 'STATE_READ_FAILED'}: ${error.message}`);
+    }
   }
 
-  try {
-    const stat = await fs.stat(workspacePath);
-    check('workspace-directory', stat.isDirectory(), workspacePath);
-  } catch (error) {
-    check('workspace-directory', false, `${error.code ?? 'WORKSPACE_READ_FAILED'}: ${error.message}`);
+  if (workspaceLocal) {
+    try {
+      const stat = await fs.stat(workspacePath);
+      check('workspace-directory', stat.isDirectory(), workspacePath);
+    } catch (error) {
+      check('workspace-directory', false, `${error.code ?? 'WORKSPACE_READ_FAILED'}: ${error.message}`);
+    }
   }
 
   if (config) {
