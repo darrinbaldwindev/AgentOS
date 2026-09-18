@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "policy": "free-first",
+  "primaryWorkerRequirements": {
+    "subscriptionRequired": false,
+    "connectedRequired": true,
+    "usableStatus": ["available", "authenticated", "healthy"]
+  },
+  "recommendationOrder": [
+    "healthy-free-worker",
+    "healthy-existing-subscription",
+    "healthy-existing-api",
+    "healthy-fallback-worker",
+    "new-paid-subscription-or-api"
+  ],
+  "paidRecommendationTriggers": [
+    "material-capability-gap",
+    "temporary-workload-spike",
+    "required-autonomy-unavailable",
+    "required-integration-unavailable",
+    "capacity-limit-materially-blocks-task"
+  ],
+  "commercialRules": {
+    "commercialDataCannotChangeTechnicalRanking": true,
+    "affiliateDisclosureRequired": true,
+    "preferOneMonthForTemporaryNeed": true,
+    "noPurchaseRecommendationWhenExistingWorkersSuffice": true
+  }
+}
