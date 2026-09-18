@@ -20,7 +20,10 @@ test('Basic Chat does not restore a clicked control to enabled blindly after the
 });
 
 test('control failures refresh canonical state before controls are rendered again', () => {
-  const controlHandler = js.slice(js.indexOf("for (const button of document.querySelectorAll('[data-action]'))"));
+  const marker = "for (const button of document.querySelectorAll('[data-action]')) button.addEventListener";
+  const start = js.indexOf(marker);
+  assert.notEqual(start, -1);
+  const controlHandler = js.slice(start);
   assert.match(controlHandler, /catch \(error\) \{ showError\(error\); await refresh\(\)\.catch\(\(\) => \{\}\); \}/);
   assert.match(controlHandler, /finally \{ render\(\); \}/);
 });
