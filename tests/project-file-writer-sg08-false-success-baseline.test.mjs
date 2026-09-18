@@ -116,7 +116,6 @@ test('SG-08 repair fixture: successor installed after publish forbids durable su
     assert.equal(injected, true);
     assert.equal(await readFile(target, 'utf8'), 'published-before-successor-check\n');
     assert.equal(successReceipts(persistence).length, 0);
-    assert.equal(successReceipts(persistence)[0].recovery_required, false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
