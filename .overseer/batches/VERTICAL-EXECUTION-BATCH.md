@@ -3,14 +3,14 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Frontend Overseer  
-**Cycle:** Frontend vertical cycle 014 — Stop-state hardening  
-**Reconciled:** 2026-09-16 Australia/Brisbane  
+**Cycle:** Frontend vertical cycle 021 — control-error truth refresh  
+**Reconciled:** 2026-09-18 Australia/Brisbane  
 **Canonical main:** `962cb3820b83506f9e6d90f50e003690dd85a8a1`  
 **Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
-**Current #111 exact head after Cycle 014 edits:** `2d44e6fbac7a78c0d2eddc0fdb7e8d82b654606f`  
-**Last validated predecessor #111 head:** `b4386cfd960fc1659917b223c75004982a2c157d` — AgentOS Tests #1403 (`34960526589`) SUCCESS  
-**Runtime Windows dependency #104:** `5bb27bb4290bbdf743c53c7f48e75af14db37966`  
+**Current #111 exact head after Cycle 021 edits:** `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`  
+**Last validated #111 head:** `aa274b837f454b8268a5e658f11916a70c66d1f6` — AgentOS Tests #1729 (`35282531423`) SUCCESS  
+**Runtime Windows dependency #104:** `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a` — AgentOS Tests #1745 (`35297751947`) SUCCESS  
 **Read-only host status #101:** `d91abaecf602d7ef223c4888f10fa9361677302e`  
 **Project integration #112:** `33eca1d257179a873a8aca2eea1a4e5e994415a0`  
 **Batch status:** ACTIVE  
@@ -35,6 +35,7 @@ Never create a duplicate scheduler, queue, registry, mission ledger, persistence
 Truth rules:
 - `Stop requested` != `Execution stopped` != `Permission revoked`;
 - Stop cannot be silently cleared by Resume inside the same host lifetime;
+- a failed control request must refresh canonical state before the UI decides which controls are available again;
 - Local Basic Chat != host lifecycle != Windows capability != physical acceptance != mutation readiness;
 - persisted success receipt != safe mutation completion when ownership/recovery evidence contradicts it;
 - Boolean tool availability != executable identity evidence;
@@ -47,25 +48,17 @@ Truth rules:
 
 #101 remains the strongest current read-only host lifecycle source and grants no authority or mutation/recovery action.
 
-#104 advanced to `5bb27bb4290bbdf743c53c7f48e75af14db37966`. New SG-08 regressions/design evidence confirm a POSIX pre-receipt ownership-loss false-success window. A pathname assertion is not continuous ownership. Mutation remains UNKNOWN/BLOCKED until one kernel-held/crash-releasing fence covers final verification -> publish/recovery -> durable success receipt -> release and independent assurance passes.
+#104 is now `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a`; exact-head AgentOS Tests #1745 passed on Windows/Node26 and Ubuntu/Node22 including dependency audit. New movement adds installer fail-closed coverage, dispatch correlation hardening and SG-08 Windows research reconciliation. The research explicitly remains research input, not assurance, and requires an existing kernel-backed cross-platform primitive to be proven before production ownership changes. Mutation remains UNKNOWN/BLOCKED.
 
-#112 advanced to `33eca1d257179a873a8aca2eea1a4e5e994415a0`. Capability normalization now rejects conflicting alias/canonical evidence. No runtime-owned composed readiness snapshot was evidenced in the scanned movement; readiness remains intentionally unwired.
+#112 remains `33eca1d257179a873a8aca2eea1a4e5e994415a0`. No runtime-owned composed readiness snapshot has been evidenced; readiness remains intentionally unwired.
 
-#111 advanced concurrently before this cycle to `b4386cfd960fc1659917b223c75004982a2c157d`; AgentOS Tests #1403 (`34960526589`) SUCCESS on that exact predecessor, including general tests, npm audit and Windows-native Basic Chat lifecycle. Recent Jobs is now a bounded read-only projection of canonical `dispatch.task` artifacts.
+#111 Cycle 019 head `aa274b837f454b8268a5e658f11916a70c66d1f6` passed exact-head AgentOS Tests #1729 including Ubuntu general suite/audit and Windows-native Basic Chat lifecycle. Cycle 021 then inspected the control error path and found that failed `/api/control` requests displayed an error but did not refresh canonical state, unlike failed sends. This could leave stale client control state after a server-side rejection or concurrent state change.
 
-## Cycle 014 execution
+## Cycle 021 execution
 
-Fresh inspection found that the UI disabled Resume after Stop but the runtime API still implemented Resume as `{ stopped:false }`. A direct API caller could therefore clear a Stop request without the host restart promised by the frontend.
+The existing #111 lineage now refreshes `/api/state` after any control request failure before controls are rendered again. This is presentation reconciliation only: it does not retry, clear, grant, revoke, start, stop or mutate authority/work beyond the original requested control action.
 
-Cycle 014 repaired the existing #111 lineage:
-- Stop remains sticky for the current host lifetime;
-- Resume after Stop fails closed with `CHAT_STOPPED`;
-- Pause after Stop also fails closed;
-- ordinary Pause -> Resume remains supported;
-- no claim of active-action cancellation or permission revocation was introduced;
-- deterministic regressions prove the stopped snapshot remains stopped and future sends remain blocked after attempted Resume/Pause.
-
-Current implementation head after the regression commit is `2d44e6fbac7a78c0d2eddc0fdb7e8d82b654606f`. Fresh exact-head CI is required; predecessor CI must not be borrowed.
+A static regression pins the control handler to this rule. Current #111 exact head is `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`; fresh exact-head CI is required and predecessor success must not be borrowed.
 
 ## Current frontend truth model
 
@@ -77,11 +70,11 @@ Recent Jobs is safe as a read-only canonical task projection. Projects, Inbox, C
 
 ## Replenished P0 queue
 
-1. Consume exact-head CI for #111 `2d44e6f...`; repair failures without weakening Stop semantics.
-2. Continue SG-08 change detection on #104; never upgrade mutation from a success receipt, CI, capability or physical acceptance alone.
+1. Consume exact-head CI for #111 `3ac4d306...`; repair failures without weakening fail-closed control semantics.
+2. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
 3. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
-4. Extend the existing shared shell incrementally from canonical read contracts; keep Recent Jobs read-only.
-5. Find the smallest truthful read contracts for Projects and Inbox next.
+4. Inspect Basic Chat HTTP error/status semantics for any remaining cases where transport status or stale client state could imply a false action result.
+5. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
 6. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
 7. Keep recovery contract-only until a live canonical producer/read path exists.
 8. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
