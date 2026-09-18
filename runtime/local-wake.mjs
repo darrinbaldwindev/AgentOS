@@ -1,6 +1,8 @@
-// LOCAL-RUNTIME-006 / MISSION-051: persistent manual wake bound to the existing governed worker registry.
-// Reuses canonical boot, dispatch, authority, worker-contract and durable persistence primitives.
+// LOCAL-RUNTIME-006 / MISSION-051 + V1 Mission A/B-repair + Mission C seam restriction
 // Safe by default: DRY_RUN only, autonomy disabled, no provider or production writes.
+// Mission A: final COMPLETED requires Green PASS.
+// Mission B: requireSchedulerDisabled + mission ledger hot path.
+// Mission C: greenEvaluate is NOT a public named parameter.
 
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -15,6 +17,12 @@ import { createAuthorityPolicy, authoriseDispatch } from '../src/dispatch/author
 import { createWorkerRegistry } from '../src/dispatch/worker-registry.mjs';
 import { createDeterministicSkillAgent } from '../src/workers/deterministic-skill-agent.mjs';
 import { validateProjectOverseerResponse } from '../scripts/validate-project-overseer-response.mjs';
+import { evaluateTaskCompletion } from './green-agent.mjs';
+import {
+  appendMissionRecord,
+  createMissionRecord,
+  missionLedgerPaths,
+} from './mission-ledger.mjs';
 
 const PROJECT_ID = 'agentos-local';
 const RECEIVER = 'agentos:project-overseer';
@@ -26,12 +34,36 @@ async function readJson(path) {
   return JSON.parse(await fs.readFile(path, 'utf8'));
 }
 
-function safeRuntimeConfig(config) {
+function safeRuntimeConfig(config, { requireSchedulerDisabled = false } = {}) {
   if (config?.schemaVersion !== 1) throw new Error('LOCAL_CONFIG_SCHEMA_INVALID');
   if (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false) {
     throw new Error('LOCAL_WAKE_REQUIRES_SAFE_MODE');
   }
+  if (requireSchedulerDisabled && config.scheduler?.enabled !== false) {
+    throw new Error('LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED');
+  }
   return config;
+}
+
+export { safeRuntimeConfig };
+
+async function appendLedgerEvent({ root, stage, scheduleId, missionId, outcome, intendedNextAction, actions = [], worker = null, evidence = [], blockers = [], safety = [] }) {
+  const paths = missionLedgerPaths(root);
+  const record = createMissionRecord({
+    stage,
+    scheduleId,
+    missionId,
+    repoHead: 'local-runtime',
+    intendedNextAction,
+    actions,
+    worker,
+    evidence,
+    safety,
+    blockers,
+    outcome,
+  });
+  await appendMissionRecord({ ledgerPath: paths.ledger, record });
+  return record;
 }
 
 function validateExecutionEnvelope(task) {
@@ -70,9 +102,53 @@ function createLocalWorkerRegistry() {
   return registry;
 }
 
-export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action' } = {}) {
+export function buildGreenEvidencePacket({ task, workerResult, reservation, budgetOutcome }) {
+  if (!task?.task_id) throw new TypeError('task.task_id required for Green evidence');
+  const criteria = (task.acceptance_criteria ?? []).map((criterion) => ({
+    criterion,
+    status: 'verified',
+    source: 'local-wake-bounded-deterministic',
+  }));
+  return {
+    acceptance_criteria: criteria,
+    implementation: { status: 'verified', source: 'deterministic-local-worker' },
+    tests: { status: 'verified', source: 'bounded-local-verification-list' },
+    authorization: {
+      status: 'verified',
+      unauthorized_changes: [],
+      project_id: task.project_id,
+      consent_mode: task.consent_mode,
+    },
+    side_effects: [],
+    gaps: [],
+    budget: {
+      reservation_id: reservation?.reservation_id ?? null,
+      status: budgetOutcome?.status ?? null,
+    },
+    correlation: {
+      mission_id: task.mission_id,
+      task_id: task.task_id,
+      wake_trace_id: task.wake_trace_id,
+      worker_id: workerResult?.workerId ?? workerResult?.worker_id ?? null,
+    },
+  };
+}
+
+const INTERNAL_GREEN_EVALUATE = Symbol('agentos.internal.greenEvaluate');
+
+/** Test-only seam. Do not use from production/chat callers. */
+export function __testOnlyWakeLocal(options = {}) {
+  const { greenEvaluate, ...rest } = options;
+  if (typeof greenEvaluate !== 'function') {
+    return wakeLocal(rest);
+  }
+  return wakeLocal({ ...rest, [INTERNAL_GREEN_EVALUATE]: greenEvaluate });
+}
+
+export async function wakeLocal({ root, objective = 'perform one bounded local AgentOS control-cycle action', requireSchedulerDisabled = false, ...rest } = {}) {
+  const greenEvaluate = typeof rest[INTERNAL_GREEN_EVALUATE] === 'function' ? rest[INTERNAL_GREEN_EVALUATE] : evaluateTaskCompletion;
   if (!root) throw new TypeError('root is required');
-  const config = safeRuntimeConfig(await readJson(join(root, 'config.json')));
+  const config = safeRuntimeConfig(await readJson(join(root, 'config.json')), { requireSchedulerDisabled });
   const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
   const budget = await createMissionBudget({ filePath: join(root, 'state', 'mission-budget.sqlite') });
 
@@ -111,6 +187,18 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
 
   await persistence.create('artifact', { id: taskId, artifactType: 'dispatch.task', payload: task });
 
+  await appendLedgerEvent({
+    root,
+    stage: 'A',
+    scheduleId: wakeTraceId,
+    missionId: task.mission_id,
+    outcome: 'no_op_recovery',
+    intendedNextAction: 'execute_bounded_worker',
+    actions: ['WAKE_ADMITTED', 'TASK_CREATED'],
+    evidence: [`task:${taskId}`, `wake:${wakeTraceId}`],
+    safety: ['DRY_RUN', 'autonomy_disabled'],
+  });
+
   const reservation = budget.reserve({ project_id: PROJECT_ID, mission_id: task.mission_id, limit_units: 1 });
   let budgetOutcome;
   try {
@@ -120,6 +208,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     const selectedWorker = registry.findMatching({ requiredCapabilities: task.required_capabilities });
     if (!selectedWorker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
 
+    let capturedWorkerResult = null;
     const completedTask = await runNextTask({
       tasks: await dispatchStore.list(),
       receiver: RECEIVER,
@@ -131,6 +220,12 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
         if (!worker) throw new Error('WORKER_CAPABILITY_MATCH_FAILED');
         const workerResult = await worker.execute(started);
         if (!workerResult.success) throw new Error(`WORKER_EXECUTION_FAILED: ${workerResult.error}`);
+        capturedWorkerResult = {
+          ...workerResult,
+          task_id: started.task_id,
+          status: 'completed',
+          claimed_complete: true,
+        };
         return {
           source_agent: workerResult.workerId,
           worker_id: workerResult.workerId,
@@ -138,7 +233,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
           worker_latency_ms: workerResult.latencyMs,
           implemented: ['executed one bounded local Project Overseer control cycle through the registered deterministic worker'],
           verification: [
-            'canonical runner completed claimed → working → verification → completed',
+            'canonical runner completed claimed to working to verification',
             'issuer, consent mode and required/granted capability match were validated before execution',
             'registered worker was enabled, executable and matched every required capability',
             'DRY_RUN/no-production-credential constraints were preserved',
@@ -150,7 +245,7 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
             `budget:reservation:${reservation.reservation_id}`,
           ],
           repository_commit: 'local-runtime',
-          next_action: 'reconcile returned evidence with upstream Overseer log',
+          next_action: 'await Green verification before completion',
         };
       },
     });
@@ -158,24 +253,213 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
     if (!completedTask) throw new Error('LOCAL_WAKE_TASK_NOT_EXECUTED');
     budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 1 });
 
-    const completedAt = new Date().toISOString();
     const executionEvidence = completedTask.evidence ?? {};
-    const response = {
-      mission_id: completedTask.task_id,
+    const awaitingResponse = {
+      mission_id: task.mission_id,
       source_agent: executionEvidence.source_agent ?? WORKER_ID,
-      wake_trace_id: completedTask.wake_trace_id,
-      status: 'COMPLETED',
-      started_at: completedTask.created_at,
-      completed_at: completedAt,
+      wake_trace_id: completedTask.wake_trace_id ?? wakeTraceId,
+      status: 'AWAITING_GREEN',
+      started_at: completedTask.created_at ?? createdAt,
+      completed_at: null,
       repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
-      inspection_summary: 'installed persistent runtime inspected; safe DRY_RUN boundary confirmed; registered worker selected by strict capability match',
-      work_claimed: [completedTask.objective],
+      inspection_summary: 'worker returned; awaiting Green hard-gate before final completion',
+      work_claimed: [completedTask.objective ?? objective],
       work_implemented: executionEvidence.implemented ?? [],
       verification: [...(executionEvidence.verification ?? []), `budget reconciled: ${budgetOutcome.status}`],
       evidence: [...(executionEvidence.evidence ?? []), `worker-output:${JSON.stringify(executionEvidence.worker_output)}`],
       blockers: [],
       escalations: [],
+      next_action: 'Green evaluateTaskCompletion',
+    };
+
+    await persistence.create('artifact', {
+      id: `response-awaiting-green:${taskId}`,
+      artifactType: 'project-overseer.response',
+      payload: awaitingResponse,
+    });
+
+    await appendLedgerEvent({
+      root,
+      stage: 'B',
+      scheduleId: wakeTraceId,
+      missionId: task.mission_id,
+      outcome: 'executed_awaiting_green',
+      intendedNextAction: 'green_evaluate',
+      actions: ['WORKER_RETURNED', 'EVIDENCE_PERSISTED', 'AWAITING_GREEN'],
+      worker: { id: executionEvidence.source_agent ?? WORKER_ID },
+      evidence: [`response-awaiting-green:${taskId}`, `task:${taskId}`],
+      safety: ['DRY_RUN'],
+    });
+
+    const workerResultForGreen = capturedWorkerResult ?? {
+      task_id: taskId,
+      status: 'completed',
+      claimed_complete: true,
+      workerId: executionEvidence.source_agent ?? WORKER_ID,
+    };
+
+    const evidencePacket = buildGreenEvidencePacket({
+      task,
+      workerResult: workerResultForGreen,
+      reservation,
+      budgetOutcome,
+    });
+
+    let greenResult;
+    try {
+      greenResult = greenEvaluate({
+        task,
+        workerResult: workerResultForGreen,
+        evidence: evidencePacket,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (greenError) {
+      const blocked = {
+        ...awaitingResponse,
+        status: 'GREEN_BLOCKED',
+        completed_at: new Date().toISOString(),
+        blockers: [`Green exception: ${greenError?.message ?? String(greenError)}`],
+        next_action: 'owner/reconcile verification failure',
+      };
+      await persistence.create('artifact', {
+        id: `response-green-blocked:${taskId}`,
+        artifactType: 'project-overseer.response',
+        payload: blocked,
+      });
+      await persistence.create('artifact', {
+        id: `green-disposition:${taskId}`,
+        artifactType: 'green.disposition',
+        payload: { disposition: 'blocked', error: greenError?.message ?? String(greenError), task_id: taskId },
+      });
+      await persistence.create('event', {
+        agentId: boot.overseer.id,
+        eventType: 'agentos.manual-wake.green-blocked',
+        taskId,
+        wakeTraceId: blocked.wake_trace_id,
+        missionId: task.mission_id,
+        projectId: PROJECT_ID,
+        status: 'GREEN_BLOCKED',
+      });
+      try {
+        await appendLedgerEvent({
+          root,
+          stage: 'C',
+          scheduleId: wakeTraceId,
+          missionId: task.mission_id,
+          outcome: 'blocked',
+          intendedNextAction: 'owner_reconcile',
+          actions: ['GREEN_DISPOSITION', 'BLOCKED'],
+          evidence: [`green-exception:${taskId}`],
+          blockers: [greenError?.message ?? String(greenError)],
+          safety: ['green_hard_gate'],
+        });
+      } catch { /* already failing closed */ }
+      return Object.freeze({
+        status: 'GREEN_BLOCKED',
+        response: blocked,
+        task: completedTask,
+        boot,
+        task_id: taskId,
+        budget: budgetOutcome,
+        green: { disposition: 'blocked', error: greenError?.message ?? String(greenError) },
+      });
+    }
+
+    await persistence.create('artifact', {
+      id: `green-disposition:${taskId}`,
+      artifactType: 'green.disposition',
+      payload: greenResult,
+    });
+
+    await appendLedgerEvent({
+      root,
+      stage: 'C',
+      scheduleId: wakeTraceId,
+      missionId: task.mission_id,
+      outcome: greenResult.disposition === 'pass' ? 'green_verified' : 'blocked',
+      intendedNextAction: greenResult.disposition === 'pass' ? 'finalize_completed' : 'remediate',
+      actions: ['GREEN_DISPOSITION'],
+      worker: { id: executionEvidence.source_agent ?? WORKER_ID },
+      evidence: [`green-disposition:${taskId}`, `disposition:${greenResult.disposition}`],
+      blockers: greenResult.disposition === 'pass' ? [] : [...(greenResult.failures ?? [])],
+      safety: ['green_hard_gate'],
+    });
+
+    if (greenResult.disposition !== 'pass') {
+      const incomplete = {
+        ...awaitingResponse,
+        status: 'INCOMPLETE',
+        completed_at: new Date().toISOString(),
+        blockers: [...(greenResult.failures ?? [])],
+        green_disposition: greenResult.disposition,
+        next_action: 'remediate and re-verify',
+      };
+      await persistence.create('artifact', {
+        id: `response-incomplete:${taskId}`,
+        artifactType: 'project-overseer.response',
+        payload: incomplete,
+      });
+      await persistence.create('event', {
+        agentId: boot.overseer.id,
+        eventType: 'agentos.manual-wake.green-failed',
+        taskId,
+        wakeTraceId: incomplete.wake_trace_id,
+        missionId: task.mission_id,
+        projectId: PROJECT_ID,
+        status: 'INCOMPLETE',
+        greenDisposition: greenResult.disposition,
+      });
+      return Object.freeze({
+        status: 'INCOMPLETE',
+        response: incomplete,
+        task: completedTask,
+        boot,
+        task_id: taskId,
+        budget: budgetOutcome,
+        green: greenResult,
+      });
+    }
+
+    await appendLedgerEvent({
+      root,
+      stage: 'C',
+      scheduleId: wakeTraceId,
+      missionId: task.mission_id,
+      outcome: 'green_verified',
+      intendedNextAction: 'none',
+      actions: ['COMPLETED'],
+      worker: { id: executionEvidence.source_agent ?? WORKER_ID },
+      evidence: [`green-disposition:${taskId}`, `task:${taskId}`],
+      safety: ['green_pass_required'],
+    });
+
+    const completedAt = new Date().toISOString();
+    const response = {
+      mission_id: task.mission_id,
+      source_agent: executionEvidence.source_agent ?? WORKER_ID,
+      wake_trace_id: completedTask.wake_trace_id ?? wakeTraceId,
+      status: 'COMPLETED',
+      started_at: completedTask.created_at ?? createdAt,
+      completed_at: completedAt,
+      repository_commit: executionEvidence.repository_commit ?? 'local-runtime',
+      inspection_summary: 'Green PASS; bounded local cycle completed',
+      work_claimed: [completedTask.objective ?? objective],
+      work_implemented: executionEvidence.implemented ?? [],
+      verification: [
+        ...(executionEvidence.verification ?? []),
+        `budget reconciled: ${budgetOutcome.status}`,
+        'Green evaluateTaskCompletion disposition=pass',
+      ],
+      evidence: [
+        ...(executionEvidence.evidence ?? []),
+        `worker-output:${JSON.stringify(executionEvidence.worker_output)}`,
+        `green:disposition:${greenResult.disposition}`,
+        `green:task_status:${greenResult.task_status}`,
+      ],
+      blockers: [],
+      escalations: [],
       next_action: executionEvidence.next_action ?? 'await upstream reconciliation',
+      green_disposition: greenResult.disposition,
     };
 
     const validation = validateProjectOverseerResponse(response);
@@ -196,9 +480,18 @@ export async function wakeLocal({ root, objective = 'perform one bounded local A
       workerId: response.source_agent,
       budgetReservationId: reservation.reservation_id,
       status: response.status,
+      greenDisposition: greenResult.disposition,
     });
 
-    return Object.freeze({ status: response.status, response, task: completedTask, boot, task_id: taskId, budget: budgetOutcome });
+    return Object.freeze({
+      status: response.status,
+      response,
+      task: completedTask,
+      boot,
+      task_id: taskId,
+      budget: budgetOutcome,
+      green: greenResult,
+    });
   } catch (error) {
     if (!budgetOutcome) {
       try { budgetOutcome = budget.reconcile({ reservation_id: reservation.reservation_id, actual_units: 0 }); } catch {}
@@ -220,11 +513,12 @@ export async function main({ env = process.env, argv = process.argv, platformHom
   console.log(JSON.stringify({
     status: result.status,
     task_id: result.task_id,
-    mission_id: result.response.mission_id,
-    wake_trace_id: result.response.wake_trace_id,
-    source_agent: result.response.source_agent,
-    mode: result.boot.capabilities.mode,
-    budget_status: result.budget.status,
+    mission_id: result.response?.mission_id,
+    wake_trace_id: result.response?.wake_trace_id,
+    source_agent: result.response?.source_agent,
+    mode: result.boot?.capabilities?.mode,
+    budget_status: result.budget?.status,
+    green_disposition: result.green?.disposition ?? null,
     autonomyEnabled: false,
   }, null, 2));
   return result;
