@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "disclosureRequired": true,
+  "providers": [
+    {"id":"openai","workerType":"model","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"anthropic","workerType":"model","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"google","workerType":"model","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"perplexity","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"manus","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"devin","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"replit","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"lovable","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"base44","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"gumloop","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"taskade","workerType":"agent","connectionModes":["subscription","api","mcp"],"affiliateStatus":"verify-current"},
+    {"id":"relevance-ai","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"n8n","workerType":"automation","connectionModes":["subscription","api","self-hosted"],"affiliateStatus":"verify-current"},
+    {"id":"make","workerType":"automation","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"},
+    {"id":"sintra","workerType":"agent","connectionModes":["subscription"],"affiliateStatus":"verify-current"},
+    {"id":"poe","workerType":"agent","connectionModes":["subscription","api"],"affiliateStatus":"verify-current"}
+  ]
+}
