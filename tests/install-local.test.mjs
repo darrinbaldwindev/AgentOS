@@ -19,6 +19,8 @@ test('local installer creates durable safe defaults without enabling autonomy', 
   assert.deepEqual(config, DEFAULT_CONFIG);
   assert.equal(config.mode, 'DRY_RUN');
   assert.equal(config.autonomyEnabled, false);
+  assert.equal(config.scheduler.enabled, false);
+  assert.equal(config.scheduler.cadenceMinutes, 5);
   assert.equal(state.schemaVersion, 1);
 
   const second = await installLocal({ root });
