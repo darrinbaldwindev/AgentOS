@@ -60,7 +60,7 @@ The existing #111 lineage now refreshes `/api/state` after any control request f
 
 A static regression pins the control handler to this rule. Current #111 exact head is `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`; fresh exact-head CI is required and predecessor success must not be borrowed.
 
-Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md` on this documentation lineage.
+Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md` on this documentation lineage. Documentation lineage current head after final record update: `0335276709ae697e08fca51235722c13415ea334`.
 
 ## Current frontend truth model
 
