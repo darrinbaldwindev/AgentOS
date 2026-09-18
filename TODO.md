@@ -18,3 +18,10 @@
 - [x] CORE-002-I2: Reject missing/unknown runs and omit prompts, mission inputs, metadata payloads, credentials, raw URLs, workspace contents, and artifact payloads from the inspection result.
 - [x] CORE-002-I3: Add direct run-inspector and demo integration coverage, then rerun the complete deterministic suite.
 - [x] CORE-002-I4: Open a dependent review pull request that requires PR #3 and PR #4 to merge first; do not merge automatically.
+
+## Version 1 M1 direct contract coverage
+
+- [x] V1-M1-T1: Add deterministic fake-adapter coverage for AgentOS boot continuity/eligibility, Overseer bootstrap/activation, and boot event persistence.
+- [x] V1-M1-T2: Add deterministic coverage for Overseer session/pipeline routing, available-model selection, provider adapter/executor fail-closed behavior, and bounded payload forwarding.
+- [x] V1-M1-T3: Add a static no-live-side-effect regression check covering the eight boot-to-observation modules and rerun the complete local suite.
+- [x] V1-M1-T4: Publish the bounded M1 test-coverage pull request for owner review; do not merge directly into `main`.
