@@ -27,6 +27,30 @@ AgentOS remains provider/model/tool agnostic and free-first. External capability
 | AgentMail | AgentMail | CORE | APPROVED FOR CATALOGUE + BOUNDED CAPABILITY EVIDENCE |
 | Tavily | Tavily | CORE | APPROVED FOR CATALOGUE + BOUNDED CAPABILITY EVIDENCE |
 
+## $99 AgentOS tier entitlement
+
+**Owner decision — 2026-09-18:** the **$99 AgentOS tier includes access to all twelve core integrations**.
+
+This means the AgentOS product entitlement for the $99 tier must not artificially withhold any of the twelve core integration surfaces solely because of AgentOS tiering. Subject to implementation readiness, the user may connect and use any core integration that is otherwise available, healthy, authorised and permitted by policy.
+
+This decision does **not** mean that AgentOS purchases or bundles third-party subscriptions, API credits, paid provider plans, usage charges or external account entitlements. Where a core provider requires its own account, paid plan, credits or API billing, those remain separate unless a later explicit owner decision creates a bundled commercial arrangement.
+
+The following remain independent of the $99 AgentOS entitlement:
+
+- provider account availability;
+- external subscription or API entitlement;
+- credentials / authenticated connection;
+- capability health;
+- provider plan limits, quotas and rate limits;
+- AgentOS authority and consent;
+- policy/risk controls;
+- spend/budget approval;
+- execution approval;
+- verification, Green and PRS;
+- production eligibility.
+
+Therefore, **“all core integrations included” means AgentOS integration access, not unlimited third-party usage or automatic authority.**
+
 ## Core product capability roles
 
 The core set is intentionally complementary rather than twelve interchangeable providers. AgentOS sits above these products and routes work according to capability, health, entitlement, policy, cost and authority.
@@ -110,6 +134,8 @@ Each FAQ must support one canonical truth model rendered at three depths:
 - Tech Head
 
 Minimum subject coverage includes purpose, use cases, free/paid options, connection method, account requirements, permissions, least privilege, read/write capabilities, privacy/data movement, secrets, multiple accounts, capability health, costs/budgets, routing/fallback, upgrade behaviour, autonomy/scheduling, approvals, recovery, replay/duplicate protection, evidence/receipts, Green/PRS, disconnection, troubleshooting, limitations and last-verified evidence.
+
+The FAQ for the $99 tier must state clearly that all twelve core integration surfaces are included in AgentOS, while external provider accounts, subscriptions, API credits and usage charges may still apply.
 
 ## Commercial neutrality
 
