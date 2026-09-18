@@ -1,0 +1,592 @@
+# Overseer Review Log
+
+## Repository
+
+`darrinbaldwindev/AgentOS`
+
+## Purpose
+
+A local-first, multi-model AI-agent operating-system initiative. The main planning materials describe privacy-aware local operation, a Tauri/Svelte/Rust architecture, deterministic mocks, MCP-oriented tooling, and opt-in referral concepts subject to owner control.
+
+## Last scan
+
+2026-08-23T12:51:18Z
+
+## Scan scope
+
+Initial read-only review of `main` at `86a9287`, the `active-dashboard` branch at `bb3cd59`, the AgentOS handover, coordination charter, autonomous progress log, branch divergence, open GitHub issues and pull requests, and a non-invasive credential-pattern path check. This was not a runtime, security, deployment, provider-integration, privacy-certification, or release-readiness audit.
+
+## Status
+
+**AMBER — ATTENTION REQUIRED**
+
+## Executive summary
+
+AgentOS has strong documented boundaries around credentials, provider activation, affiliate behavior, scheduling, deployment, and owner authority. Its main repository branch is a planning/prototype and governed-local-mock stream, while `active-dashboard` contains a materially different, recently updated full-stack dashboard baseline. The separation is documented but creates a material discoverability and source-of-truth risk for contributors who use only the default branch.
+
+No high-confidence credential-pattern file paths were returned by the scoped initial check. This is a limited observation only and does not constitute a complete security audit.
+
+## Open findings
+
+### OVERSEER-20260823-001
+
+- **Severity:** MEDIUM
+- **Area:** architecture
+- **Finding:** `main` and `active-dashboard` represent materially different AgentOS baselines. `main` contains planning records, local contract/mocking artifacts, and governance files, while `active-dashboard` contains the current full-stack dashboard source and removes or relocates many planning-stream artifacts.
+- **Evidence:** `AGENTOS_HANDOVER.md` describes the handover/planning model and records a specification-first repository. The branch comparison shows `active-dashboard` at `bb3cd59` adds client/server/database application source while deleting or superseding numerous `main` planning artifacts. `agents/AGENTOS_SHARED_RECORDS.md` on `active-dashboard` identifies that branch’s dashboard as the active repository for role work.
+- **Why it matters:** A contributor or automation acting from default `main` can study or modify a different baseline from the one described as active, increasing the risk of duplicated effort, missed fixes, or misleading validation claims.
+- **Recommendation:** Darrin and the AgentOS coordinator should publish and maintain one concise, versioned branch-role map in both contexts: which branch is canonical for implementation, which is historical/planning evidence, how shared records are located, and what merge or synchronization policy applies. Do not merge histories or relocate archives without an explicit owner-approved plan.
+- **Suggested owner:** Darrin / AgentOS Primary Coordinator
+- **Status:** NEEDS DECISION
+- **Confidence:** HIGH
+
+### OVERSEER-20260823-002
+
+- **Severity:** MEDIUM
+- **Area:** operations
+- **Finding:** The active-dashboard branch points its autonomous backlog, progress log, and role protocol to external shared-project paths rather than versioned records within the branch.
+- **Evidence:** `active-dashboard:agents/AGENTOS_SHARED_RECORDS.md` lists the shared canonical locations and instructs roles not to create a repository-local mirror. The same document says the old isolated worktree is historical reference only.
+- **Why it matters:** A clean GitHub clone of the active branch does not by itself provide the mutable coordination context required for governed autonomous work. Recovery, onboarding, and review depend on external project-record availability and a documented access model.
+- **Recommendation:** Preserve the current no-mirror rule if it remains owner-approved, but add a repository-safe, non-sensitive recovery pointer that identifies the access preflight, expected unavailable-state behavior, and owner escalation path. Verify it from a fresh clone without exposing project-file content, credentials, or private records.
+- **Suggested owner:** AgentOS Primary Coordinator
+- **Status:** OPEN
+- **Confidence:** HIGH
+
+### OVERSEER-20260823-003
+
+- **Severity:** LOW
+- **Area:** documentation
+- **Finding:** The root `README.md` on `main` is only a repository title, while the handover and coordination documents carry the actual purpose, architecture, and status information.
+- **Evidence:** `README.md` contains only the project title; `AGENTOS_HANDOVER.md` and `PROJECT_COORDINATION_CHARTER.md` provide the substantive project description and governance rules.
+- **Why it matters:** New reviewers are more likely to classify the repository incorrectly or miss the branch-role distinction before reaching the authoritative documentation.
+- **Recommendation:** After the owner decides the canonical implementation branch, add a short, non-duplicative root README orientation with links to the authoritative handover, branch-role map, and governance charter.
+- **Suggested owner:** AgentOS Primary Coordinator
+- **Status:** OPEN
+- **Confidence:** HIGH
+
+## Cross-repository observations
+
+AgentOS is not evidenced as a runtime dependency of Franchise or GemVerse. Its governance mechanisms—owner-gated external actions, append-only evidence, explicit mock-versus-live boundaries, and prohibition on secret persistence—are reusable process patterns, not evidence for a shared codebase or integration.
+
+The same source-of-truth concern appears in different forms elsewhere in the portfolio: Franchise is awaiting controlled integration of a managed workspace, while AgentOS separates planning and active implementation across branches. A portfolio-level branch-role convention would reduce ambiguity without forcing common implementation technology.
+
+## Decisions required
+
+1. **Darrin:** Confirm the intended canonical role of `main` and `active-dashboard`, including whether `active-dashboard` should remain the active implementation baseline and how it will be kept discoverable.
+2. **Darrin / AgentOS Primary Coordinator:** Approve the safe recovery/onboarding contract for actors who have a GitHub clone but do not have access to shared project records.
+
+## Resolved since last scan
+
+None. This is the initial Overseer record.
+
+## Areas reviewed
+
+Repository identity and branches; handover and coordination charter; autonomous progress evidence; main-versus-active branch scope; open issues and pull requests; and a limited credential-pattern path check.
+
+## Repository/commit state reviewed
+
+`main` at `86a92877f35fe47102856713a910a329675c2c4d`; `active-dashboard` at `bb3cd59dac6f7e47635ada09fd4a3fc3cf1a0d79`.
+
+## Handoff acknowledgement
+
+The Overseer handoff specification was read. The read-only boundary is understood: this agent may modify only `docs/overseer/OVERSEER.md` in each authorized repository and may not alter application code, configuration, CI/CD, migrations, continuity records, business rules, production data, or other agent logs.
+
+Accessible repositories for this scan were `darrinbaldwindev/Franchise`, `darrinbaldwindev/repo`, `darrinbaldwindev/manus`, and `darrinbaldwindev/AgentOS`. No repository in that authorized set was inaccessible. Darrin remains the final authority.
+
+## Next review
+
+A lightweight read-only change scan should occur daily, with a deeper cross-repository review weekly and an additional scan after major merges, architecture changes, or explicit owner requests. No background schedule is configured by this record.
+
+> This review log is evidence-based governance documentation. It is not proof of runtime, security, privacy, production, legal, financial, or release readiness.
+
+## Follow-up review-request status — 2026-08-23T13:07:55Z
+
+The initial Overseer-log pull request, [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1), remains **OPEN**, non-draft, and `CLEAN` for merge at head `49a3f231ead6fe7c390a80c84ce5bcd33ee05590` against base `86a92877f35fe47102856713a910a329675c2c4d`. At the time of this check it had no review decision, reviews, or comments.
+
+The request remains documentation-only and changes only `docs/overseer/OVERSEER.md`. No AgentOS application code, configuration, CI/CD, migrations, task/continuity records, provider behavior, schedule, deployment, data, or external integration was changed by this status check.
+
+## Follow-up testability review — 2026-08-24T06:43:44Z
+
+A new [AgentOS PR #3 — CORE-002: add deterministic local test runner](https://github.com/darrinbaldwindev/AgentOS/pull/3) is open at `468b4e128c4fb00ced0ff0b601639a6e50ce7e8a`, is non-draft and `CLEAN`, and changes five files: a local Node test runner, direct runner coverage, an updated recovery-event status assertion, a bounded task record, and a TODO record. Static inspection shows that the runner discovers `tests/*.test.mjs`, sorts the list, executes each file sequentially with the current Node executable, aggregates nonzero child statuses, and rejects an empty suite. The updated recovery-event assertion names the full allowlist, including `recovered`, rather than retaining a stale fixed count.
+
+No GitHub checks or review records are currently reported for PR #3. The task record claims that all 18 deterministic test files passed, but this Overseer follow-up did not execute untrusted repository code and therefore cannot independently verify that claim. The material decision is whether to authorize a narrow review/merge path based on reproducible local evidence, or require additional independent validation and/or a separately approved CI check. `CLEAN` mergeability is not evidence of the claimed test result, integration coverage, provider safety, deployment readiness, or production behavior.
+
+A draft governance notification template was prepared inside Manus only. No test-runner code, test, branch, pull request, provider, credential, deployment, or external communication was changed by this record.
+
+## Autonomous material-change notices — 2026-08-24T08:11:47Z
+
+Two new CORE-002 pull requests are active. [AgentOS PR #4](https://github.com/darrinbaldwindev/AgentOS/pull/4) is open, non-draft, and `CLEAN` at `e7e4599dce2b636df6fd4478c73f77a28e790c00`; it adds a local deterministic vertical-slice demo and associated runner/tests across eight files. [AgentOS PR #5](https://github.com/darrinbaldwindev/AgentOS/pull/5) is open, non-draft, and `CLEAN` at `1f84ca31267e47c3bb284d9ef80b29079e45170e`; it extends the same lineage with `runtime/run-inspector.mjs` and related tests across eleven files. Neither pull request reports GitHub checks or formal reviews. This Overseer scan did not execute repository code, so local claims remain unverified and the relationship/supersession decision across PRs #3–#5 remains owner-gated.
+
+The authorized governance notices were posted to [PR #4](https://github.com/darrinbaldwindev/AgentOS/pull/4#issuecomment-5392429401) and [PR #5](https://github.com/darrinbaldwindev/AgentOS/pull/5#issuecomment-5392429632). The notices do not approve, merge, deploy, or expand the CORE-002 scope.
+
+## Portfolio continuity audit — 2026-08-24T10:00:00Z
+
+### OVERSEER-20260824-004
+
+- **Severity:** MEDIUM
+- **Area:** continuity / status reporting
+- **Finding:** Two current canonical-looking AgentOS records materially disagree about repository maturity. `PROJECT_STATUS_2026-08-24.md` says AgentOS is "not yet the product runtime" and that repository evidence is strongest in specified, prototyped, and verified categories. By contrast, `AGENTOS_CHECKPOINT.md` at `main` `4d4778fb70c86e0ea8528c1dcab4ac1077bacd0d` records core state primitives, a provider-independent `AgentRuntime`, deterministic mock provider, tool registry, recovery/handoff, policy auditing, mission orchestration, continuity protocol, agent-capability eligibility, and connectivity health as completed. The current tree also contains dedicated runtime modules and tests, while the five most recent main commits add the provider-neutral adapter/executor, provider boundary, and Overseer-hierarchy reconciliation.
+- **Evidence:** `CONTINUITY_PROTOCOL.md` establishes code/tests, runtime state, change log, and checkpoint as canonical sources and requires code/runtime to win when a checkpoint conflicts with another record. `AGENTOS_CHECKPOINT.md` identifies the runtime shell, durable checkpoint/change-log integration, and stronger end-to-end tests as still in progress. `PROJECT_STATUS_2026-08-24.md` is therefore a stale or insufficient standalone current-state summary, not evidence of production readiness.
+- **Why it matters:** A contributor who reads only the narrative status may underestimate what exists; a contributor who reads only the checkpoint/runtime tree may overstate the project’s production, security, provider, deployment, or release maturity. The older `AGENTOS_HANDOVER.md` also identifies a different `agents/continuity_log/` canonical-record model, preserving branch/record ambiguity.
+- **Recommendation:** Darrin or the designated AgentOS coordinator should publish one current maturity statement and branch/record map. It should identify the implementation baseline, distinguish implemented local/mock capabilities from independently unverified production capabilities, retain the open shell/persistence/end-to-end gates, and point fresh clones to the approved recovery/onboarding contract. Preserve historical records; do not rewrite the handover or relocate history without an owner-approved plan.
+- **Suggested owner:** Darrin / AgentOS Primary Coordinator
+- **Status:** NEEDS DECISION
+- **Confidence:** HIGH
+- **External notification:** None. The active AgentOS PRs #3–#5 already have current deduplicated notices for their own unverified local-review evidence, and this documentation-state finding does not alter their exact heads or require an unrelated pull-request comment.
+
+### Audit boundary
+
+This entry is a static, read-only comparison of repository records and tree state. It does not execute runtime code, tests, builds, providers, credentials, migrations, deployments, or production actions, and it does not approve merge, release, or production readiness.
+
+## Direction-gate evidence update — 2026-08-24T20:02:13+10:00
+
+**Repository state reviewed:** `main` at `8dbf6647881ef32bfb7d9e05cc9a00ab7fe40032`, compared with the prior continuity-audit baseline at `4d4778fb70c86e0ea8528c1dcab4ac1077bacd0d` and the prior persistence-migration record at `16a74358498eaac71331b52aa4d24f4ffebad5d6`.
+
+**Verified facts:** The current default branch adds a root `package.json` with a `node --test tests/**/*.test.mjs` harness and `tests/persistence-contract.test.mjs`. The static test fixture constructs the canonical persistence bridge over the in-memory `createStateStore()` and asserts `create`, `get`, `list`, and `update` behavior for an agent record. This follows the new persistence-migration record’s stated goal of one durable-state vocabulary. The current checkpoint continues to name the runtime shell boundary, durable checkpoint/change-log integration, and stronger end-to-end tests as in progress.
+
+**Assessment:** This is a **partial, directionally aligned advancement** of the first executable-runtime gate. It adds a reproducible test entry point and a narrow persistence-contract test, but it does not itself demonstrate the CORE-001 acceptance path: workspace/agent/run/event/artifact persistence through a local runtime shell; real capability probes; a bounded task; deterministic provider execution; persisted recovery after simulated provider failure; and an Overseer recommendation/change-log event. This Overseer review did not execute the new test harness or any project code; no GitHub check result was available in the refreshed review queue. Accordingly, the test’s intended behavior is a contributor/source claim until independently reproduced.
+
+**Direction impact:** `OVERSEER-20260824-004` remains **NEEDS DECISION**. The recommended near-term focus is unchanged: complete one bounded deterministic vertical-path proof and update the current maturity record to distinguish a committed local test harness from independently reproduced runtime evidence. The existing overlapping CORE-002 pull requests #3–#5 remain open at their previously reviewed heads; no new pull-request-specific finding or duplicate external notice is warranted from this default-branch update.
+
+**Owner decision required:** Darrin or the designated AgentOS coordinator should confirm the canonical sequence: first run and record the narrow persistence-contract test; then implement/verify the local runtime-shell and end-to-end acceptance path; then decide the disposition and lineage of PRs #3–#5. This record neither authorizes test execution nor approves merge, deployment, provider activation, production operation, or release.
+
+**Audit boundary:** Static source, branch, issue, and pull-request evidence only. No application code, test, build, provider, credential, connector, migration, deployment, data, or repository-setting action was performed.
+
+## Daily open-pull-request review update — 2026-08-24T20:02:13+10:00
+
+**Scope:** Complete accessible open-pull-request queue refreshed under `darrinbaldwindev`; AgentOS PR #1 reviewed at documentation head `4ac7bb06d9c42e162a04f7ce03f4663ff5d49a7b` against its prior reviewed log revision and default `main` at `8dbf6647881ef32bfb7d9e05cc9a00ab7fe40032`.
+
+**Material change:** PR #1’s authorized log now contains the persistence-direction update recorded above. It accurately distinguishes the new Node test harness and narrow in-memory persistence-contract test from independently reproduced runtime evidence. This is a material documentation/review-scope change, not proof that AgentOS Issue #2’s end-to-end acceptance path is complete.
+
+**Finding:** The persistence test artifact is **unverified by this read-only Overseer review**. The current checkpoint continues to identify the runtime shell boundary, durable checkpoint/change-log integration, and stronger end-to-end tests as in progress. Existing CORE-002 PRs #3–#5 remain open at their previously reviewed revisions and retain their lineage and local-validation owner gates.
+
+**Notification:** One deduplicated, affected-PR-only notice was posted to [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5395616438). It states the exact revision, classification, owner decision, permitted/prohibited actions, reassessment evidence, links, and response field. No notice was posted to any issue, email, Slack, or other channel.
+
+**Owner decision:** Darrin or the designated AgentOS coordinator should confirm whether the updated log is accepted as the current record and retain the bounded sequence of a reproducible persistence test followed by runtime-shell and full deterministic vertical-path evidence. No merge, close, rebase, approval, execution, deployment, provider activation, credential use, or production action is authorized by this entry.
+
+**Audit boundary:** Static repository, pull-request, issue, and documentation evidence only. No project code, tests, builds, migrations, deployments, credentials, or external provider calls were executed.
+
+## Daily open-pull-request review update — 2026-08-25T23:25:07+10:00
+
+**Scope:** Complete accessible open-pull-request queue refreshed under `darrinbaldwindev`. This record covers the material AgentOS queue transition from four open PRs in the 24 August baseline (PRs #1, #3, #4, and #5) to two open PRs on 25 August (PRs #1 and #6). Static GitHub metadata, changed-file scope, comments, formal reviews, revisions, and linked-issue references were reviewed; `statusCheckRollup` was unavailable to this reviewer and is therefore recorded as **unknown**.
+
+**Verified queue transition:** AgentOS PRs [#3](https://github.com/darrinbaldwindev/AgentOS/pull/3), [#4](https://github.com/darrinbaldwindev/AgentOS/pull/4), and [#5](https://github.com/darrinbaldwindev/AgentOS/pull/5) were merged on 25 August at `a1c0190b152e24296a91cbfe754c550baa59cafa`, `86e82acee8a50f00493db84e9bb5b5f7dc4e47a3`, and `e06f8f55795594fb6a4160e5ec24aa37308db3c4`, respectively. Their closure is a material status change; it is not validation, deployment, or release evidence.
+
+**New pull request:** [AgentOS PR #6](https://github.com/darrinbaldwindev/AgentOS/pull/6) is open, non-draft, and `CLEAN` at `5a8e0907ac7819f1411a59ff28921c47efe3d847`, based on `main` at `e06f8f55795594fb6a4160e5ec24aa37308db3c4`. It changes only `TODO.md`, `docs/overseer/V1-M1-BOOT-CONTRACT-COVERAGE-TASK.md`, `tests/m1-boot-and-lifecycle.test.mjs`, `tests/m1-no-live-side-effects.test.mjs`, and `tests/m1-session-routing-provider.test.mjs`. Static scope review found test/documentation additions only; no runtime-module change, connector, credential, provider, deployment, migration, or repository mutation is in the PR diff. It has no GitHub comments, formal reviews, or linked closing issues in the refreshed metadata.
+
+**Claim and limitation:** The contributor task record says that focused M1 tests, `node scripts/run-tests.mjs`, and `npm test` passed. This is a contributor claim only: the read-only Overseer did not execute project code or tests, and missing check-rollup access prevents independent check-status confirmation. `CLEAN` mergeability is not evidence of the claimed validation and does not grant merge, provider, production, security, privacy, deployment, or release approval.
+
+**Classification and owner gate:** **MEDIUM — unverified deterministic validation and adequacy of the new static no-live-side-effect assertion.** Darrin must decide whether independently reproducible M1 validation is required before a merge decision and confirm that the change remains restricted to deterministic injected local-only coverage. Permitted next work is a review of the exact head and, only in an owner-approved non-production environment, reproduction with recorded command, runtime versions, full intended test set, exit status, and evidence that no network, credential, provider, Git, workspace, or production side effect occurred. Prohibited next work includes merge, rebase, deployment, provider activation, credential use, or expansion into runtime/persistence/integration scope absent explicit Darrin authorization.
+
+**Notification:** Under the standing, time-bounded, pull-request-only authorization, one deduplicated material-change notice was posted to [AgentOS PR #6](https://github.com/darrinbaldwindev/AgentOS/pull/6#issuecomment-5411032306). It includes the exact revision and paths, risk and limitations, owner decision, permitted/prohibited actions, verification criteria, links, and an owner-response field. No comment was sent to an issue, email, Slack, or another channel.
+
+**Reassessment condition:** Provide reproducible evidence for `5a8e0907ac7819f1411a59ff28921c47efe3d847`, including `git diff --check`, focused and intended-suite commands, runtime versions, exit codes, and local-only boundary observations; or record Darrin’s explicit alternate decision. This record does not approve any merge or operational action.
+
+**Audit boundary:** Static repository, pull-request, issue, and documentation evidence only. No project code, tests, builds, migrations, deployments, credentials, provider calls, schedule change, connector change, or production action was performed.
+
+## Project timeline and current milestone — 2026-08-26T11:02:51+10:00
+
+**Scope and evidence:** Deep static review of default `main` at `66d443bad47d540a8ed3aa342e5e4615377e8d29`, the recent default-branch history, 140 tracked files (48 source-path, 29 test-path, 44 documentation-path), open Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2), and open PRs [#1](https://github.com/darrinbaldwindev/AgentOS/pull/1) and [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6). No project command, test, build, provider, credential, deployment, or production action was run.
+
+| Timeline point | Verified observation | Status |
+|---|---|---|
+| 24–25 Aug | CORE-002 sequence and subsequent CORE-003 commits added local test/contract evidence, explicit evidence classification, evidence-aware Overseer decisions, a local runtime-shell capability boundary, and its test. | Static evidence only; no independent runtime execution. |
+| Current | `main` now ends at `66d443ba` (*CORE-003 test runtime shell capability eligibility*). PR #6 remains an open five-file M1 test/documentation PR at `5a8e0907`; its check status and claimed local validation remain unverified here. | In progress. |
+
+**Current milestone:** Demonstrate the first deterministic local AgentOS vertical slice defined by Issue #2: persisted Project → Workspace → Agent → Run → Event → Artifact state; bounded task execution through a deterministic provider; simulated recovery/handoff; and an Overseer audit/recommendation event.
+
+**Held blockers:** A canonical maturity/branch-record statement is still needed because the status record calls the project specification/prototype-heavy while the checkpoint lists substantial runtime components as completed. The runtime shell, durable persistence integration, stronger end-to-end proof, and independently reproducible exact-revision validation remain incomplete or unverified. GitHub check rollup is unavailable to this review.
+
+**Owner decision:** Darrin or the AgentOS coordinator must name the current maturity record and decide the approved evidence package for the vertical-slice milestone. No merge, rebase, provider activation, credential use, deployment, or release is authorized by this entry.
+
+**Next Overseer instruction:** Maintain this timeline append-only. On a material commit, PR, issue, or check change, record date, exact revision, verified fact versus claim, current milestone, blocker status, owner decision, and reassessment condition. Do not execute project code or mutate paths other than this log without separate authority.
+
+**Confidence:** High for repository/PR/issue metadata; limited for runtime behavior and check status.
+
+## Active task assignment — Wave 1 (A-01) — 2026-08-26T13:50:47+10:00
+
+**Authority and scope:** Darrin’s continuous-task-chain instruction. This is a read-only evidence task; it does not authorize code execution, test execution, merge, rebase, deployment, provider activation, credential use, or changes outside this log.
+
+**Task A-01:** Map every Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2) deterministic-vertical-slice acceptance element to exact current `main` / PR evidence or an explicit unknown. Distinguish contract-test coverage from demonstrated runtime behavior.
+
+**Closure evidence:** Exact refs; Issue #2 acceptance map; verified facts versus claims; missing evidence; explicit statement that no execution was performed.
+
+**Immediate successor:** On closure, issue **A-02**: independently reassess the exact-revision evidence package when supplied; if none exists, retain one owner decision request naming the authoritative maturity record.
+
+## Wave 1 task closure — A-01 — 2026-08-26T13:58:32+10:00
+
+**Author/platform:** Manus Overseer. **Scope:** Read-only mapping of open Issue [#2](https://github.com/darrinbaldwindev/AgentOS/issues/2), current `main` at `66d443baaf2c5e44904a2d7af9484124fd22ae92`, and PR [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) at `5a8e0907ac7819f1411a59ff28921c47efe3d847`. No project command was executed.
+
+**Result:** **A-01 CLOSED — acceptance-evidence map completed.** Issue #2 requires a local deterministic end-to-end test that creates workspace/agent state, executes a bounded task, persists events/artifacts, simulates provider failure, recovers through an alternate adapter, and produces an Overseer audit/recommendation event. PR #6 is explicitly test/documentation-only and uses in-memory persistence and inline fake adapters. Its listed coverage supports bounded boot/eligibility, lifecycle, registry, routing, adapter-payload, and no-live-side-effect contracts, but does not independently demonstrate the Issue #2 end-to-end acceptance chain.
+
+| Issue #2 acceptance element | Current evidence classification |
+|---|---|
+| Workspace/agent/run/event/artifact persistence | **Unknown for durable end-to-end behavior.** PR #6 uses in-memory fixtures. |
+| Bounded task execution / plan→execute→verify→finish | **Unknown.** No exact runtime demonstration was inspected. |
+| Provider failure and alternate-adapter recovery without lost mission state | **Claim/test-boundary only.** No reproduced persisted handoff evidence. |
+| Overseer audit/recommendation event from completed run | **Unknown.** Boot-to-observation contracts are not the required completed-run audit evidence. |
+
+**Owner decision / blocker:** Name the authoritative maturity record and the exact revision evidence package required to satisfy Issue #2. Passing claims in PR #6 remain contributor claims because this review did not run tests or access check rollups.
+
+### Active successor — A-02
+
+**Task A-02:** Reassess the exact revision evidence package when it is supplied. If no package exists, retain the single owner decision request above and mark the vertical slice blocked; do not duplicate PR #6 contract-test review.
+
+**Status:** A-01 closed; A-02 active and blocked on exact-revision end-to-end evidence or Darrin’s maturity-record decision.
+
+## Task-chain update — A-03 external-tool evaluation gate — 2026-08-26T15:19:39+10:00
+
+**Authority and scope:** Darrin’s continuous task-chain instruction. This is a documentation-only, conditional evaluation gate. It does not authorize installation, execution, configuration, credential entry, connector access, code changes, test execution, deployment, merge, or external automation for OpenHands, OpenCode, Aider, OpenManus, Ollama, or any other framework.
+
+**Evidence:** AgentOS `main` records the first real milestone as a local provider-independent vertical slice with workspace/run/tool-event observation, simulated recovery/handoff, and Overseer audit output. The current checkpoint still identifies runtime shell, durable checkpoint/change-log integration, and stronger end-to-end evidence as in progress. AgentOS PR [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) at `5a8e0907ac7819f1411a59ff28921c47efe3d847` is test/documentation scope only; it does not independently prove the complete runtime milestone.
+
+### Task A-03 — External-tool evaluation gate
+
+**Dependency:** A-02 must first be closed with exact-revision evidence of the required M1 local vertical slice, or Darrin must explicitly choose a different maturity record. Until then, A-03 is **assigned but inactive**.
+
+**First permitted evaluation, after dependency closure:** A read-only OpenCode planning/review pilot against a disposable AgentOS clone or exported diff. The pilot must use no credentials, connectors, code edits, shell execution, repository mutation, provider account, or external side effect.
+
+**Required evidence before considering any framework adapter:**
+
+1. AgentOS remains the source of truth for mission/run/event/artifact lineage, provider handoff, capability policy, and Overseer records.
+2. The evaluated tool’s effective capability/mount/command configuration is captured, including denied permissions.
+3. The evaluation uses fixtures or a disposable copy and emits no credential, telemetry, or external-service data.
+4. A human can reproduce and inspect the inputs, output plan, and resulting no-mutation state.
+5. Any future OpenHands sandbox, Aider write, local-model, or browser-use experiment is separately owner-gated.
+
+**Explicit exclusions:** No tool becomes the AgentOS core runtime; no default browser automation; no host-Docker socket exposure; no writable real checkout; no autonomous commit, test, merge, deployment, issue creation, external notification, or provider-key reuse.
+
+**Success criterion:** A bounded planning artifact is useful and reproducible while every AgentOS control-plane boundary remains intact. A successful planning pilot is not approval for an adapter or product integration.
+
+**Next review trigger:** A-02 evidence closure, an explicit Darrin maturity decision, or a materially changed AgentOS runtime/control-plane revision. **Status:** A-03 assigned, inactive pending A-02.
+
+## Reference intake — local AI model orchestration material — 2026-08-26T15:35:05+10:00
+
+**Source classification:** User-supplied reference material at `/home/ubuntu/upload/pasted_content.txt`. It describes LM Studio, Ollama (with Open WebUI), and Jan as possible local model-management and chat/workspace tools. The supplied feature, continuity, local-file-indexing, model-swapping, API-compatibility, and interoperability statements are **owner-provided claims / unverified reference information**, not an independently reproduced capability assessment or an adoption decision.
+
+| Referenced category | Potential future relevance | Current AgentOS classification |
+|---|---|---|
+| Local model manager/server (for example, Ollama or LM Studio) | May inform the later local-provider adapter experiment. | Conditional provider-test input only; not AgentOS state, mission, audit, capability, or continuity authority. |
+| Local chat/workspace interface (for example, LM Studio, Open WebUI, or Jan) | May assist a human maintainer’s private exploration. | Outside the AgentOS runtime/control plane; no repository indexing, document ingestion, or local file sharing is authorized by this intake. |
+| Mid-conversation model switching and saved chat history | May be useful for a maintainer interface. | Advisory context only; AgentOS must retain canonical mission/run/event/artifact lineage and provider-handoff evidence. |
+
+**Reconciled assessment:** The material is directionally compatible with the existing A-03 Stage 5 concept of a **separately owner-gated, fixed-fixture local-provider adapter experiment**. It does not alter the dependency ordering: first close A-02 using exact-revision M1 deterministic vertical-slice evidence or an explicit Darrin maturity decision; then perform only the already-defined read-only OpenCode planning pilot. Local-orchestrator evaluation remains later, non-production, and separately authorized.
+
+**No-action boundary:** This reference intake does not authorize downloading or installing models/tools, operating a local server, indexing any repository or local files, entering credentials, connecting OpenCode/Aider/OpenHands/OpenManus, changing AgentOS code/configuration, executing tests, using a provider, or creating an adapter. No such action occurred.
+
+**Task-chain status:** A-03 remains **assigned and inactive pending A-02**. The next review trigger is unchanged: A-02 evidence closure, an explicit Darrin maturity decision, or a materially changed AgentOS runtime/control-plane revision. The future local-provider experiment must additionally name the exact tool/model/runtime, hardware/operating boundary, fixture set, context/window limit, isolated networking and mount policy, redacted configuration method, no-secret verification, reproducible run record, and rollback/cleanup path.
+
+## Comprehensive portfolio scan — new AgentOS coordination issues — 2026-08-26T17:31:45+10:00
+
+**Verified scan evidence:** Current `main` remains `66d443baaf2c5e44904a2d7af9484124fd22ae92`; PR #6 remains open/`CLEAN` at `5a8e0907ac7819f1411a59ff28921c47efe3d847` with no reported check-rollup items, one comment, and no formal review. Its local-validation result remains a contributor claim, not independently reproduced evidence.
+
+**New owner-authored coordination issues:** Issue #7 requests a runtime validation pass; Issue #8 describes an event-driven Overseer control-plane direction; Issue #9 requires user-decision propagation and conflict escalation across Overseers. These are material task/direction records. They do not supersede A-02, make runtime behavior verified, or authorize test execution in this task. Any test/run authorization must separately state the exact revision, command set, non-production environment, no-network/no-credential/no-provider guard, evidence destination, and stop condition.
+
+**Task-chain impact:** A-02 remains blocked on exact M1 vertical-slice evidence or Darrin’s maturity-record decision. A-03 remains inactive. **A-04 proposed — control-plane requirement reconciliation:** Prepare a private mapping from Issues #8–#9 to the selected shared-log policy and AgentOS M1 sequence; do not implement an event bus, schedule, connector, or runtime integration. A-04 is independent from execution and awaits the outcome of A-02 for any runtime dependency.
+
+## A-04 control-plane requirement reconciliation — closed; A-05 publication decision required — 2026-08-26
+
+**A-04 result:** A private AgentOS control-plane requirement reconciliation is prepared at `/home/ubuntu/overseer_scan/agentos_a04_control_plane_requirement_reconciliation_draft_2026-08-26.md`. It maps Issues #8–#9 to the existing project/shared append-only logs, defines a minimal governance-event record, and retains M1 deterministic vertical-slice evidence as the dependency before any future runtime control-plane work.
+
+**Validation:** The draft classifies facts/claims/recommendations/unknowns; treats existing logs as the current event ledger; prohibits an AgentOS event bus, webhook, API, database, worker, schedule/connector change, code/test/run, provider/network/credential use, repository mutation, merge, deployment, release, and external notification. No repository was modified while drafting.
+
+**Status:** **A-04 CLOSED — private requirement reconciliation prepared and validated.** A-02 remains blocked; A-03 remains inactive.
+
+### A-05 — owner-gated reconciliation-publication decision
+
+**Recommended Option A:** Authorize a documentation-only append to `AgentOS/docs/overseer/OVERSEER.md` and shared `repo/docs/overseer/OVERSEER.md` that publishes the exact validated mapping as a current governance interpretation. It would not implement a control plane or change schedule/configuration/connectors.
+
+**Option B:** Publish only the minimal governance-event schema in the AgentOS project log; retain the fuller reconciliation privately.
+
+**Option C:** Retain the reconciliation privately until Darrin selects an AgentOS maturity record and canonical control-plane implementation scope.
+
+**No option is selected by this record.** A-05 is blocked pending Darrin’s explicit selection. H-03 remains independently blocked on naming the Headless reconciliation-plan owner.
+
+## Manus dispatcher assignment — A-06 acceptance-evidence gap triage — 2026-08-26
+
+**Current task:** **A-06 — Compare the exact current PR #6 contract-test scope against Issue #2’s deterministic M1 vertical-slice acceptance requirements.** This is a bounded static-evidence task issued by Manus under the mandatory project task loop; it does not replace A-02 or infer runtime proof.
+
+**Required output:** A compact matrix that maps each M1 acceptance requirement to the exact PR #6 source/test path or marks it **requires independent runtime evidence**. It must distinguish contract coverage, contributor claim, missing static evidence, and runtime-only evidence. It must record current main and PR head revisions, reported check availability, and the precise evidence needed to close A-02.
+
+**Permitted scope:** Read-only GitHub metadata, issue, PR, changed-file, and static-test inspection; append-only evidence/task-log record. A bounded subreview may be delegated only for static changed-path comparison and must return exact paths, revision, and confidence to Manus.
+
+**Prohibited scope:** No code/test/run, build, provider/model access, credential/network use, repository mutation, merge, deployment, release, or external notice.
+
+**Return condition:** A-06 returns the matrix and recommended successor to Manus. A-02 remains the project’s implementation gate until exact runtime evidence or Darrin’s maturity decision exists.
+
+**Next review trigger:** PR #6 revision/check/review change, Issue #2 update, A-06 closure, or Darrin maturity decision.
+
+## A-06 return — M1 acceptance-evidence gap triage — 2026-08-26
+
+**Scope and exact evidence:** Read-only mapping of Issue #2 (`CORE-001`) to PR #6 head `5a8e0907ac7819f1411a59ff28921c47efe3d847`; no commands or project runtime were executed. PR #6 is test/documentation-only and changes `TODO.md`, `docs/overseer/V1-M1-BOOT-CONTRACT-COVERAGE-TASK.md`, `tests/m1-boot-and-lifecycle.test.mjs`, `tests/m1-no-live-side-effects.test.mjs`, and `tests/m1-session-routing-provider.test.mjs`.
+
+| Issue #2 requirement | Static result at PR #6 head | A-02 closure evidence still required |
+|---|---|---|
+| Project → Workspace → Agent → Run → Event → Artifact | Boot-event persistence only; no full entity chain. | One deterministic stored entity/artifact lineage. |
+| Deterministic local runtime | Fake adapter/executor contract coverage. | Exact intended-M1 local execution record. |
+| Bounded tool execution | No PR #6 coverage. | Tool policy, invocation, result/event, and refusal evidence. |
+| Plan → execute → verify → finish | Forwarding envelope only; no four-state workflow. | One deterministic workflow trace. |
+| Run/recovery state | Bootstrap restore, not run recovery. | Interruption, persisted recovery, and terminal trace. |
+| Alternate-provider recovery | Unavailable-provider rejection, not handoff. | Failure/handoff preserving mission state. |
+| Overseer recommendation/change-log | `overseer.turn.completed` only. | Persisted recommendation/change-log event. |
+
+**Finding:** **A-06 complete — A-02 is unchanged.** PR #6 gives partial static contract coverage only. Its reported command outcomes are contributor claims not independently rerun; `CLEAN` is not validation or acceptance proof.
+
+**Successor task / precise hold:** **A-07 — exact M1 evidence-package intake.** On an Issue #2/PR #6 revision, credible reproducible evidence package, or Darrin maturity decision, inspect only the new exact evidence against the seven rows above and return an accept/partial/missing matrix. Do not rerun code/tests, change source, merge, deploy, or access any provider/credential.
+
+**Next review trigger:** Exact M1 evidence package, PR #6/Issue #2 change, A-07 return, or Darrin maturity decision.
+
+## Daily open-pull-request review — 2026-08-26
+
+**Queue evidence:** The daily organization-wide read-only review enumerated AgentOS PR #1 and PR #6 as open. PR #1 advanced from prior log head `6e858b4` to `45874c5`; PR #6 remains open, non-draft, `CLEAN`, and unchanged at `5a8e0907ac7819f1411a59ff28921c47efe3d847`. Issue #2 remains open.
+
+**Material delta:** PR #1 now records the completed A-06 acceptance-evidence matrix and active A-07 evidence-intake hold. A deduplicated affected-PR notification was posted at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5425774101.
+
+**Assessment:** The PR #6 static contract tests remain partial coverage; their reported commands remain contributor claims. No exact Issue #2 end-to-end evidence package, owner maturity decision, review, or check evidence was found. No notification was repeated on PR #6 because its relevant head, review, comment, and gate evidence were unchanged.
+
+**Boundary:** No code/test execution, source change, merge, provider/credential action, deployment, release, or external notice beyond the authorized affected-PR notification occurred.
+
+## Portfolio scan — new canonical architecture records — 2026-08-27
+
+**Verified default-branch delta:** AgentOS `main` advanced through `431d62c`, `f521dd4`, `8c4ed072`, `0c6124f`, and `4d7413e`, adding only candidate/provider research and product-entitlement, capability-gate, and project-provisioning architecture records. The new documents identify future target policy and explicitly retain provider availability/terms and external capabilities as subject to independent revalidation; the provisioning record states autonomous repository creation is not currently implemented.
+
+**M1 classification:** This new documentation does not change A-02/A-07. It does not evidence the required Issue #2 deterministic entity/artifact lineage, bounded tool use, complete lifecycle, recovery/handoff, or persisted Overseer recommendation/change-log event. It does not authorize runtime execution, provider/credential access, repository creation, scheduling, commercial action, implementation, merge, deployment, release, or production action.
+
+**Notification:** The material default-branch architecture delta was reported to the affected documentation PR at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5427986507 under Darrin’s standing PR-only authorization.
+
+**Successor:** A-07 remains the active exact-evidence intake hold. A future architecture-to-roadmap reconciliation requires a separately bounded owner decision and must not widen the current M1 acceptance scope.
+
+## New Issue #11 — autonomy-attribution reporting proposal — 2026-08-27
+
+**Evidence:** [Issue #11](https://github.com/darrinbaldwindev/AgentOS/issues/11), created `2026-08-27T00:51:48Z`, proposes a portfolio/project reporting measurement model for trigger, author, executor, verifier, evidence state, user-directed/autonomous distinction, A0–A5 autonomy depth, chain length, interventions, reusable gains, and autonomy failure reasons. It directs that generic Git metadata must not determine authorship and `UNKNOWN` must be used where evidence is incomplete.
+
+**Classification:** **New documentation/governance proposal, not an implemented measurement system.** The repository currently supplies no canonical event schema, data source, privacy/retention boundary, calculation method, evidence baseline, or verified project-progress metric. The proposal does not modify Issue #2 M1 acceptance rows, does not release A-07, and must not be used to estimate progress/savings or imply autonomous capability that has not been evidenced.
+
+**Notification:** The material issue delta was reported to the affected documentation PR at https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5432968780 under Darrin’s standing PR-only authorization.
+
+**A-08 — reporting-attribution field-map reconciliation:** Produce a read-only mapping of each Issue #11 field to one of: existing exact evidence source, missing canonical source, privacy/retention decision, calculation/attribution rule, or `UNKNOWN`. Identify overlap with the shared continuation-report template and conflicts with A-02/A-07 scope. Do not add metrics, infer authorship, calculate progress, execute code/tests, change schema, configure schedules/connectors, access providers/credentials, merge, deploy, release, or contact external parties.
+
+**Return/release condition:** A-08 returns a field-by-field matrix and smallest owner decision for canonical evidence source and reporting boundary. A-07 remains independently active for exact M1 runtime evidence. **Next review trigger:** Issue #11/PR #1 change, A-08 return, evidence-source decision, or exact M1 evidence.
+
+## A-08 return — reporting-attribution field-map reconciliation — 2026-08-27
+
+**Scope:** Read-only reconciliation of [Issue #11](https://github.com/darrinbaldwindev/AgentOS/issues/11), the shared/project append-only logs, and the adopted continuation-report template. No code, schema, database, telemetry, calculation, schedule, connector, provider, credential, test, merge, deployment, release, or external action occurred.
+
+**Result:** **A-08 complete.** Current sources can support only qualitative, evidence-backed reporting of reporting window, exact revision/log, explicitly recorded task/hold, bounded completed work, blocker, trigger, and confidence. They provide partial support for named decision/executor/verifier only when the durable record states them explicitly. Trigger, event identity, user-directed versus autonomous classification, autonomy depth, chain length, interventions, time saved, numeric progress/autonomous share, and contributor breakdown are `UNKNOWN` or not collected. Git author/committer metadata must not be used to infer decision-maker, executor, verifier, or autonomy.
+
+**Required current rule:** Do not calculate progress, time saved, autonomy scores, author share, or cross-project gain totals. Continue the completed-work delta; label runtime evidence and attribution as `UNKNOWN` where explicit durable evidence is absent. The full field matrix and treatment rationale are retained in the Manus workspace at `agentos_a08_reporting_attribution_field_map_2026-08-27.md`.
+
+**Smallest owner decision — recommended Option A:** Approve a **documentation-only Measurement Semantics v0.1** with shared/project append-only Overseer logs as interim canonical source. It would define field meanings, `UNKNOWN` policy, attribution boundaries, and a no-metrics rule, but would not add schema/data collection, telemetry, dashboards, schedules/connectors, providers, tests, implementation, or production capability.
+
+**Options:** **A (recommended):** documentation-only field dictionary and labelled pilot; **B:** defer all measurement work and retain current template; **C:** defer until a post-M1 measurement-design decision. No option is selected by this record.
+
+**Successor task / precise hold:** **A-09 — measurement-semantics intake hold.** If Darrin selects A, reconcile one approved field dictionary and labelled documentation-only pilot; if B/C, retain `UNKNOWN`/no-metrics boundary. A-07 remains independent and unchanged. **Next trigger:** Darrin Option A/B/C decision, Issue #11/PR #1 revision, or exact M1 evidence.
+
+## A-09 complete — Option A Measurement Semantics v0.1 — 2026-08-27
+
+**Owner decision:** Darrin selected **Option A**. The authorized scope was documentation-only: establish Measurement Semantics v0.1 with append-only designated project/shared Overseer logs as the **interim canonical evidence source**.
+
+**Completed artifact:** `agentos_measurement_semantics_v0_1_2026-08-27.md` is retained in the Manus workspace. It defines a controlled qualitative field dictionary; actor/evidence separation; `UNKNOWN`, `NOT_COLLECTED`, `VERIFIED`, `PARTIALLY_VERIFIED`, and `CLAIMED` treatment; a privacy/minimal-metadata rule; explicit non-inference from Git identities; A0–A5 definitions without measurement; and an explicitly non-metric labelled pilot format. It includes an A-08 pilot record with `NOT_MEASURED` autonomy and no numeric progress, time-saved, contribution, or autonomy claim.
+
+**Boundary preserved:** This decision does **not** authorize a schema, database, telemetry, event collector, dashboard, calculation, progress percentage, intervention count, schedule, connector, provider/credential, runtime, test, merge, deployment, release, or production action. It does not change Issue #2 M1 acceptance or A-07.
+
+**Task-loop state:** **A-09 documentation package complete.** **A-07 remains the current AgentOS task** for exact M1 runtime evidence intake. Measurement Semantics v0.1 is a standing reporting rule; reassess it only if Darrin requests a specific future data/event-collection design or a privacy/security/evidence boundary changes.
+
+## Manus-led AgentOS dispatch and return protocol — 2026-08-27
+
+**Darrin direction applied:** Manus Overseer owns the portfolio task chain. A Project Overseer may execute or delegate only the exact bounded work in a Manus task packet, then must return an evidence package to Manus for immediate successor dispatch or the smallest genuine owner/access escalation. This strengthens—not replaces—the shared mandatory project task loop.
+
+**Agent availability limit:** The current evidence establishes an AgentOS task role, not a named/acknowledged online Project Overseer or sub-agent. Until an explicit durable acknowledgement identifies a capable actor, the responsible Project Overseer is **`UNCONFIRMED — Manus retains direct task ownership`**. No fictitious delegation or autonomous runtime claim is permitted.
+
+### Current Manus task packet — A-07
+
+| Packet field | Required value |
+|---|---|
+| Dispatcher / responsible role | `MANUS` / `UNCONFIRMED — Manus retains direct evidence task` |
+| Parent / reason | A-06 completed; Issue #2 M1 acceptance remains partially evidenced. |
+| Exact required return | A seven-row entity/tool/lifecycle/recovery/handoff/Overseer-event accept/partial/missing matrix against newly supplied exact evidence. |
+| Permitted work | Read-only Issue #2/PR #6/new-artifact and changed-path inspection. A confirmed child reviewer may compare static paths only. |
+| Prohibited work | No runtime test/run, source/config change, provider/model/credential access, merge, deployment, release, or external communication. |
+| Return package | Status; work performed; exact revision/path/artifact; verified/claimed/unknown classification; confirmed/likely/unresolved blockers; confidence; smallest successor/owner decision. |
+| Next trigger | Exact M1 evidence, PR #6/Issue #2 material delta, named Project Overseer acknowledgement, or Darrin maturity decision. |
+
+**No-delay successor rule:** On A-07 return, Manus must in the same continuation cycle either assign the smallest permitted successor, retain a precise evidence hold, request a non-duplicative independent GPTChat challenge, or present the smallest Darrin owner/access decision. A Project Overseer/sub-agent may not broaden authority or select a consequential successor independently.
+
+## A-10 — GlobalShopCo pilot dispatch-contract compatibility and acknowledgement request — 2026-08-27
+
+**Authority and purpose:** Darrin directed that GlobalShopCo serve as the first bounded working autonomy model while AgentOS develops reusable control-plane capability. The AgentOS `main` dispatch proposal (`e9a6b4838104`, `docs/OVERSEER_AGENT_DISPATCH.md`) and durable queue contract (`5016d7ee8efd`, `.agentos/dispatch/README.md`) are relevant future architecture. They do not supersede Darrin’s current governance hierarchy: Manus remains the portfolio dispatcher, GPTChat remains an independent synthesis/challenge role unless Darrin records otherwise, and all consequential authority remains owner-gated.
+
+**Current task:** **A-10 — return a documentation-only compatibility/acknowledgement receipt** for GlobalShopCo pilot task `GSC-AUT-01`. The AgentOS Project Overseer role is `UNCONFIRMED` until a durable acknowledgement is recorded; Manus retains the task/hold in the interim.
+
+| Required return | Boundary |
+|---|---|
+| Exact field mapping between AgentOS queue fields and GlobalShopCo task-packet/return fields; identify no-overlap field additions. | Read-only documentation/log comparison only. |
+| Confirm that AgentOS is control-interface reviewer for this pilot, not a live executor or higher portfolio authority. | No AgentOS runtime/queue implementation, project-agent creation, or autonomy-completion claim. |
+| State any exact authority conflict or missing contract field requiring Darrin decision. | Do not resolve a conflict by source/configuration change. |
+| Return `ACKNOWLEDGED`, `UNCONFIRMED`, or `BLOCKED` with exact evidence, confidence, and next trigger. | No code/test/run, provider/model/credential use, schedule/connector action, merge, deployment, release, or external communication. |
+
+**Next trigger:** A durable AgentOS Project Overseer acknowledgement/receipt in the shared log, GlobalShopCo `GSC-AUT-01` acknowledgement/return, a material dispatch-document revision, or Darrin authority decision. A-07 remains an independent M1 evidence hold.
+
+**Coordination notice:** The A-10 packet was posted once to the affected documentation PR under Darrin’s standing, time-bounded PR-comment authorization: https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5433393872. The comment requests a durable shared-log receipt only; it does not authorise runtime/queue implementation, source change, credentials, or external action.
+
+## A-11 completed — minimal durable-queue decision package — 2026-08-27
+
+**Authority:** Darrin selected Option A from the autonomy-advancement choices: authorise preparation of a **read-only AgentOS minimal durable-queue decision package now**. This authorization covers analysis, preparation, and evidence logging only. It does not authorize queue code, testing, scheduling, webhooks, credentials/providers, source/configuration mutation, merge, deployment, release, or production operation.
+
+**Package result:** The private package `agentos_minimal_durable_queue_decision_package_2026-08-27.md` defines recommended future candidate **DQ-01**: an isolated branch-only repository-backed queue with versioned task/receipt records, append-only state events, manual acknowledgement, and an explicit `OBSERVE`/`PREPARE`/`RECORD` authority allow-list. It reuses AgentOS queue fields and adds explicit evidence baseline, prohibited scope, acknowledgement/capability, classification, blockers, confidence, successor, and trigger fields from the GlobalShopCo pilot.
+
+**Excluded scope:** DQ-01 must have no automatic worker, agent creation, model/provider call, credential/secret, network request, webhook, scheduler, database/migration, external communication, product/commerce action, merge/deploy/release, or production behavior. A task is not a permission grant; a target/issuer string is not authentication or proof that an agent is available.
+
+**Acceptance/rollback:** The package specifies later required deterministic evidence for valid creation, authority denial, acknowledgement/return integrity, lifecycle rejection cases, no-external-effects, GlobalShopCo-pilot compatibility, and explicit interrupted-task recovery. It requires a new isolated branch and preserves records on cancellation/supersession; it forbids history rewriting/force push/reset-style recovery.
+
+**Next owner choice:** Darrin may select **A (recommended):** name an implementer and authorize isolated DQ-01 candidate creation; **B:** authorize a documentation/schema review only; or **C:** defer and retain the log-only pilot. Before any code, Darrin must also decide/approve named implementer/branch, allowed verification command/environment, canonical task source, and next-stage activation boundaries. **A-11** is now the conditional implementation-authority intake hold. A-07 and A-10 remain independent.
+
+## DQ-01 Implementer designated; isolated candidate branch established; direct-main divergence held — 2026-08-27
+
+**Darrin authorization applied:** `AgentOS DQ-01 Implementer` is the designated bounded implementation role. This designation is task authority only; no durable acknowledgement establishes that a live/capable agent has accepted or performed the task. Manus remains portfolio dispatcher and independent reviewer; AgentOS Project Overseer remains `UNCONFIRMED` pending a durable receipt.
+
+**Isolated branch created:** `agent/dq01/minimal-durable-queue` now exists at verified pre-implementation baseline `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. It contains none of the later `src/dispatch/**`, `tests/dispatch*.mjs`, or `.agentos/dispatch/tasks/**` files. Its purpose is an unmodified, reviewable candidate boundary—not authorization to copy/recreate/run implementation.
+
+**New material evidence — direct-to-main implementation:** AgentOS `main` advanced directly to `5448d9c3bf3369fe33bc46d8987d5ac221bffd34`, adding dispatch schema/task documents, `src/dispatch/dispatch.mjs`, `worker.mjs`, `store.mjs`, and test files. Static inspection finds the committed task authorizes `repository_write` and `tests`, is issued as `GPTChat Overseer`, and lacks DQ-01-required schema version, prohibited-scope, evidence baseline, acknowledgement/capability, structured return, confidence, successor, and trigger fields. The new `MemoryDispatchStore` is in-memory, while worker functions operate on passed state; no durable/recoverable/append-only store, atomic claim, issuer authentication, capability registry, or recovery protocol is evidenced in the inspected files. Static test files are not independent execution evidence; **Manus did not run them.** Git metadata does not prove authorisation/actor attribution.
+
+**Classification:** **Confirmed source/branch-boundary and authority-contract divergence; unverified runtime validation.** This is not a merge/release/security conclusion and does not authorize moving, executing, modifying, or deleting the direct-main work.
+
+### DQ-01-CANDIDATE-01 current packet
+
+| Field | Current boundary |
+|---|---|
+| Dispatcher / responsible role | `MANUS` / `AgentOS DQ-01 Implementer — designated, acknowledgement required` |
+| Candidate | `agent/dq01/minimal-durable-queue` at `4d7413eb1` |
+| Status | `BOUNDARY_ESTABLISHED / IMPLEMENTATION_HELD` |
+| Permitted now | Acknowledgement and plan-only/static reconciliation receipt. |
+| Prohibited now | Source edit; copy/cherry-pick/rebase direct-main DQ code; code/test/run; task execution; provider/model/network/credential; schedule/webhook; database/migration; external action; merge/deploy/release/production. |
+| Required return | Capability, branch/base, accepted/prohibited scope, direct-main non-adoption, exact static findings, confirmed/likely/unresolved blockers, confidence, and recommended next action. |
+| Release | Manus-verified acknowledgement, Darrin direct-main treatment decision, and separately defined verification boundary. |
+
+**Owner decision now required:** **A (recommended):** treat direct-main `5448d9c3b` as an unreviewed parallel implementation, retain isolated branch `4d7413eb1`, and authorize a Manus static conformance/reconciliation package; **B:** authorize a named owner to create a review PR for the direct-main work; or **C:** defer. No option is selected by this log.
+
+**No external notice:** The direct-main code is not contained in an open affected PR. The standing PR-only notification authority therefore does not permit posting on an unrelated PR; the evidence is recorded here and in shared coordination.
+
+## DQ-01-R1 read-only direct-main conformance and reconciliation package — 2026-08-27
+
+**Authority:** Darrin selected Option A: prepare the read-only conformance/reconciliation package for the direct-to-main DQ work. This entry records analysis/decision preparation only. Manus did not modify or execute AgentOS source, tests, workflows, credentials, providers, schedules, webhooks, data, deployments, or releases.
+
+**Pinned evidence:** `main` was observed at `4be1281014fb218b22ec2048a866f64a96324f7d`, seventeen commits ahead of isolated candidate base `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. The direct-main range adds dispatch docs/task, `authority.mjs`, `dispatch.mjs`, `worker.mjs`, `store.mjs`, `github-store.mjs`, and dispatch tests. The candidate branch remains isolated at `4d7413e`.
+
+| DQ-01 control | Reconciliation status |
+|---|---|
+| Candidate branch only | **Does not conform:** direct-main code sits outside `agent/dq01/minimal-durable-queue`. |
+| Manus/limited authority | **Does not conform:** direct task/architecture use GPTChat issuer semantics and grant `repository_write`/`tests`; source does not enforce closed `OBSERVE`/`PREPARE`/`RECORD` authority. |
+| Immutable, versioned, safe task record | **Does not conform:** no `schema_version`, required timestamp enforcement, immutable issued fields, safe task-ID/path checks, or payload boundary. |
+| Acknowledgement, return, and audit | **Does not conform:** no acknowledgement receipt, return classification/blockers/confidence/successor/trigger, status-event lineage, or exception reasons. |
+| Durable, atomic, recoverable state | **Does not conform:** in-memory Map plus injected read/write adapter is not proof of durable/atomic/recoverable append-only state; `replace` is unvalidated. |
+| Static external-effect boundary | **Partial only:** no concrete network/schedule/webhook/provider/credential/DB call is in inspected modules, but injected adapter `write` can create repository effect if invoked. |
+| Tests/behavior | **Unverified:** static test files/package script are contributor artifacts; Manus ran nothing. |
+
+**Confirmed blockers:** branch-boundary divergence; issuer/authority conflict; missing DQ-01 control contract. **Likely blocker:** a later injected writer could mutate repository state. **Unresolved:** any source/test execution, runtime correctness/effects, actual agent/implementer capability, and concrete transport behavior.
+
+**DQ-01-R1 owner disposition:** **A (recommended)** retain direct-main `4be1281` as an unreviewed parallel reference, keep candidate branch unchanged, and allow only a requirements-to-candidate reconciliation plan; **B** name owner and a new reviewable PR/branch for direct-main disposition; or **C** defer and maintain log-only pilot. No option is selected by this entry.
+
+**PR-only notice assessment:** PR #1 is now an affected oversight-log PR because its head includes the earlier isolation/divergence entry. Its existing A-10 notice does not cover this `4be1281` reconciliation. Under standing authority, one deduplicated **comment-only** DQ-01-R1 notice is warranted after this record is pushed. It must not imply approval, request changes, or authorize code action. The resulting comment URL will be appended when available.
+
+**Detailed evidence:** Private Manus workspace document `agentos_dq01_direct_main_conformance_reconciliation_package_2026-08-27.md`; GitHub compare `4d7413e...4be1281`.
+
+**Authorized PR-only notice posted:** One deduplicated, commentary-only DQ-01-R1 notice was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5433785778) after the log record was pushed. It identifies the exact direct-main comparison, candidate branch, scope/authority/state-integrity gate, Darrin disposition request, permitted/prohibited scope, and verification boundary. It does not approve, request changes, merge, close, rebase, execute, deploy, or release anything. No repeat DQ-01-R1 comment is warranted absent a material revision or owner decision.
+
+## DQ-01-R2 direct-main runner, workflow, and continuation escalation — 2026-08-27
+
+**Material delta:** After R1 review tip `4be1281`, AgentOS `main` directly advanced eight commits to `fe03e5b6e6d8f6873cc5c339a42b703945fd8df4`, adding `.github/workflows/agentos-dispatch.yml`, a runtime/polling document, runner/continuation modules, and tests. This is new evidence, not a continuation of the R1 notification. Manus conducted a static GitHub/source review only and did not execute code/tests/workflows or use credentials/providers/networks/schedules/webhooks/data/deployments.
+
+| Verified static evidence | Governance result |
+|---|---|
+| Active workflow has `workflow_dispatch` and task-file-push triggers and runs `npm test` with read-only contents permissions. GitHub returned **zero workflow runs** when inspected. | **High direct-main automation gate.** Activation definition exists; no execution is evidenced. DQ-01 excludes workflows/automatic runners. |
+| Runner claims a task, calls injected `execute`, and writes lifecycle state through injected `store.writeTask`. | **Outside DQ-01.** This is an execution pathway with possible later repository-side write effect, not manual record-only work. |
+| Continuation derives child queued work from a completed task’s capability set. | **Outside DQ-01.** Only Manus may issue a portfolio successor after structured return/classification; a parent task cannot self-authorise a child. |
+| `continuation-runner.mjs` imports `createContinuation`; pinned `continuation.mjs` exports `deriveNextTask` only. | **Confirmed static import/export mismatch.** Normal ESM linking would be expected to reject it; no runtime/test execution was attempted. |
+| Test names/assertions model runner/chain behavior. | **Unverified contributor claims**, not runtime/autonomy proof. |
+
+**DQ-01-R2 status:** `HIGH-IMPACT DIRECT-MAIN HOLD`. The isolated candidate remains unchanged at `agent/dq01/minimal-durable-queue` / `4d7413e`. No direct-main path is accepted as DQ-01, a GlobalShopCo pilot control, or active project-agent capability.
+
+**Required Darrin decision:** **A (recommended)** retain direct-main `fe03e5b` paths only as unreviewed, non-invoked prototype; require a named owner and dedicated review path before remediation/adoption; **B** authorize that owner/review path now; or **C** defer DQ/automation and retain log-only pilot. Pending that decision, no workflow dispatch, runner/executor/transport/test invocation, task-file/source/configuration change, network/provider/credential/database/schedule/webhook, merge/close/rebase/deploy/release/production action is permitted under this packet.
+
+**Verification for reassessment:** Exact owner disposition; named source/branch/PR; durable role/capability receipt; and separately authorized bounded verification command/environment with explicit no-side-effect controls. Detailed private evidence: `agentos_dq01_r2_runner_workflow_reconciliation_2026-08-27.md`.
+
+**PR-only notification:** This is materially distinct from R1. PR #1 remains the affected oversight-log PR. One deduplicated commentary-only DQ-01-R2 notice is warranted after this record is pushed; no other communication is authorized. Its URL will be appended when posted.
+
+**Authorized PR-only notice posted:** One commentary-only, deduplicated DQ-01-R2 escalation was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5434169680) after this record was pushed. It identifies the eight-commit `4be1281...fe03e5b` delta, active workflow definition, runner/continuation boundaries, exact decision request, prohibited actions, and verification gate. It does not request source changes or approve/execute/merge/close/rebase/deploy/release anything. No repeat R2 notice is permitted absent a further material revision or Darrin decision.
+
+## DQ-01-R3 direct-main canonical-state, poll/recovery, and PR #14 reconciliation — 2026-08-27
+
+**Material scope:** After R2 tip `fe03e5b`, AgentOS `main` directly advanced fourteen commits to `2c84a8106ab50d49b2611de64309a6576db40ded`, adding `.agentos/state/**`, `runtime/canonical-state.mjs`, canonical context, recovery/poll modules, and tests. PR [#14](https://github.com/darrinbaldwindev/AgentOS/pull/14) separately proposes the narrow continuation import/export repair at `4452d54` against base `9f6fbff`. Manus inspected static GitHub evidence only; no code/test/build/workflow/runner/transport/provider/credential/network/database/deployment/release action occurred.
+
+| Evidence | Reconciliation |
+|---|---|
+| Repository state files mark `agentos:overseer` active/default and state decisions accepted. | Source content only—not durable agent capability acknowledgement or a Darrin decision. It cannot supersede current portfolio task/return controls without Darrin’s decision. |
+| New `pollDispatch` recovers tasks, calls continuation runner, and accepts injected executor/writer; recovery emits in-memory queued state. | **Outside DQ-01.** Models automatic work; no durable/atomic persistence/event/reclaim evidence. `createRunBudget` is not wired into reviewed poll path. |
+| Canonical context validates known missions/accepted decisions. | **Partial only.** It is not statically called from reviewed runner/poll execution boundary. |
+| Continuation derives a queued child within parent capability subset. | **Does not conform:** only Manus may issue a portfolio successor after structured return; subset capability is not successor authority. |
+| PR #14 substitutes `deriveNextTask(completed, candidate, receiver)` for stale import/call. | Addresses R2 named import/export mismatch on its branch; contributor claims of passing tests/executor remain unverified. It does not cure wider R1/R2/R3 controls. |
+
+**Confirmed blockers:** direct-main automatic work/state declarations remain outside candidate isolation and DQ exclusions; self-declared active/accepted state is not evidence of authority; canonical context is not demonstrated at worker/poll gate. **Likely blocker:** concrete adapter wiring could write task state/issue automatic child work. **Unresolved:** execution/test/workflow history, effects, actual agent identity/capability, decision provenance, and transport wiring.
+
+**DQ-01-R3 status:** `HIGH-IMPACT DIRECT-MAIN HOLD`. Candidate `agent/dq01/minimal-durable-queue` remains unchanged at `4d7413e`. No direct-main source or PR #14 is accepted as DQ-01, GlobalShopCo pilot control, or live autonomy evidence.
+
+**Darrin decision:** **A (recommended)** retain direct-main state/poll/recovery/continuation work at `2c84a81` as unreviewed, non-invoked prototype; retain candidate isolation and treat PR #14 only as pending narrow repair until a named review path reconciles the full control plane. **B:** name that review owner/path. **C:** defer DQ/automation. Pending decision: no invocation, source/state edit, credential/provider/network/database/schedule/webhook, merge/close/rebase/deploy/release/production action is within this packet.
+
+**PR notices:** This R3 delta is distinct from R2. One deduplicated commentary-only notice is warranted after push on affected oversight PR #1, and a separate context notice on affected PR #14; neither may imply approval/request changes. Detailed private record: `agentos_dq01_r3_canonical_state_poll_pr14_reconciliation_2026-08-27.md`.
+
+**Authorized notices posted:** One commentary-only DQ-01-R3 escalation was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435256690), and one related context notice was posted to [AgentOS PR #14](https://github.com/darrinbaldwindev/AgentOS/pull/14#issuecomment-5435258135). They record exact revisions, scope/authority/validation limits, owner decision fields, prohibited actions, and reassessment evidence. Neither approves, requests changes, invokes artifacts, or authorizes merge/close/rebase/deployment/release/production action. No repeat R3 notices are permitted absent a material revision or Darrin decision.
+
+## Darrin decision — DQ-01-R3 Option A approved: direct-main containment — 2026-08-27
+
+**Decision:** Darrin approved **DQ-01-R3 Option A.** Retain direct-main state/poll/recovery/continuation paths at `2c84a8106ab50d49b2611de64309a6576db40ded` as an **unreviewed, non-invoked prototype**. The owner-authorized DQ candidate `agent/dq01/minimal-durable-queue` remains isolated and unchanged at `4d7413ebdf1c645eb6ae2f67493a5db697ba3112`. PR #14 remains a pending narrow continuation repair; this decision does not approve, merge, or otherwise adopt it.
+
+**Authority/evidence:** Darrin’s explicit Option A selection following DQ-01-R3; direct-main comparison `fe03e5b...2c84a81`; PR #14 at `4452d54`; DQ-01-R3 static reconciliation record. **Risk handled:** Direct-main automatic-work, self-declared authority, and branch-isolation ambiguity. **Reversibility:** Governance-only containment decision; no source/configuration/CI/data state changed.
+
+**Approved scope:** Read-only static review; append-only governance/acknowledgement/decision records; and preparation of a future owner-named review-path plan. **Excluded scope:** Invocation of workflow, poll, runner, executor, transport, or tests; direct-main/candidate/state/task/source/configuration edits; credentials/providers/network/database/schedule/webhook; merge/close/rebase; deploy/release/production action.
+
+### Active successor — DQ-01-R4 control-plane review-path hold
+
+**Status:** `ACTIVE HOLD — accountable owner/review path not yet named.` A future review path must declare the canonical authority hierarchy, candidate/base/source relationship, issuer/capability allow-list, acknowledgement/return/audit controls, durable/atomic state/recovery design, explicit Manus-issued successor rule, PR #14 disposition, and exact non-side-effect verification boundary. It may not invoke or alter the prototype under this hold.
+
+**Return/trigger:** A named accountable owner and review branch/PR; a Darrin change to this containment decision; a durable actor/capability receipt; or a material direct-main/PR #14/workflow revision. No state-file label, commit message, test claim, or role name is sufficient return evidence.
+
+**Notification decision:** This approved owner containment is a material decision on both affected PR #1 and PR #14. One bounded commentary-only decision update is warranted on each after this record is pushed; neither is a review verdict or code-change instruction.
+
+**Authorized decision updates posted:** One commentary-only DQ-01-R3 Option A containment update was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435373253), and one pending-status update was posted to [AgentOS PR #14](https://github.com/darrinbaldwindev/AgentOS/pull/14#issuecomment-5435374409). They confirm containment, candidate isolation, and the DQ-01-R4 review-path hold; neither approves, requests change, invokes artifacts, or authorizes merge/close/rebase/deploy/release/production action. No repeat Option A notice is warranted absent material revision or Darrin change.
+
+## DQ-01-R4 direct-main mission-context, capability-adapter, and claim assessment — 2026-08-27
+
+**Material scope:** AgentOS `main` advanced seven direct commits from R3 reviewed tip `2c84a81` to `4b699a04e89e47c674c2f376b3e4350a093fa9b8`, adding mission/decision envelope validation, capability-probe adapters, and claim/release helpers. Manus performed static GitHub/source review only; no code/test/build/workflow/runner/probe/transport/credential/provider/network/database/deployment/release action occurred.
+
+| Verified static evidence | R4 reconciliation |
+|---|---|
+| `dispatch.mjs` requires non-empty `mission_id`; current committed A1 task contains no `mission_id`. | **Inconsistent direct-main contract.** That task cannot satisfy this newer validator as written. |
+| `envelope.mjs` validates canonical task context, but reviewed `pollDispatch` and `runNextTask` do not statically call it. | **Partial and unintegrated** task-context control; no execution-boundary proof. |
+| `decision_id` is optional; state JSON is source content. | Does not evidence Darrin decision/Manus issue authority or resolve R1–R3 issuer/return controls. |
+| Capability adapters invoke injected probe methods; static tests use fake probes. | **Outside DQ candidate scope.** A fixture result is not durable capability availability and invocation could access external integrations when later wired. |
+| `atomicClaim`/`releaseClaim` return in-memory object copies and are not shown used by reviewed poll/runner code. | **Not atomic/durable proof.** No persistence precondition, CAS/version, lock, audit event, or concurrent coordination evidence. |
+
+**R4 result:** Directionally useful reference abstractions only. The new paths remain direct-main, unreviewed, non-invoked, outside the isolated candidate, and insufficient for DQ acceptance or GlobalShopCo pilot control. **Confirmed:** inconsistent validator/task, incomplete integration, and absence of durable atomicity. **Likely:** later injected probes/writers could produce external effects. **Unresolved:** any actual invocation/result/effect, agent capability, adapter wiring, and decision provenance.
+
+**Darrin decision:** **A (recommended)** extend the approved non-invoked-prototype containment from R3 through `4b699a0`, keep candidate `agent/dq01/minimal-durable-queue` unchanged at `4d7413e`, and retain PR #14 as pending narrow repair until a named R4 control-plane review path exists. **B:** name owner/path. **C:** defer. Pending decision: no workflow/poll/runner/executor/probe/transport/test invocation, source/state/task/configuration edit, credential/provider/network/database/schedule/webhook action, merge/close/rebase/deploy/release/production action is within scope.
+
+**Notification:** The R4 direct-main delta is distinct from R3. One deduplicated commentary-only update to affected PR #1 is warranted after this log record is pushed. PR #14 head/content has not changed since R3; no new PR #14 notice is warranted. Detailed private evidence: `agentos_dq01_r4_mission_context_capability_claim_reconciliation_2026-08-27.md`.
+
+**Authorized PR-only notice posted:** One commentary-only, deduplicated DQ-01-R4 notice was posted to affected [AgentOS PR #1](https://github.com/darrinbaldwindev/AgentOS/pull/1#issuecomment-5435421008) after this record was pushed. It identifies `2c84a81...4b699a0`, the direct-main control/integration findings, Darrin decision choices, prohibited actions, and exact reassessment evidence. It does not approve, request changes, invoke artifacts, or authorize merge/close/rebase/deploy/release/production action. No repeat R4 notice is permitted absent material revision or Darrin decision.
+
+## Comprehensive PR scan delta — 2026-08-28
+
+**Evidence:** The accessible queue contains AgentOS PRs #1, #6, and #14. Static metadata now reports PR #6 at unchanged head `1d77b5d` as `CLEAN`, and PR #14 at unchanged head `4452d54` as `DIRTY`; GitHub check-run visibility remains unavailable (`403 Resource not accessible by integration`). PR #1 remains the oversight record branch.
+
+| PR | Material classification | Controlling task / result |
+|---|---|---|
+| [#6](https://github.com/darrinbaldwindev/AgentOS/pull/6) | `CLEAN` metadata at unchanged test/documentation head; contributor test results remain unverified. | **A-07** remains exact M1 evidence intake. Clean metadata is not validation, merge, release, runtime, or autonomy evidence. |
+| [#14](https://github.com/darrinbaldwindev/AgentOS/pull/14) | `DIRTY` metadata at unchanged narrow repair head; branch divergence from main. | **DQ-01-R4** containment applies. It remains pending and is not DQ acceptance or a merge/rebase instruction. |
+| [#1](https://github.com/darrinbaldwindev/AgentOS/pull/1) | Existing R1–R4 log/notice surface. | No new decision/acknowledgement was found. |
+
+**Henry comparison:** The public Henry Intelligent Machines page identifies an autonomous-microbusiness positioning but does not provide enough primary technical/control evidence to assess integration, identity, data, audit, or approval safeguards. No authoritative link between HIM and OpenClaw was found. No installation, connection, access request, credential, or adoption is authorised. Potentially reusable concepts are explicit missions, bounded role receipts, and supervisor returns—not external code or an unbounded action runtime.
+
+**Notice decision:** One material, commentary-only notice is warranted on each affected PR #6 and #14 after this record is pushed. Detailed private record: `portfolio_pr_scan_henry_comparison_2026-08-28.md`.
+
+**Authorized notices posted:** One commentary-only clean-metadata/validation-provenance notice was posted to [AgentOS PR #6](https://github.com/darrinbaldwindev/AgentOS/pull/6#issuecomment-5447511531); one commentary-only stale-repair/control-plane-dependency notice was posted to [AgentOS PR #14](https://github.com/darrinbaldwindev/AgentOS/pull/14#issuecomment-5447511670). Both request owner evidence/disposition only and do not approve, request changes, execute artifacts, or authorize merge/close/rebase/deployment/release/production action. No repeat notice is warranted absent a material revision or Darrin decision.
