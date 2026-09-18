@@ -41,13 +41,17 @@ function twoCallLockBarrier() {
   let arrivals = 0;
   let releaseFirst;
   let releaseSecond;
+  let signalFirstArrival;
+  const firstArrival = new Promise((resolve) => { signalFirstArrival = resolve; });
   const firstGate = new Promise((resolve) => { releaseFirst = resolve; });
   const secondGate = new Promise((resolve) => { releaseSecond = resolve; });
   return {
+    firstArrival,
     releaseSecond: () => releaseSecond(),
     hook: async () => {
       arrivals += 1;
       if (arrivals === 1) {
+        signalFirstArrival();
         await firstGate;
         return;
       }
@@ -157,6 +161,9 @@ test('concurrent same-key same-intent duplicate resolves as one mutation plus de
     const target = path.join(f.root, 'fixture.txt');
     const args = { task, targetPath: target, content: 'concurrent-same\n', idempotencyKey: 'idem-concurrent-same' };
     const firstPromise = writer.execute(args).then((result) => { barrier.releaseSecond(); return result; });
+    // Filesystem observation can reorder execute calls before the hook. Bind the
+    // first gate to the intended winner before admitting the competing call.
+    await barrier.firstArrival;
     const secondPromise = writer.execute(args);
     const [first, second] = await Promise.all([firstPromise, secondPromise]);
     assert.equal(first.replayed, false);
@@ -189,6 +196,7 @@ test('concurrent same-key different-intent duplicate fails closed under the targ
     const writer = await createProjectFileWriter({ approvedRoots: [f.root], persistence: p.api, hooks: { beforeLock: barrier.hook } });
     const target = path.join(f.root, 'fixture.txt');
     const firstPromise = writer.execute({ task, targetPath: target, content: 'winner\n', idempotencyKey: 'idem-concurrent-conflict' }).then((result) => { barrier.releaseSecond(); return result; });
+    await barrier.firstArrival;
     const secondPromise = writer.execute({ task, targetPath: target, content: 'conflict\n', idempotencyKey: 'idem-concurrent-conflict' });
     const first = await firstPromise;
     assert.equal(first.replayed, false);
@@ -620,4 +628,5 @@ test('missing or malformed owner metadata requires recovery without mutation', a
     } finally { await f.cleanup(); }
   }
 });
+
 
