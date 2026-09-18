@@ -42,7 +42,7 @@ Therefore frontend project-file mutation remains `unknown / NO_CANONICAL_MUTATIO
 
 ## Durable coordination
 
-The canonical frontend vertical batch was replenished through Cycle 021 on PR #110's documentation lineage. Documentation commits are intentionally not recursively self-referenced; repository head is the source of truth. PR #110 and #111 remain DRAFT / OPEN / UNMERGED.
+The canonical frontend vertical batch was replenished through Cycle 021 on PR #110's documentation lineage. Documentation files deliberately contain no self-referential documentation commit SHA; the live branch head is authoritative. PR #110 and #111 remain DRAFT / OPEN / UNMERGED.
 
 ## Protected boundaries
 
