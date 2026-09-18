@@ -45,8 +45,13 @@ export async function doctorLocal({ root = resolveInstallRoot() } = {}) {
     check('config-schema', config.schemaVersion === DEFAULT_CONFIG.schemaVersion, `schemaVersion=${config.schemaVersion}`);
     check('safe-autonomy-default', config.mode === 'DRY_RUN' && config.autonomyEnabled === false,
       `mode=${config.mode}, autonomyEnabled=${config.autonomyEnabled}`);
-    check('scheduler-config', config.scheduler?.enabled === true && config.scheduler?.cadenceMinutes === 5,
-      `enabled=${config.scheduler?.enabled}, cadenceMinutes=${config.scheduler?.cadenceMinutes}`);
+    // V1 safe default: scheduler OFF is healthy (chat-ready). Enabled is optional and explicit.
+    const cadenceOk = config.scheduler?.cadenceMinutes === 5 || config.scheduler?.cadenceMinutes == null;
+    const schedEnabled = config.scheduler?.enabled === true;
+    check('scheduler-config', cadenceOk && (config.scheduler?.enabled === false || config.scheduler?.enabled === true),
+      schedEnabled
+        ? `enabled=true (optional), cadenceMinutes=${config.scheduler?.cadenceMinutes}`
+        : `enabled=false (safe default / chat-ready), cadenceMinutes=${config.scheduler?.cadenceMinutes}`);
     check('github-canonical-sync', config.github?.canonicalSync === true, `canonicalSync=${config.github?.canonicalSync}`);
   }
 
