@@ -13,6 +13,26 @@ async function persist(store, task, expectedSha = null) {
   return result.result;
 }
 
+function assertResultCorrelation(task, result) {
+  if (!result || typeof result !== 'object') return;
+  if (result.task_id != null && result.task != null && result.task_id !== result.task) {
+    throw new Error(`executor result task aliases conflict: ${task.task_id}`);
+  }
+  const resultTaskId = result.task_id ?? result.task;
+  if (result.mission_id != null && resultTaskId == null) {
+    throw new Error(`executor result task correlation required: ${task.task_id}`);
+  }
+  if (resultTaskId != null && resultTaskId !== task.task_id) {
+    throw new Error(`executor result task correlation mismatch: ${task.task_id}`);
+  }
+  if (result.task_id != null && result.mission_id == null) {
+    throw new Error(`executor result mission correlation required: ${task.mission_id}`);
+  }
+  if (result.mission_id != null && result.mission_id !== task.mission_id) {
+    throw new Error(`executor result mission correlation mismatch: ${task.mission_id}`);
+  }
+}
+
 export async function runNextTask({ tasks, receiver, authorityPolicy, store, execute }) {
   if (!Array.isArray(tasks)) throw new Error('tasks must be an array');
   if (!store?.writeTask) throw new Error('store.writeTask is required');
@@ -30,12 +50,22 @@ export async function runNextTask({ tasks, receiver, authorityPolicy, store, exe
     expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
     const result = await execute(current);
+    assertResultCorrelation(current, result);
 
     current = advanceTask(current, 'verify');
     expectedSha = (await persist(store, current, expectedSha))?.sha ?? expectedSha;
 
+    const verification = current;
     current = advanceTask(current, { type: 'complete', evidence: result });
-    await persist(store, current, expectedSha);
+    try {
+      await persist(store, current, expectedSha);
+    } catch (error) {
+      // The completed state was not durably written. Keep the last durable
+      // verification state so the failure can still be persisted as an
+      // escalation instead of becoming trapped behind a local terminal state.
+      current = verification;
+      throw error;
+    }
     return current;
   } catch (error) {
     try {

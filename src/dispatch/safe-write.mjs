@@ -7,5 +7,14 @@ export async function safeWriteTask({ store, task, expectedSha = null, now = Dat
   if (outcome.kind === 'conflict') {
     return { ok: false, outcome: conflictOutcome(task, result, now) };
   }
-  return { ok: false, outcome: { kind: 'failure', action: 'escalate', task_id: task.task_id, error: outcome.error } };
+  return {
+    ok: false,
+    outcome: {
+      kind: 'failure',
+      action: 'escalate',
+      task_id: task.task_id,
+      mission_id: task.mission_id,
+      error: outcome.error,
+    },
+  };
 }

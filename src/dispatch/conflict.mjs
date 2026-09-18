@@ -13,6 +13,7 @@ export function conflictOutcome(task, result, now = Date.now()) {
     kind: 'conflict',
     action: 'reconcile',
     task_id: task.task_id,
+    mission_id: task.mission_id,
     detected_at: new Date(now).toISOString(),
     reason: 'repository_version_changed',
     current: classification.current,

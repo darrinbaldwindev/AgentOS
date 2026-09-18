@@ -1,0 +1,104 @@
+// AGENTOS-WINDOWS-WORKER-002
+// Fail-closed host capability probe for the bounded Windows worker.
+// This module reports capability evidence only; it grants no authority and performs no task execution.
+
+const REQUIRED_TOOLS = Object.freeze(['powershell.exe', 'git.exe', 'npm.cmd']);
+
+export function deriveWindowsWorkerCapabilities(probeResult = {}) {
+  const evaluation = probeResult?.evaluation ?? {};
+  if (evaluation.windows !== true) return Object.freeze([]);
+
+  const tools = evaluation.tools ?? {};
+  const workspace = evaluation.workspace ?? {};
+  const capabilities = [];
+
+  if (tools['powershell.exe'] === true) {
+    capabilities.push('shell.powershell.system.read');
+  }
+  if (tools['powershell.exe'] === true && tools['git.exe'] === true && workspace.readable === true) {
+    capabilities.push('shell.powershell.repo.read');
+  }
+  if (
+    tools['powershell.exe'] === true &&
+    tools['git.exe'] === true &&
+    tools['npm.cmd'] === true &&
+    workspace.readable === true &&
+    workspace.writable === true
+  ) {
+    capabilities.push('shell.powershell.dev.execute');
+  }
+
+  return Object.freeze(capabilities);
+}
+
+function normalizeToolProbe(result) {
+  if (result === true) return Object.freeze({ available: true, path: null, version: null });
+  if (result === false || result == null) return Object.freeze({ available: false, path: null, version: null });
+  if (typeof result !== 'object' || Array.isArray(result)) return Object.freeze({ available: false, path: null, version: null });
+  const available = result.available === true;
+  const executablePath = available && typeof result.path === 'string' && result.path.trim() ? result.path.trim() : null;
+  const version = available && typeof result.version === 'string' && result.version.trim() ? result.version.trim() : null;
+  return Object.freeze({ available, path: executablePath, version });
+}
+
+export function createWindowsWorkerHostProbe({
+  platform = process.platform,
+  commandProbe,
+  workspaceProbe,
+} = {}) {
+  if (typeof commandProbe !== 'function') throw new TypeError('commandProbe is required');
+  if (typeof workspaceProbe !== 'function') throw new TypeError('workspaceProbe is required');
+
+  async function probe(agentId) {
+    const toolResults = {};
+    const toolEvidence = {};
+    for (const tool of REQUIRED_TOOLS) {
+      try {
+        const normalized = normalizeToolProbe(await commandProbe(tool));
+        toolResults[tool] = normalized.available;
+        toolEvidence[tool] = normalized;
+      } catch {
+        toolResults[tool] = false;
+        toolEvidence[tool] = Object.freeze({ available: false, path: null, version: null });
+      }
+    }
+
+    let workspace = { readable: false, writable: false };
+    try {
+      const result = await workspaceProbe();
+      workspace = {
+        readable: result?.readable === true,
+        writable: result?.writable === true,
+      };
+    } catch {
+      // Fail closed below.
+    }
+
+    const windows = platform === 'win32';
+    const missingRequired = [];
+    if (!windows) missingRequired.push('platform.win32');
+    for (const tool of REQUIRED_TOOLS) {
+      if (!toolResults[tool]) missingRequired.push(`tool.${tool}`);
+    }
+    if (!workspace.readable) missingRequired.push('workspace.read');
+    if (!workspace.writable) missingRequired.push('workspace.write');
+
+    const evaluation = Object.freeze({
+      eligible: missingRequired.length === 0,
+      windows,
+      tools: Object.freeze({ ...toolResults }),
+      tool_evidence: Object.freeze({ ...toolEvidence }),
+      workspace: Object.freeze({ ...workspace }),
+      missingRequired: Object.freeze(missingRequired),
+    });
+
+    return Object.freeze({
+      agent_id: agentId ?? null,
+      mode: 'DRY_RUN',
+      evaluation,
+      capabilities: deriveWindowsWorkerCapabilities({ evaluation }),
+    });
+  }
+
+  return Object.freeze({ probe, requiredTools: REQUIRED_TOOLS });
+}
