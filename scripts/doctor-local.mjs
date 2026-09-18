@@ -18,34 +18,59 @@ export async function doctorLocal({ root = resolveInstallRoot() } = {}) {
   const statePath = join(root, DEFAULT_CONFIG.stateFile);
   const workspacePath = join(root, DEFAULT_CONFIG.workspaceRoot);
 
+  const checkNotSymlink = async (name, path) => {
+    try {
+      const stat = await fs.lstat(path);
+      check(name, !stat.isSymbolicLink(), path);
+      return !stat.isSymbolicLink();
+    } catch (error) {
+      check(name, false, `${error.code ?? 'LSTAT_FAILED'}: ${error.message}`);
+      return false;
+    }
+  };
+
+  const configLocal = await checkNotSymlink('config-local-artifact', configPath);
+  const stateLocal = await checkNotSymlink('state-local-artifact', statePath);
+  const workspaceLocal = await checkNotSymlink('workspace-local-artifact', workspacePath);
+
   let config = null;
   let state = null;
-  try {
-    config = JSON.parse(await fs.readFile(configPath, 'utf8'));
-    check('config-readable', true, configPath);
-  } catch (error) {
-    check('config-readable', false, `${error.code ?? 'CONFIG_READ_FAILED'}: ${error.message}`);
+  if (configLocal) {
+    try {
+      config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      check('config-readable', true, configPath);
+    } catch (error) {
+      check('config-readable', false, `${error.code ?? 'CONFIG_READ_FAILED'}: ${error.message}`);
+    }
   }
 
-  try {
-    state = JSON.parse(await fs.readFile(statePath, 'utf8'));
-    check('state-readable', true, statePath);
-  } catch (error) {
-    check('state-readable', false, `${error.code ?? 'STATE_READ_FAILED'}: ${error.message}`);
+  if (stateLocal) {
+    try {
+      state = JSON.parse(await fs.readFile(statePath, 'utf8'));
+      check('state-readable', true, statePath);
+    } catch (error) {
+      check('state-readable', false, `${error.code ?? 'STATE_READ_FAILED'}: ${error.message}`);
+    }
   }
 
-  try {
-    const stat = await fs.stat(workspacePath);
-    check('workspace-directory', stat.isDirectory(), workspacePath);
-  } catch (error) {
-    check('workspace-directory', false, `${error.code ?? 'WORKSPACE_READ_FAILED'}: ${error.message}`);
+  if (workspaceLocal) {
+    try {
+      const stat = await fs.stat(workspacePath);
+      check('workspace-directory', stat.isDirectory(), workspacePath);
+    } catch (error) {
+      check('workspace-directory', false, `${error.code ?? 'WORKSPACE_READ_FAILED'}: ${error.message}`);
+    }
   }
 
   if (config) {
     check('config-schema', config.schemaVersion === DEFAULT_CONFIG.schemaVersion, `schemaVersion=${config.schemaVersion}`);
     check('safe-autonomy-default', config.mode === 'DRY_RUN' && config.autonomyEnabled === false,
       `mode=${config.mode}, autonomyEnabled=${config.autonomyEnabled}`);
-    check('scheduler-config', config.scheduler?.enabled === true && config.scheduler?.cadenceMinutes === 5,
+    check('state-file-config', config.stateFile === DEFAULT_CONFIG.stateFile,
+      `stateFile=${config.stateFile}`);
+    check('workspace-root-config', config.workspaceRoot === DEFAULT_CONFIG.workspaceRoot,
+      `workspaceRoot=${config.workspaceRoot}`);
+    check('scheduler-config', config.scheduler?.enabled === false && config.scheduler?.cadenceMinutes === 5,
       `enabled=${config.scheduler?.enabled}, cadenceMinutes=${config.scheduler?.cadenceMinutes}`);
     check('github-canonical-sync', config.github?.canonicalSync === true, `canonicalSync=${config.github?.canonicalSync}`);
   }

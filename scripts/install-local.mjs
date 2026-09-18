@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   autonomyEnabled: false,
   workspaceRoot: 'workspaces',
   stateFile: 'state/agentos.json',
-  scheduler: Object.freeze({ enabled: true, cadenceMinutes: 5 }),
+  scheduler: Object.freeze({ enabled: false, cadenceMinutes: 5 }),
   github: Object.freeze({ canonicalSync: true }),
 });
 
@@ -60,10 +60,16 @@ export async function installLocal({ root = resolveInstallRoot(), force = false 
   const statePath = join(root, DEFAULT_CONFIG.stateFile);
   const configExists = await exists(configPath);
   const stateExists = await exists(statePath);
-  if (configExists && !force) {
-    if (!stateExists) {
+  if (configExists !== stateExists) {
+    if (configExists) {
       throw new Error(`LOCAL_INSTALL_INCOMPLETE: config exists but canonical state is missing (${statePath}); preserve existing files and repair explicitly`);
     }
+    throw new Error(`LOCAL_INSTALL_INCOMPLETE: canonical state exists but config is missing (${configPath}); preserve existing files and repair explicitly`);
+  }
+  if (force && (configExists || stateExists)) {
+    throw new Error('LOCAL_INSTALL_FORCE_UNSAFE: refusing to overwrite an existing installation; use an explicit bounded recovery/rollback workflow');
+  }
+  if (configExists) {
     return { root, configPath, statePath, created: false };
   }
 

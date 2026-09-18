@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp } from 'node:fs/promises';
+import { mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installLocal } from '../scripts/install-local.mjs';
@@ -13,6 +13,7 @@ test('local doctor reports GREEN for a fresh safe installation', async () => {
   assert.equal(result.status, 'GREEN');
   assert.equal(result.failedChecks, 0);
   assert.ok(result.checks.length >= 7);
+  assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'PASS');
 });
 
 test('local doctor fails closed when state is missing', async () => {
@@ -24,4 +25,46 @@ test('local doctor fails closed when state is missing', async () => {
   const result = await doctorLocal({ root });
   assert.equal(result.status, 'FAILED');
   assert.ok(result.failedChecks >= 1);
+});
+
+test('local doctor fails closed when installed state/workspace paths drift from safe defaults', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-path-drift-'));
+  const installed = await installLocal({ root });
+  const config = JSON.parse(await readFile(installed.configPath, 'utf8'));
+  config.stateFile = '../borrowed-state.json';
+  config.workspaceRoot = '../borrowed-workspace';
+  await writeFile(installed.configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'state-file-config')?.status, 'FAIL');
+  assert.equal(result.checks.find(({ name }) => name === 'workspace-root-config')?.status, 'FAIL');
+});
+
+test('local doctor fails closed when scheduler is enabled before explicit acceptance', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-scheduler-enabled-'));
+  const installed = await installLocal({ root });
+  const config = JSON.parse(await readFile(installed.configPath, 'utf8'));
+  config.scheduler.enabled = true;
+  await writeFile(installed.configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'scheduler-config')?.status, 'FAIL');
+});
+
+test('local doctor fails closed when canonical state is redirected through a symlink', { skip: process.platform === 'win32' }, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-link-'));
+  const outside = await mkdtemp(join(tmpdir(), 'agentos-doctor-state-target-'));
+  const installed = await installLocal({ root });
+  const state = await readFile(installed.statePath, 'utf8');
+  const target = join(outside, 'borrowed-state.json');
+  await writeFile(target, state);
+  const { unlink } = await import('node:fs/promises');
+  await unlink(installed.statePath);
+  await symlink(target, installed.statePath, 'file');
+
+  const result = await doctorLocal({ root });
+  assert.equal(result.status, 'FAILED');
+  assert.equal(result.checks.find(({ name }) => name === 'state-local-artifact')?.status, 'FAIL');
 });
