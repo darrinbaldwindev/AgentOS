@@ -60,6 +60,8 @@ The existing #111 lineage now refreshes `/api/state` after any control request f
 
 A static regression pins the control handler to this rule. Current #111 exact head is `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`; fresh exact-head CI is required and predecessor success must not be borrowed.
 
+Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md` on this documentation lineage.
+
 ## Current frontend truth model
 
 Basic Chat scope remains `Local Basic Chat · Test actions only · Background work off`. Stop is future-action prevention/request state, not proof an already-running action terminated. Canonical `What happened` evidence requires dispatch-task identity and exact task/mission/wake correlation. Henry/PRS remains independent.
