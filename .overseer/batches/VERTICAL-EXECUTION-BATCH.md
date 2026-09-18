@@ -8,8 +8,7 @@
 **Canonical main:** `962cb3820b83506f9e6d90f50e003690dd85a8a1`  
 **Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
-**Current #111 exact head after Cycle 021 edits:** `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`  
-**Last validated #111 head:** `aa274b837f454b8268a5e658f11916a70c66d1f6` — AgentOS Tests #1729 (`35282531423`) SUCCESS  
+**Current validated #111 exact head:** `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` — AgentOS Tests #1753 (`35302954832`) SUCCESS  
 **Runtime Windows dependency #104:** `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a` — AgentOS Tests #1745 (`35297751947`) SUCCESS  
 **Read-only host status #101:** `d91abaecf602d7ef223c4888f10fa9361677302e`  
 **Project integration #112:** `33eca1d257179a873a8aca2eea1a4e5e994415a0`  
@@ -52,13 +51,13 @@ Truth rules:
 
 #112 remains `33eca1d257179a873a8aca2eea1a4e5e994415a0`. No runtime-owned composed readiness snapshot has been evidenced; readiness remains intentionally unwired.
 
-#111 Cycle 019 head `aa274b837f454b8268a5e658f11916a70c66d1f6` passed exact-head AgentOS Tests #1729 including Ubuntu general suite/audit and Windows-native Basic Chat lifecycle. Cycle 021 then inspected the control error path and found that failed `/api/control` requests displayed an error but did not refresh canonical state, unlike failed sends. This could leave stale client control state after a server-side rejection or concurrent state change.
+## Cycle 021 execution and verification
 
-## Cycle 021 execution
+Fresh inspection found that failed `/api/control` requests displayed an error but did not refresh canonical state, unlike failed sends. A server-side rejection or concurrent state change could therefore leave stale client control availability until a later refresh.
 
-The existing #111 lineage now refreshes `/api/state` after any control request failure before controls are rendered again. This is presentation reconciliation only: it does not retry, clear, grant, revoke, start, stop or mutate authority/work beyond the original requested control action.
+#111 now refreshes `/api/state` after any control request failure before controls are rendered again. This is presentation reconciliation only: it does not retry, clear, grant, revoke, start, stop or mutate authority/work beyond the original requested control action.
 
-A static regression pins the control handler to this rule. Current #111 exact head is `3ac4d306087ac0ef34d65ba63c76b704bc821e4a`; fresh exact-head CI is required and predecessor success must not be borrowed.
+A static regression pins the control handler to this rule. Exact implementation head `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` passed AgentOS Tests #1753 / run `35302954832`: general test suite SUCCESS, npm dependency audit SUCCESS and Windows-native Basic Chat lifecycle SUCCESS.
 
 Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md`. Documentation commits are intentionally not recursively self-referenced; repository head is the source of truth.
 
@@ -72,16 +71,15 @@ Recent Jobs is safe as a read-only canonical task projection. Projects, Inbox, C
 
 ## Replenished P0 queue
 
-1. Consume exact-head CI for #111 `3ac4d306...`; repair failures without weakening fail-closed control semantics.
-2. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
-3. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
-4. Inspect Basic Chat HTTP error/status semantics for any remaining cases where transport status or stale client state could imply a false action result.
-5. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
-6. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
-7. Keep recovery contract-only until a live canonical producer/read path exists.
-8. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
-9. Keep Simple/Essentials/Tech Head independent of commercial entitlement unless explicitly changed.
-10. Prepare Founding Beta only after technical and frontend trust gates independently clear.
+1. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
+2. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
+3. Inspect Basic Chat HTTP error/status semantics for remaining cases where transport status or stale client state could imply a false action result.
+4. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
+5. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
+6. Keep recovery contract-only until a live canonical producer/read path exists.
+7. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
+8. Keep Simple/Essentials/Tech Head independent of commercial entitlement unless explicitly changed.
+9. Prepare Founding Beta only after technical and frontend trust gates independently clear.
 
 ## Protected HOLD
 
