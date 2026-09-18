@@ -111,5 +111,5 @@ async function refresh() { const res = await fetch('/api/state'); state = await 
 for (const input of document.querySelectorAll('input[name="view-mode"]')) input.addEventListener('change', () => { if (input.checked) { applyViewMode(input.value); render(); } });
 applyViewMode('essentials');
 $('chat').addEventListener('submit', async (event) => { event.preventDefault(); if (sending || state.paused || state.stopped) return; sending = true; clearError(); render(); try { state = await api('/api/send', { text: $('message').value }); $('message').value = ''; } catch (error) { showError(error); await refresh().catch(() => {}); } finally { sending = false; render(); } });
-for (const button of document.querySelectorAll('[data-action]')) button.addEventListener('click', async () => { button.disabled = true; clearError(); try { state = await api('/api/control', { action: button.dataset.action }); render(); } catch (error) { showError(error); } finally { render(); } });
+for (const button of document.querySelectorAll('[data-action]')) button.addEventListener('click', async () => { button.disabled = true; clearError(); try { state = await api('/api/control', { action: button.dataset.action }); render(); } catch (error) { showError(error); await refresh().catch(() => {}); } finally { render(); } });
 refresh().catch((error) => { showError(error); });
