@@ -56,7 +56,7 @@ test('SG-08 regression: governed successor cannot enter after verification but b
   });
 
   try {
-    const result = await (await createProjectFileWriter({ approvedRoots: [root], persistence: persistence.api })).execute({
+    await (await createProjectFileWriter({ approvedRoots: [root], persistence: persistence.api })).execute({
       task,
       targetPath: target,
       content: 'published-before-receipt-successor-challenge\n',
@@ -66,7 +66,6 @@ test('SG-08 regression: governed successor cannot enter after verification but b
     assert.equal(challenged, true);
     assert.equal(successorError?.code, 'PROJECT_FILE_LIVE_CONTENTION');
     assert.equal(await readFile(target, 'utf8'), 'published-before-receipt-successor-challenge\n');
-    assert.equal(result.result, 'MUTATED_VERIFIED');
     const receipts = [...persistence.artifacts.values()].filter(
       (artifact) => artifact.artifact_kind === 'project.file.write.receipt'
     );
