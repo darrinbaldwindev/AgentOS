@@ -8,6 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
+import { acquirePosixKernelFence } from './posix-kernel-fence.mjs';
 
 const MAX_CONTENT_BYTES = 1_048_576;
 const LOCK_OWNER_FILE = 'owner.json';
@@ -180,7 +181,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     }
 
     async function finalizePreparedReceipt(prepared, result, recoveryEvidenceId = null) {
-      await assertOwnLock();
+      await retireMetadataBeforeReceipt('prepared-receipt');
       const receipt = receiptFromPrepared(prepared, result, recoveryEvidenceId);
       try {
         await persistence.create('artifact', receipt);
@@ -254,12 +255,26 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
 
     const lock = `${target.canonical}.agentos-write-lock`;
     const lockNamespaceGuard = `${lock}.namespace-guard`;
+    const kernelFencePath = `${target.canonical}.agentos-kernel-fence`;
     const lockOwner = Object.freeze({ lock_id: randomUUID(), pid: process.pid, ...correlation, target_path: target.canonical, intent_hash: intentHash, idempotency_key_sha256: keyHash, acquired_at: new Date().toISOString() });
 
     if (typeof hooks.beforeLock === 'function') await hooks.beforeLock({ target: target.canonical, intent });
     let lockOwned = false;
     let ownedLockIdentity = null;
     let windowsLockHandle = null;
+    let posixKernelFence = null;
+
+    async function acquireContinuousFence() {
+      if (WINDOWS_HANDLE_LOCK) return;
+      try {
+        posixKernelFence = await acquirePosixKernelFence(kernelFencePath);
+      } catch (error) {
+        if (error?.code === 'PROJECT_FILE_KERNEL_FENCE_BUSY') {
+          throw fail('PROJECT_FILE_LIVE_CONTENTION', { lock, fence: kernelFencePath, retryable: true, recovery_required: false });
+        }
+        throw fail('PROJECT_FILE_LOCK_PRIMITIVE_UNAVAILABLE', { lock, fence: kernelFencePath, cause: error, recovery_required: true });
+      }
+    }
 
     async function acquireLockNamespaceGuard(reason) {
       if (WINDOWS_HANDLE_LOCK) return null;
@@ -340,6 +355,14 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
           !sameLockDirectory(ownedLockIdentity, await lockDirectoryIdentity(lock))) {
         throw fail('PROJECT_FILE_LOCK_RECOVERY_REQUIRED', { lock, recovery_required: true });
       }
+    }
+
+    async function retireMetadataBeforeReceipt(reason) {
+      await assertOwnLock();
+      if (WINDOWS_HANDLE_LOCK) return;
+      await retireLock(lockOwner, ownedLockIdentity, reason);
+      lockOwned = false;
+      ownedLockIdentity = null;
     }
 
     async function establishLock() {
@@ -430,6 +453,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       }
     }
 
+    await acquireContinuousFence();
     await establishLock();
 
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
@@ -503,7 +527,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
       const receipt = { ...receiptFromPrepared(prepared), recovered_from_prepared_intent: false };
-      await assertOwnLock();
+      await retireMetadataBeforeReceipt('receipt');
       try { await persistence.create('artifact', receipt); }
       catch (error) { throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true }); }
       return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
@@ -512,7 +536,11 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       throw error;
     } finally {
       if (!preparedPersisted || published) await fs.rm(temp, { force: true }).catch(() => undefined);
-      if (lockOwned) await retireLock(lockOwner, ownedLockIdentity, 'release');
+      try {
+        if (lockOwned) await retireLock(lockOwner, ownedLockIdentity, 'release');
+      } finally {
+        if (posixKernelFence) await posixKernelFence.release();
+      }
     }
   }
 
