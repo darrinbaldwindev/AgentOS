@@ -18,7 +18,8 @@ test('Basic Chat keeps keyboard-visible focus and touch-sized controls', () => {
   assert.match(css, /button:focus-visible/);
   assert.match(css, /textarea:focus-visible/);
   assert.match(css, /summary:focus-visible/);
-  assert.match(css, /outline:\s*3px solid currentColor/);
+  assert.match(css, /--focus:\s*#[0-9a-f]{6}/i);
+  assert.match(css, /outline:\s*3px solid var\(--focus\)/);
 });
 
 test('Basic Chat limits live announcements to concise status and alert channels', () => {
