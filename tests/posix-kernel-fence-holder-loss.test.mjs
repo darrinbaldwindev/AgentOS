@@ -31,7 +31,15 @@ async function waitForMarker(owner, marker) {
 }
 
 function directChildren(pid) {
-  const text = execFileSync('ps', ['-o', 'pid=', '--ppid', String(pid)], { encoding: 'utf8' });
+  let text;
+  try {
+    text = execFileSync('ps', ['-o', 'pid=', '--ppid', String(pid)], { encoding: 'utf8' });
+  } catch (error) {
+    // procps `ps --ppid` exits 1 when there are no matching processes.
+    // That is the expected steady state after the helper holder is killed.
+    if (error?.status === 1) return [];
+    throw error;
+  }
   return text.split(/\s+/).map((value) => Number.parseInt(value, 10)).filter(Number.isInteger);
 }
 
