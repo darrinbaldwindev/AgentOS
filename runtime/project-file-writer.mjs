@@ -181,7 +181,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     }
 
     async function finalizePreparedReceipt(prepared, result, recoveryEvidenceId = null) {
-      await retireMetadataBeforeReceipt('prepared-receipt');
+      await retireMetadataBeforeReceipt('release');
       const receipt = receiptFromPrepared(prepared, result, recoveryEvidenceId);
       try {
         await persistence.create('artifact', receipt);
@@ -274,6 +274,13 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         }
         throw fail('PROJECT_FILE_LOCK_PRIMITIVE_UNAVAILABLE', { lock, fence: kernelFencePath, cause: error, recovery_required: true });
       }
+    }
+
+    async function releaseContinuousFence() {
+      if (!posixKernelFence) return;
+      const fence = posixKernelFence;
+      posixKernelFence = null;
+      await fence.release();
     }
 
     async function acquireLockNamespaceGuard(reason) {
@@ -454,7 +461,12 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
     }
 
     await acquireContinuousFence();
-    await establishLock();
+    try {
+      await establishLock();
+    } catch (error) {
+      await releaseContinuousFence().catch(() => undefined);
+      throw error;
+    }
 
     const temp = path.join(path.dirname(target.canonical), `.${path.basename(target.canonical)}.agentos-${process.pid}-${randomUUID()}.tmp`);
     let published = false;
@@ -527,7 +539,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
         throw fail('PROJECT_FILE_POSTWRITE_VERIFICATION_FAILED', { actual_postimage_sha256: after.hash, recovery_required: true });
       }
       const receipt = { ...receiptFromPrepared(prepared), recovered_from_prepared_intent: false };
-      await retireMetadataBeforeReceipt('receipt');
+      await retireMetadataBeforeReceipt('release');
       try { await persistence.create('artifact', receipt); }
       catch (error) { throw fail('PROJECT_FILE_RECEIPT_PERSISTENCE_FAILED', { cause: error, prepared_id: preparedId, path: target.canonical, postimage_sha256: posthash, recovery_required: true }); }
       return Object.freeze({ success: true, replayed: false, recovered: false, receipt_id: receiptId, ...intent, preimage_sha256: before.hash });
@@ -539,7 +551,7 @@ export async function createProjectFileWriter({ approvedRoots, persistence, maxC
       try {
         if (lockOwned) await retireLock(lockOwner, ownedLockIdentity, 'release');
       } finally {
-        if (posixKernelFence) await posixKernelFence.release();
+        await releaseContinuousFence();
       }
     }
   }
