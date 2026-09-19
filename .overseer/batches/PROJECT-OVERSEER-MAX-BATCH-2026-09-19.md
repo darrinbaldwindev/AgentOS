@@ -33,6 +33,7 @@ No merge, approval, ready transition, protected rebase, deploy, credential/secur
 | M-06 | PRESERVED | #122 remains separate installer/Doctor lane; scheduler default-disabled and physical Windows remains owner-gated. | #122 `d827547...`, exact-head success already recorded. |
 | M-07 | REPAIRED_EXACT_HEAD | Fresh scan found #111 actual head `9ba9e1db...` red because static accessibility test still required literal `currentColor` while CSS had moved to canonical `--focus` token. Production CSS already provided 3px visible focus. Test was corrected to require a defined `--focus` colour and `outline: 3px solid var(--focus)` rather than weakening CSS. | First red run `35414071670`; repaired #111 head `f8521b5cfb48d332ae890983c2a9dbcd231d94da`; Tests #2110 / `35446534255` SUCCESS including general suite/audit and Windows Basic Chat lifecycle. |
 | M-08 | PRESERVED | Main six-pillar consolidation remains presentation/IA direction only; no authority/readiness/assurance state created. | main `44e0bd5...`. |
+| M-09 | VERIFIED | Final maximised-batch checkpoint head on #112 is `fc7ced33a6f38a746b8026172fd04ab5e62be10b`; AgentOS Tests #2114 / `35446617884` SUCCESS and Project Overseer Wake #707 / `35446617946` SUCCESS. | exact-head workflows |
 
 ## Controlling SG-08 finding
 
