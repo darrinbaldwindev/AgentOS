@@ -4,6 +4,14 @@
 import { evaluateAgentCapability, assertAgentEligible } from './agent-capability.mjs';
 import { normalizeCapabilities } from './capability-contract.mjs';
 
+export function evaluateCapabilityResults(results = {}) {
+  return evaluateAgentCapability(normalizeCapabilities(results));
+}
+
+export function assertCapabilityResults(results = {}) {
+  return assertAgentEligible(evaluateCapabilityResults(results));
+}
+
 export function createRuntimeShell({ probes = {} } = {}) {
   async function probeCapabilities() {
     const results = {};
