@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { createWindowsFamilySafetyProbe } from '../runtime/windows-family-safety-probe.mjs';
 
 const NOW = new Date('2026-09-19T08:00:00.000Z');
+const COMPLETE_FIREWALL = Object.freeze([
+  { Name: 'Domain', Enabled: true },
+  { Name: 'Private', Enabled: true },
+  { Name: 'Public', Enabled: true },
+]);
+
 function executorFor(outputs) {
   const calls = [];
   return {
@@ -18,7 +24,7 @@ function executorFor(outputs) {
 
 test('uses only fixed read-only noninteractive PowerShell requests', async () => {
   const executor = executorFor([
-    { exitCode: 0, stdout: JSON.stringify([{ Name: 'Domain', Enabled: true }, { Name: 'Private', Enabled: true }, { Name: 'Public', Enabled: true }]) },
+    { exitCode: 0, stdout: JSON.stringify(COMPLETE_FIREWALL) },
     { exitCode: 0, stdout: JSON.stringify({ RealTimeProtectionEnabled: true, AntivirusEnabled: true }) },
   ]);
   const findings = await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspect();
@@ -31,14 +37,77 @@ test('uses only fixed read-only noninteractive PowerShell requests', async () =>
   }
 });
 
-test('disabled firewall profile needs attention', async () => {
-  const executor = executorFor([{ exitCode: 0, stdout: JSON.stringify([{ Name: 'Public', Enabled: false }]) }]);
-  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall()).state, 'NEEDS_ATTENTION');
+test('complete firewall set with disabled profile needs attention', async () => {
+  const executor = executorFor([{
+    exitCode: 0,
+    stdout: JSON.stringify([
+      { Name: 'Domain', Enabled: true },
+      { Name: 'Private', Enabled: true },
+      { Name: 'Public', Enabled: false },
+    ]),
+  }]);
+  const finding = await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall();
+  assert.equal(finding.state, 'NEEDS_ATTENTION');
+  assert.match(finding.detail, /Public/);
 });
 
-test('disabled Defender protection needs attention', async () => {
+test('omitted firewall profile is UNKNOWN rather than false VERIFIED', async () => {
+  const executor = executorFor([{
+    exitCode: 0,
+    stdout: JSON.stringify([
+      { Name: 'Domain', Enabled: true },
+      { Name: 'Private', Enabled: true },
+    ]),
+  }]);
+  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall()).state, 'UNKNOWN');
+});
+
+test('duplicate firewall profile is UNKNOWN', async () => {
+  const executor = executorFor([{
+    exitCode: 0,
+    stdout: JSON.stringify([
+      { Name: 'Domain', Enabled: true },
+      { Name: 'Private', Enabled: true },
+      { Name: 'Private', Enabled: true },
+    ]),
+  }]);
+  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall()).state, 'UNKNOWN');
+});
+
+test('unexpected firewall profile is UNKNOWN', async () => {
+  const executor = executorFor([{
+    exitCode: 0,
+    stdout: JSON.stringify([
+      { Name: 'Domain', Enabled: true },
+      { Name: 'Private', Enabled: true },
+      { Name: 'Custom', Enabled: true },
+    ]),
+  }]);
+  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall()).state, 'UNKNOWN');
+});
+
+test('malformed firewall profile fields are UNKNOWN', async () => {
+  const executor = executorFor([{
+    exitCode: 0,
+    stdout: JSON.stringify([
+      { Name: 'Domain', Enabled: true },
+      { Name: 'Private', Enabled: true },
+      { Name: '', Enabled: true },
+    ]),
+  }]);
+  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectFirewall()).state, 'UNKNOWN');
+});
+
+test('Defender fully enabled is VERIFIED', async () => {
+  const executor = executorFor([{ exitCode: 0, stdout: JSON.stringify({ RealTimeProtectionEnabled: true, AntivirusEnabled: true }) }]);
+  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectDefender()).state, 'VERIFIED');
+});
+
+test('Defender disabled or passive-like state is UNKNOWN until provider context exists', async () => {
   const executor = executorFor([{ exitCode: 0, stdout: JSON.stringify({ RealTimeProtectionEnabled: false, AntivirusEnabled: true }) }]);
-  assert.equal((await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectDefender()).state, 'NEEDS_ATTENTION');
+  const finding = await createWindowsFamilySafetyProbe({ executor, clock: () => NOW }).inspectDefender();
+  assert.equal(finding.state, 'UNKNOWN');
+  assert.match(finding.detail, /provider and running-mode context required/i);
 });
 
 test('command failure becomes UNKNOWN rather than pass', async () => {
