@@ -44,7 +44,7 @@ async function installSuccessor(lock, displaced, suffix) {
   }));
 }
 
-test('SG-08 baseline: ownership loss during retirement rejects execution but current lineage has already persisted success receipt', { skip: process.platform === 'win32' }, async () => {
+test('SG-08 regression: ownership loss during retirement cannot persist a success receipt', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'agentos-sg08-baseline-'));
   const target = path.join(root, 'fixture.txt');
   const displaced = `${target}.agentos-write-lock.displaced`;
@@ -76,8 +76,7 @@ test('SG-08 baseline: ownership loss during retirement rejects execution but cur
 
     assert.equal(injected, true);
     assert.equal(await readFile(target, 'utf8'), 'published-before-retirement-check\n');
-    assert.equal(successReceipts(persistence).length, 1);
-    assert.equal(successReceipts(persistence)[0].recovery_required, false);
+    assert.equal(successReceipts(persistence).length, 0);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -121,7 +120,7 @@ test('SG-08 repair fixture: successor installed after publish forbids durable su
   }
 });
 
-test('SG-08 repair fixture: replacement at release preserves the prepared intent while exposing false success receipt ordering', { skip: process.platform === 'win32' }, async () => {
+test('SG-08 regression: replacement at release preserves prepared intent without false success receipt', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'agentos-sg08-prepared-order-'));
   const target = path.join(root, 'fixture.txt');
   const displaced = `${target}.agentos-write-lock.displaced`;
@@ -154,10 +153,11 @@ test('SG-08 repair fixture: replacement at release preserves the prepared intent
     const prepared = [...persistence.artifacts.values()].filter(
       (artifact) => artifact.artifact_kind === 'project.file.write.prepared'
     );
+    assert.equal(injected, true);
+    assert.equal(await readFile(target, 'utf8'), 'prepared-and-published\n');
     assert.equal(prepared.length, 1);
-    assert.equal(prepared[0].postimage_sha256, successReceipts(persistence)[0].postimage_sha256);
-    assert.equal(successReceipts(persistence).length, 1);
-    assert.equal(successReceipts(persistence)[0].recovery_required, false);
+    assert.equal(typeof prepared[0].postimage_sha256, 'string');
+    assert.equal(successReceipts(persistence).length, 0);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
