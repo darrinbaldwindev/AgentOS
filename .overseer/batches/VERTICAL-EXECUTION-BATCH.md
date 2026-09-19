@@ -3,88 +3,106 @@
 **Repository:** `darrinbaldwindev/AgentOS`  
 **Canonical coordination:** `darrinbaldwindev/Overseer#49`  
 **Role:** AgentOS Frontend Overseer  
-**Cycle:** Frontend vertical cycle 021 — control-error truth refresh  
-**Reconciled:** 2026-09-18 Australia/Brisbane  
-**Canonical main:** `962cb3820b83506f9e6d90f50e003690dd85a8a1`  
-**Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED / CURRENTLY NOT MERGEABLE  
+**Cycle:** Frontend vertical cycle 022 — fail-closed state reconciliation  
+**Reconciled:** 2026-09-19 Australia/Brisbane  
+**Canonical main:** `44e0bd506767a6b4f00f169c5ef4f8ddeefaf4eb`  
+**Frontend contract PR:** #110 OPEN / DRAFT / UNMERGED  
 **Frontend implementation PR:** #111 OPEN / DRAFT / UNMERGED  
-**Current validated #111 exact head:** `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` — AgentOS Tests #1753 (`35302954832`) SUCCESS  
-**Runtime Windows dependency #104:** `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a` — AgentOS Tests #1745 (`35297751947`) SUCCESS  
+**Current validated #111 exact head:** `d737fc513cc9b4a9d19b2ba7c18d43ccfe8c9728` — AgentOS Tests #1994 (`35413633711`) SUCCESS  
+**Runtime Windows dependency #104:** `6b32b2cad54eb58bbf8d30285c82af875a211686`  
 **Read-only host status #101:** `d91abaecf602d7ef223c4888f10fa9361677302e`  
-**Project integration #112:** `33eca1d257179a873a8aca2eea1a4e5e994415a0`  
-**Batch status:** ACTIVE  
-**P0:** truthful Level-2 frontend and one coherent Simple / Essentials / Tech Head shell.
+**Project integration #112:** `dbd7a18b845f6fa24c8b1c9a7e58825d949211fc`  
+**SG-08 prepared-recovery hardening #123:** `b993632ef44d26c91cab08190968205a6316106d`  
+**SG-08 kernel-fence spike #124:** `8bba77aa04b535d6c7a1c0edad495336572b5951`  
+**Batch status:** ACTIVE
 
-## Mission and doctrine
+## Product mission
 
-Translate canonical AgentOS runtime facts into one coherent ordinary-user product without creating frontend-owned execution, authority, persistence, Green, PRS, recovery or readiness truth.
+AgentOS now has a canonical product-surface consolidation contract on main:
 
-> Chat for intent. Palette for speed. Inbox for attention. Jobs for repetition. Jack for authority. Isla for execution. Henry for proof.
+> **More capability underneath, fewer decisions on the surface.**
 
-Simple, Essentials and Tech Head are presentation/disclosure modes over one AgentOS. They are not authority levels, runtimes or commercial tiers. All modes retain the large primary chat and must present the same underlying truth.
+Frontend work should converge into six user-facing pillars rather than proliferate unrelated surfaces:
+1. Chat & Projects — intent, projects, jobs, results and history.
+2. Workers & AI — capability/provider/worker routing and transparency.
+3. Automations — scheduled, recurring and triggered work in outcome-oriented language.
+4. Connections — providers, applications, files and services.
+5. Control & Cost — permissions, approvals, policy, privacy, budgets and spend.
+6. Evidence & Recovery — status, receipts, verification, assurance, failures and recovery.
 
-Evidence > claims. Unknown, stale, mismatched, contradictory or absent state fails closed.
+Simple / Essentials / Tech Head remain presentation views over one canonical truth and authority model. They are not commercial tiers, authority levels or separate runtimes. All retain the large primary chat.
 
 ## Hard boundaries
 
+Evidence > claims. Unknown, stale, mismatched, contradictory or absent state fails closed.
+
 No merge, approval, ready transition, rebase, deployment, credential changes, production writes, unrestricted PowerShell, production autonomy, beta activation, authority bypass, Green/PRS bypass or project-file mutation enablement.
 
-Never create a duplicate scheduler, queue, registry, mission ledger, persistence layer, authority source, worker runtime, Green system, PRS system or frontend-owned readiness source.
+Never create a duplicate scheduler, queue, registry, mission ledger, persistence layer, authority source, worker runtime, Green system, PRS system, recovery system or frontend-owned readiness source.
 
-Truth rules:
+Truth rules include:
 - `Stop requested` != `Execution stopped` != `Permission revoked`;
-- Stop cannot be silently cleared by Resume inside the same host lifetime;
-- a failed control request must refresh canonical state before the UI decides which controls are available again;
+- Stop cannot be silently cleared by Resume inside one host lifetime;
+- failed send/control requests must reconcile canonical state before controls are trusted again;
+- if canonical reconciliation itself fails, positive frontend availability must fail closed rather than reuse a stale snapshot;
 - Local Basic Chat != host lifecycle != Windows capability != physical acceptance != mutation readiness;
-- persisted success receipt != safe mutation completion when ownership/recovery evidence contradicts it;
-- Boolean tool availability != executable identity evidence;
-- view mode != capability or authority;
+- dispatch `completed` != Green PASS != Henry/PRS assurance;
+- view mode != capability, authority, entitlement or safety state;
 - CI PASS != product/assurance GREEN.
 
 ## Fresh repository truth
 
-`main` remains `962cb3820b83506f9e6d90f50e003690dd85a8a1`. Commercial direction remains Free $0/year; Standard $49/year; Advanced/Pro $99/year; AI Plus $22/month separately; Commercial/Business TBD. Do not map presentation modes to those tiers without a future explicit entitlement decision.
+Main moved from the Cycle 021 baseline to `44e0bd506767a6b4f00f169c5ef4f8ddeefaf4eb`, adding the product-surface consolidation contract. This is now controlling frontend product direction.
 
-#101 remains the strongest current read-only host lifecycle source and grants no authority or mutation/recovery action.
+#110 remains DRAFT / OPEN / UNMERGED. Fresh metadata now reports mergeable true, so Cycle 021's not-mergeable observation was transient and must not be treated as a current blocker.
 
-#104 is now `607f2683b7d3b234fc6ffa70e2a7d42e31499c3a`; exact-head AgentOS Tests #1745 passed on Windows/Node26 and Ubuntu/Node22 including dependency audit. New movement adds installer fail-closed coverage, dispatch correlation hardening and SG-08 Windows research reconciliation. The research explicitly remains research input, not assurance, and requires an existing kernel-backed cross-platform primitive to be proven before production ownership changes. Mutation remains UNKNOWN/BLOCKED.
+#104 moved to `6b32b2cad54eb58bbf8d30285c82af875a211686`; current PR metadata reports exact-head AgentOS Tests SUCCESS but still states SG-08 and authenticated actor/canonical-grant provenance are unresolved.
 
-#112 remains `33eca1d257179a873a8aca2eea1a4e5e994415a0`. No runtime-owned composed readiness snapshot has been evidenced; readiness remains intentionally unwired.
+#123 independently strengthened SG-08 evidence: PRS reproduced the continuous-ownership false-success class for both normal and prepared-recovery publish. #124 now tests a stable POSIX advisory `flock` fence as a bounded viability spike. #124 is not integrated into mutation, verification, receipt persistence, recovery or release sequencing and therefore does not close SG-08.
 
-## Cycle 021 execution and verification
+#112 moved to `dbd7a18b845f6fa24c8b1c9a7e58825d949211fc`; current metadata reports AgentOS Tests and Project Overseer Wake SUCCESS. It still does not evidence the single composed runtime-owned frontend readiness snapshot required for live readiness wiring.
 
-Fresh inspection found that failed `/api/control` requests displayed an error but did not refresh canonical state, unlike failed sends. A server-side rejection or concurrent state change could therefore leave stale client control availability until a later refresh.
+## Cycle 022 execution
 
-#111 now refreshes `/api/state` after any control request failure before controls are rendered again. This is presentation reconciliation only: it does not retry, clear, grant, revoke, start, stop or mutate authority/work beyond the original requested control action.
+Cycle 021 refreshed `/api/state` after failed send/control requests, but swallowed failure of that reconciliation call. The final render could therefore reuse stale pre-error `ready/paused/stopped` flags and re-enable actions while canonical state was unavailable.
 
-A static regression pins the control handler to this rule. Exact implementation head `3ac4d306087ac0ef34d65ba63c76b704bc821e4a` passed AgentOS Tests #1753 / run `35302954832`: general test suite SUCCESS, npm dependency audit SUCCESS and Windows-native Basic Chat lifecycle SUCCESS.
+#111 now fails closed when state reconciliation cannot be established:
+- non-2xx `/api/state` is rejected;
+- invalid top-level state is rejected;
+- send/control failures use one reconciliation path;
+- failed reconciliation sets presentation availability to `ready:false`, `paused:false`, `stopped:false`, `status:'UNKNOWN'` while retaining bounded previously displayed context;
+- Send and control actions are disabled until a later canonical refresh succeeds;
+- initial state-load failure follows the same fail-closed presentation rule.
 
-Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-021.md`. Documentation files deliberately contain no self-referential documentation commit SHA; the live branch head is authoritative.
+No Pause/Stop/authority/execution/readiness/Green/PRS/recovery state is synthesized by this fallback.
 
-## Documentation-lineage integration note
+Exact #111 head `d737fc513cc9b4a9d19b2ba7c18d43ccfe8c9728` passed AgentOS Tests #1994 / run `35413633711`: general suite SUCCESS, npm dependency audit SUCCESS, Windows-native Basic Chat lifecycle SUCCESS.
 
-Fresh PR metadata reports #110 `mergeable: false` while main is still `962cb382...`. No merge/rebase/force update is authorized, so this cycle records the conflict and does not attempt to rewrite history. The implementation lane #111 remains separately open/draft and its exact-head CI result is unaffected by this documentation-lineage conflict.
+Durable cycle record: `.overseer/batches/FRONTEND-CYCLE-022.md`.
 
 ## Current frontend truth model
 
-Basic Chat scope remains `Local Basic Chat · Test actions only · Background work off`. Stop is future-action prevention/request state, not proof an already-running action terminated. Canonical `What happened` evidence requires dispatch-task identity and exact task/mission/wake correlation. Henry/PRS remains independent.
+Basic Chat remains `Local Basic Chat · Test actions only · Background work off`. Recent Jobs remains a bounded read-only canonical dispatch-task projection. Canonical `What happened` evidence requires exact task/mission/wake correlation and cannot manufacture Henry/PRS assurance.
 
-Readiness projection keeps Basic Chat, host lifecycle, Windows capability, physical acceptance and mutation readiness separate. It remains not live-wired until runtime/project integration supplies one canonical composed read-only snapshot with host identity, freshness, path-backed tool evidence, expected exact head and physical acceptance.
+Readiness remains deliberately unwired until runtime/project integration exposes one canonical read-only composition with current host identity, freshness, Windows capability, path-backed tool evidence, expected exact head and physical acceptance. Project-file mutation remains `unknown / NO_CANONICAL_MUTATION_READINESS_SOURCE`.
 
-Recent Jobs is safe as a read-only canonical task projection. Projects, Inbox, Connectors, Research history, system health, live readiness, active progress, analytics/cost and character live-status surfaces still require canonical read contracts before live claims. Jack Allow/Revoke, recovery/retry, credential mutation, task cancellation claiming termination, project-file mutation and commercial entitlement mutation require canonical action/authority contracts first.
+Projects and Attention Inbox remain product priorities under the new consolidation contract, but they still require canonical read contracts. Generic runtime events must not be relabelled as user notifications, and `agentos-local` must not be presented as a fabricated multi-project registry.
 
-## Replenished P0 queue
+Interactive Jack Allow/Revoke remains blocked pending canonical lifetime/expiry/revoke/consequence semantics and durable action receipts. Recovery remains contract-only until a live canonical producer/read path exists.
 
-1. Preserve #110 conflict evidence and reconcile only through an authorized integration path; do not force/rebase autonomously.
-2. Continue SG-08 change detection on #104; evaluate only existing kernel-backed ownership primitives and never upgrade mutation from CI/research/capability alone.
-3. Continue searching #112/runtime for one canonical read-only readiness composition seam; do not fake one in frontend state.
-4. Inspect Basic Chat HTTP error/status semantics for remaining cases where transport status or stale client state could imply a false action result.
-5. Find the smallest truthful read contracts for Projects and Inbox; do not relabel generic events as user notifications or `agentos-local` as a multi-project registry.
-6. Continue authority lifetime/expiry/revoke/consequence detection; no synthetic Jack actions.
-7. Keep recovery contract-only until a live canonical producer/read path exists.
-8. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
-9. Keep Simple/Essentials/Tech Head independent of commercial entitlement unless explicitly changed.
-10. Prepare Founding Beta only after technical and frontend trust gates independently clear.
+## Replenished vertical queue
+
+1. Reconcile all future frontend IA and mockups to the six canonical pillars; absorb rather than add headline surfaces.
+2. Continue Basic Chat HTTP/state truth audit, especially malformed successful POST responses and stale-positive presentation paths.
+3. Track #124 as primitive evidence only; require actual continuous-fence integration plus exact-head and independent assurance before mutation readiness can move.
+4. Search #112/current runtime for one canonical composed readiness snapshot; do not compose it in frontend state.
+5. Establish the smallest truthful Chat & Projects read model using canonical project/task sources; do not create a second project registry.
+6. Establish an Attention Inbox only from explicit canonical attention-required semantics; do not promote arbitrary events.
+7. Search authority lineages for real lifetime/expiry/revoke/consequence fields before any interactive Jack UI.
+8. Search recovery lineages for a live canonical producer/read path before recovery actions.
+9. Execute physical browser/mobile acceptance at 320/360/390px only when a trustworthy runnable target exists.
+10. Keep Simple/Essentials/Tech Head independent of commercial entitlement.
+11. Prepare Founding Beta only after technical and frontend trust gates independently clear.
 
 ## Protected HOLD
 
