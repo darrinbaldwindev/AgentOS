@@ -1,9 +1,19 @@
-// Family Safety first read-only Windows posture adapter.
+import { createFamilySafetyFinding, summarizeFamilySafetyCheck } from './family-safety-evidence.mjs';
+
+// Family Safety read-only Windows posture adapter.
 // Fixed queries only. No caller-supplied PowerShell. No remediation/elevation.
 
 const FIREWALL_SCRIPT = "Get-NetFirewallProfile | Select-Object Name,Enabled | ConvertTo-Json -Compress";
 const DEFENDER_SCRIPT = "Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled,AntivirusEnabled | ConvertTo-Json -Compress";
+const ADMIN_TOKEN_SCRIPT = "[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) | ConvertTo-Json -Compress";
+const RDP_SCRIPT = "$deny=(Get-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server' -Name fDenyTSConnections -ErrorAction Stop).fDenyTSConnections; $svc=Get-Service -Name TermService -ErrorAction Stop; [pscustomobject]@{DenyConnections=[bool]$deny;ServiceStatus=$svc.Status.ToString()} | ConvertTo-Json -Compress";
 const EXPECTED_FIREWALL_PROFILES = Object.freeze(['Domain', 'Private', 'Public']);
+const REQUIRED_WINDOWS_CHECK_IDS = Object.freeze([
+  'windows-firewall',
+  'windows-defender',
+  'windows-session-admin-token',
+  'windows-rdp-configuration',
+]);
 
 function finding({ checkId, state, source, observedAt, detail }) {
   return Object.freeze({ checkId, state, source, observedAt, detail });
@@ -34,6 +44,16 @@ function normalizeFirewallProfiles(rows) {
 
   if (EXPECTED_FIREWALL_PROFILES.some((name) => !seen.has(name))) return null;
   return profiles;
+}
+
+function toEvidenceFinding(probeFinding) {
+  return createFamilySafetyFinding({
+    checkId: probeFinding.checkId,
+    status: probeFinding.state,
+    observedAt: probeFinding.observedAt,
+    evidenceSource: probeFinding.source,
+    detail: probeFinding.detail,
+  });
 }
 
 export function createWindowsFamilySafetyProbe({ executor, clock = () => new Date() } = {}) {
@@ -111,9 +131,117 @@ export function createWindowsFamilySafetyProbe({ executor, clock = () => new Dat
     }
   }
 
-  async function inspect() {
-    return Object.freeze([await inspectFirewall(), await inspectDefender()]);
+  async function inspectSessionAdminToken() {
+    const observedAt = clock().toISOString();
+    try {
+      const isAdministrator = parseJson(await runFixed(ADMIN_TOKEN_SCRIPT));
+      if (typeof isAdministrator !== 'boolean') {
+        return finding({
+          checkId: 'windows-session-admin-token',
+          state: 'UNKNOWN',
+          source: 'WindowsPrincipal.IsInRole(Administrator)',
+          observedAt,
+          detail: 'unrecognized administrator-token output',
+        });
+      }
+
+      return finding({
+        checkId: 'windows-session-admin-token',
+        state: isAdministrator ? 'NEEDS_ATTENTION' : 'VERIFIED',
+        source: 'WindowsPrincipal.IsInRole(Administrator)',
+        observedAt,
+        detail: isAdministrator
+          ? 'current session presents an effective administrator token'
+          : 'current session does not present an effective administrator token',
+      });
+    } catch (error) {
+      return finding({
+        checkId: 'windows-session-admin-token',
+        state: 'UNKNOWN',
+        source: 'WindowsPrincipal.IsInRole(Administrator)',
+        observedAt,
+        detail: `probe unavailable: ${error.code ?? error.name}`,
+      });
+    }
   }
 
-  return Object.freeze({ inspect, inspectFirewall, inspectDefender });
+  async function inspectRdpConfiguration() {
+    const observedAt = clock().toISOString();
+    try {
+      const status = parseJson(await runFixed(RDP_SCRIPT));
+      if (typeof status?.DenyConnections !== 'boolean' || typeof status?.ServiceStatus !== 'string') {
+        return finding({
+          checkId: 'windows-rdp-configuration',
+          state: 'UNKNOWN',
+          source: 'fDenyTSConnections + TermService',
+          observedAt,
+          detail: 'unrecognized RDP configuration output',
+        });
+      }
+
+      if (status.DenyConnections === true && status.ServiceStatus === 'Stopped') {
+        return finding({
+          checkId: 'windows-rdp-configuration',
+          state: 'VERIFIED',
+          source: 'fDenyTSConnections + TermService',
+          observedAt,
+          detail: 'RDP connections are configured denied and TermService is stopped',
+        });
+      }
+
+      if (status.DenyConnections === false && status.ServiceStatus === 'Running') {
+        return finding({
+          checkId: 'windows-rdp-configuration',
+          state: 'NEEDS_ATTENTION',
+          source: 'fDenyTSConnections + TermService',
+          observedAt,
+          detail: 'RDP connections are configured allowed and TermService is running',
+        });
+      }
+
+      return finding({
+        checkId: 'windows-rdp-configuration',
+        state: 'UNKNOWN',
+        source: 'fDenyTSConnections + TermService',
+        observedAt,
+        detail: `RDP configuration is partial or contradictory: deny=${status.DenyConnections}, service=${status.ServiceStatus}`,
+      });
+    } catch (error) {
+      return finding({
+        checkId: 'windows-rdp-configuration',
+        state: 'UNKNOWN',
+        source: 'fDenyTSConnections + TermService',
+        observedAt,
+        detail: `probe unavailable: ${error.code ?? error.name}`,
+      });
+    }
+  }
+
+  async function inspect() {
+    return Object.freeze([
+      await inspectFirewall(),
+      await inspectDefender(),
+      await inspectSessionAdminToken(),
+      await inspectRdpConfiguration(),
+    ]);
+  }
+
+  async function inspectSummary({ now = clock().toISOString(), maxEvidenceAgeMs } = {}) {
+    const findings = (await inspect()).map(toEvidenceFinding);
+    return summarizeFamilySafetyCheck({
+      findings,
+      requiredCheckIds: REQUIRED_WINDOWS_CHECK_IDS,
+      now,
+      ...(maxEvidenceAgeMs == null ? {} : { maxEvidenceAgeMs }),
+    });
+  }
+
+  return Object.freeze({
+    inspect,
+    inspectFirewall,
+    inspectDefender,
+    inspectSessionAdminToken,
+    inspectRdpConfiguration,
+    inspectSummary,
+  });
 }
