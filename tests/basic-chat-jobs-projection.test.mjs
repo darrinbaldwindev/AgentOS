@@ -1,0 +1,91 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { projectBasicChatJobs } from '../runtime/basic-chat-jobs-projection.mjs';
+
+function task(id, status, createdAt, projectId = 'agentos-local') {
+  return {
+    id,
+    artifactType: 'dispatch.task',
+    createdAt,
+    updatedAt: createdAt,
+    payload: {
+      task_id: id,
+      mission_id: `mission:${id}`,
+      wake_trace_id: `wake:${id}`,
+      project_id: projectId,
+      status,
+      priority: 'high',
+      created_at: createdAt,
+      objective: 'private objective must not be projected',
+      authority: { token: 'secret-authority' },
+      credential: 'secret-credential',
+      worker_output: 'private-worker-output',
+      prs: { disposition: 'pass' },
+      recovery: { status: 'complete' },
+    },
+  };
+}
+
+test('projects bounded recent jobs from canonical dispatch tasks only', () => {
+  const jobs = projectBasicChatJobs({
+    artifacts: [
+      task('task-old', 'completed', '2026-09-15T01:00:00.000Z'),
+      task('task-new', 'working', '2026-09-15T02:00:00.000Z'),
+      { id: 'not-task', artifactType: 'chat.message', payload: { task_id: 'not-task', status: 'completed' } },
+    ],
+  });
+  assert.equal(jobs.length, 2);
+  assert.equal(jobs[0].taskId, 'task-new');
+  assert.equal(jobs[0].status, 'working');
+  assert.equal(jobs[1].taskId, 'task-old');
+  assert.equal(jobs[1].status, 'completed');
+});
+
+test('preserves canonical runner verification completed and escalated states', () => {
+  const jobs = projectBasicChatJobs({ artifacts: [
+    task('task-verification', 'verification', '2026-09-15T01:00:00.000Z'),
+    task('task-completed', 'completed', '2026-09-15T02:00:00.000Z'),
+    task('task-escalated', 'escalated', '2026-09-15T03:00:00.000Z'),
+  ] });
+  assert.deepEqual(jobs.map((job) => job.status), ['escalated', 'completed', 'verification']);
+});
+
+test('requires canonical project correlation and can scope the Jobs surface', () => {
+  const local = task('task-local', 'working', '2026-09-15T03:00:00.000Z', 'agentos-local');
+  const other = task('task-other', 'working', '2026-09-15T04:00:00.000Z', 'other-project');
+  const missing = task('task-missing-project', 'working', '2026-09-15T05:00:00.000Z');
+  delete missing.payload.project_id;
+  const jobs = projectBasicChatJobs({ artifacts: [local, other, missing], projectId: 'agentos-local' });
+  assert.deepEqual(jobs.map((job) => job.taskId), ['task-local']);
+  assert.equal(jobs[0].projectId, 'agentos-local');
+});
+
+test('does not project objective authority credentials worker output PRS or recovery', () => {
+  const jobs = projectBasicChatJobs({ artifacts: [task('task-sensitive', 'completed', '2026-09-15T03:00:00.000Z')] });
+  const encoded = JSON.stringify(jobs);
+  assert.doesNotMatch(encoded, /private objective|secret-authority|secret-credential|private-worker-output|prs|recovery/i);
+  assert.deepEqual(Object.keys(jobs[0]).sort(), ['createdAt', 'missionId', 'priority', 'projectId', 'schemaVersion', 'status', 'taskId', 'updatedAt'].sort());
+});
+
+test('fails closed on forged identity or incomplete canonical correlation', () => {
+  const valid = task('task-valid', 'completed', '2026-09-15T03:00:00.000Z');
+  const forged = { ...task('task-payload', 'completed', '2026-09-15T04:00:00.000Z'), id: 'different-id' };
+  const noMission = task('task-no-mission', 'completed', '2026-09-15T05:00:00.000Z');
+  delete noMission.payload.mission_id;
+  const noWake = task('task-no-wake', 'completed', '2026-09-15T06:00:00.000Z');
+  delete noWake.payload.wake_trace_id;
+  assert.deepEqual(projectBasicChatJobs({ artifacts: [forged, noMission, noWake, valid] }).map((job) => job.taskId), ['task-valid']);
+});
+
+test('unknown status stays unknown rather than being promoted', () => {
+  const jobs = projectBasicChatJobs({ artifacts: [task('task-unknown', 'MAGIC_SUCCESS', '2026-09-15T03:00:00.000Z')] });
+  assert.equal(jobs[0].status, 'unknown');
+});
+
+test('enforces bounded list limits and input types', () => {
+  const artifacts = Array.from({ length: 8 }, (_, index) => task(`task-${index}`, 'queued', `2026-09-15T0${index}:00:00.000Z`));
+  assert.equal(projectBasicChatJobs({ artifacts, limit: 3 }).length, 3);
+  assert.throws(() => projectBasicChatJobs({ artifacts: null }), /artifacts must be an array/);
+  assert.throws(() => projectBasicChatJobs({ artifacts: [], limit: 0 }), /limit must be an integer/);
+  assert.throws(() => projectBasicChatJobs({ artifacts: [], projectId: '' }), /projectId must be a non-empty string or null/);
+});

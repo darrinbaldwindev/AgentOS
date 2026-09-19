@@ -4,111 +4,46 @@
 import { randomUUID } from 'node:crypto';
 import { readFile, open, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
+import { projectBasicChatEvidence } from './basic-chat-evidence-projection.mjs';
+import { projectBasicChatJobs } from './basic-chat-jobs-projection.mjs';
 import { createLocalPersistence } from './local-persistence.mjs';
 import { wakeLocal } from './local-wake.mjs';
 
 const TRANSIENT_LOCK_RELEASE_ERRORS = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const LOCK_RELEASE_DELAYS_MS = Object.freeze([0, 10, 25, 50, 100, 200, 400]);
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
 async function acquireHostLock(lockPath) {
-  // Existence is authoritative. An empty/malformed file may be a live owner's
-  // publication window; PID absence alone is not an atomic takeover protocol.
   let handle;
-  try {
-    handle = await open(lockPath, 'wx');
-  } catch (error) {
-    if (error?.code === 'EEXIST') throw new Error('BASIC_CHAT_ALREADY_RUNNING_OR_RECOVERY_REQUIRED');
-    throw error;
-  }
-  try {
-    await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8');
-    return handle;
-  } catch (error) {
-    // Always attempt to release the descriptor while retaining the lock path.
-    // The file itself stays in place because a failed publication leaves
-    // ownership uncertain and must require explicit recovery.
-    try {
-      await handle.close();
-    } catch {}
-    throw error;
-  }
+  try { handle = await open(lockPath, 'wx'); }
+  catch (error) { if (error?.code === 'EEXIST') throw new Error('BASIC_CHAT_ALREADY_RUNNING_OR_RECOVERY_REQUIRED'); throw error; }
+  try { await handle.writeFile(`${JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() })}\n`, 'utf8'); return handle; }
+  catch (error) { try { await handle.close(); } catch {} throw error; }
 }
 
 const THREAD = 'basic:default';
 const CONTROL = 'basic-chat:control';
+const PROJECT_ID = 'agentos-local';
 
 async function releaseHostLock({ lock, lockPath, unlinkLock, lifecycleStage }) {
-  try {
-    await lock.close();
-    lifecycleStage('LOCK_HANDLE_CLOSE_DONE');
-  } catch (error) {
-    if (error?.code !== 'EBADF') {
-      const wrapped = new Error(`BASIC_CHAT_LOCK_CLOSE_FAILED: ${error?.message ?? error}`);
-      wrapped.code = 'BASIC_CHAT_LOCK_CLOSE_FAILED';
-      wrapped.cause = error;
-      throw wrapped;
-    }
-    lifecycleStage('LOCK_HANDLE_CLOSE_DONE', { alreadyClosed: true });
-  }
-
+  try { await lock.close(); lifecycleStage('LOCK_HANDLE_CLOSE_DONE'); }
+  catch (error) { if (error?.code !== 'EBADF') { const wrapped = new Error(`BASIC_CHAT_LOCK_CLOSE_FAILED: ${error?.message ?? error}`); wrapped.code = 'BASIC_CHAT_LOCK_CLOSE_FAILED'; wrapped.cause = error; throw wrapped; } lifecycleStage('LOCK_HANDLE_CLOSE_DONE', { alreadyClosed: true }); }
   lifecycleStage('LOCK_UNLINK_START');
   for (let attempt = 0; attempt < LOCK_RELEASE_DELAYS_MS.length; attempt++) {
     if (LOCK_RELEASE_DELAYS_MS[attempt] > 0) await sleep(LOCK_RELEASE_DELAYS_MS[attempt]);
-    try {
-      await unlinkLock(lockPath);
-      lifecycleStage('LOCK_UNLINK_DONE', { attempt });
-      return;
-    } catch (error) {
-      if (error?.code === 'ENOENT') {
-        lifecycleStage('LOCK_UNLINK_DONE', { attempt, alreadyAbsent: true });
-        return;
-      }
-      const retryable = TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code);
-      if (retryable && attempt < LOCK_RELEASE_DELAYS_MS.length - 1) continue;
-      const wrapped = new Error(`BASIC_CHAT_LOCK_RELEASE_FAILED: ${error?.message ?? error}`);
-      wrapped.code = 'BASIC_CHAT_LOCK_RELEASE_FAILED';
-      wrapped.cause = error;
-      throw wrapped;
+    try { await unlinkLock(lockPath); lifecycleStage('LOCK_UNLINK_DONE', { attempt }); return; }
+    catch (error) {
+      if (error?.code === 'ENOENT') { lifecycleStage('LOCK_UNLINK_DONE', { attempt, alreadyAbsent: true }); return; }
+      if (TRANSIENT_LOCK_RELEASE_ERRORS.has(error?.code) && attempt < LOCK_RELEASE_DELAYS_MS.length - 1) continue;
+      const wrapped = new Error(`BASIC_CHAT_LOCK_RELEASE_FAILED: ${error?.message ?? error}`); wrapped.code = 'BASIC_CHAT_LOCK_RELEASE_FAILED'; wrapped.cause = error; throw wrapped;
     }
   }
 }
 
-const USER_STATES = Object.freeze({
-  READY: 'READY',
-  WORKING: 'WORKING',
-  VERIFYING: 'VERIFYING',
-  COMPLETE: 'COMPLETE',
-  BLOCKED: 'BLOCKED',
-  PAUSED: 'PAUSED',
-  NEEDS_ATTENTION: 'NEEDS_ATTENTION',
-});
-
-function mapStatus(runtimeStatus) {
-  switch (runtimeStatus) {
-    case 'COMPLETED':
-      return USER_STATES.COMPLETE;
-    case 'INCOMPLETE':
-    case 'GREEN_BLOCKED':
-      return USER_STATES.BLOCKED;
-    case 'AWAITING_GREEN':
-      return USER_STATES.VERIFYING;
-    default:
-      return USER_STATES.NEEDS_ATTENTION;
-  }
-}
-
-async function readSafeChatConfig(root) {
-  const config = JSON.parse(await readFile(join(root, 'config.json'), 'utf8'));
-  if (config?.schemaVersion !== 1) throw new Error('LOCAL_CONFIG_SCHEMA_INVALID');
-  if (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false) {
-    throw new Error('CHAT_REQUIRES_SAFE_MODE');
-  }
-  return config;
-}
+const USER_STATES = Object.freeze({ READY: 'READY', WORKING: 'WORKING', VERIFYING: 'VERIFYING', COMPLETE: 'COMPLETE', BLOCKED: 'BLOCKED', PAUSED: 'PAUSED', NEEDS_ATTENTION: 'NEEDS_ATTENTION' });
+function mapStatus(runtimeStatus) { switch (runtimeStatus) { case 'COMPLETED': return USER_STATES.COMPLETE; case 'INCOMPLETE': case 'GREEN_BLOCKED': return USER_STATES.BLOCKED; case 'AWAITING_GREEN': return USER_STATES.VERIFYING; default: return USER_STATES.NEEDS_ATTENTION; } }
+async function readSafeChatConfig(root) { const config = JSON.parse(await readFile(join(root, 'config.json'), 'utf8')); if (config?.schemaVersion !== 1) throw new Error('LOCAL_CONFIG_SCHEMA_INVALID'); if (config.mode !== 'DRY_RUN' || config.autonomyEnabled !== false) throw new Error('CHAT_REQUIRES_SAFE_MODE'); return config; }
 
 export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStage = () => {} } = {}) {
   if (!root) throw new TypeError('root is required');
@@ -117,177 +52,86 @@ export async function createLocalChat({ root, unlinkLock = unlink, lifecycleStag
   const config = await readSafeChatConfig(root);
   const lockPath = join(root, 'basic-chat.lock');
   const lock = await acquireHostLock(lockPath);
+  const stateFilePath = join(root, config.stateFile);
+  let persistence = await createLocalPersistence({ filePath: stateFilePath });
+  async function refreshPersistence() { persistence = await createLocalPersistence({ filePath: stateFilePath }); return persistence; }
 
-  const persistence = await createLocalPersistence({ filePath: join(root, config.stateFile) });
-  if (!(await persistence.get('artifact', CONTROL))) {
-    await persistence.create('artifact', {
-      id: CONTROL,
-      artifactType: 'chat.control',
+  const existingControl = await persistence.get('artifact', CONTROL);
+  if (!existingControl) {
+    await persistence.create('artifact', { id: CONTROL, artifactType: 'chat.control', status: 'ready', paused: false, stopped: false });
+  } else if (existingControl.paused === true || existingControl.stopped === true) {
+    // Pause/Stop are controls for one Basic Chat host lifetime, not durable
+    // authority or execution state. A successfully acquired new host resets only
+    // those transient gates; task/evidence/history fields remain untouched.
+    await persistence.update('artifact', CONTROL, {
+      ...existingControl,
       status: 'ready',
       paused: false,
       stopped: false,
+      lastUserStatus: USER_STATES.READY,
     });
   }
-
-  for (const run of await persistence.list('run')) {
-    if (run.threadId === THREAD && run.status === 'running') {
-      await persistence.update('run', run.id, {
-        status: 'failed',
-        error: 'INTERRUPTED_BEFORE_RESPONSE',
-      });
-    }
-  }
+  for (const run of await persistence.list('run')) if (run.threadId === THREAD && run.status === 'running') await persistence.update('run', run.id, { status: 'failed', error: 'INTERRUPTED_BEFORE_RESPONSE' });
 
   let queue = Promise.resolve();
-  function enqueue(fn) {
-    const next = queue.then(fn, fn);
-    queue = next.catch(() => {});
-    return next;
-  }
-
-  async function getControl() {
-    return (await persistence.get('artifact', CONTROL)) ?? { status: 'ready', paused: false, stopped: false };
-  }
-
-  async function setControl(patch) {
-    const current = await getControl();
-    await persistence.update('artifact', CONTROL, { ...current, ...patch });
-    return getControl();
-  }
-
-  async function history() {
-    const artifacts = await persistence.list('artifact');
-    return artifacts
-      .filter((a) => a.artifactType === 'chat.message' && a.threadId === THREAD)
-      .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
-      .map((a) => ({
-        id: a.id,
-        role: a.role,
-        text: a.text,
-        createdAt: a.createdAt,
-        status: a.status ?? null,
-      }));
-  }
+  function enqueue(fn) { const next = queue.then(fn, fn); queue = next.catch(() => {}); return next; }
+  async function getControl() { return (await persistence.get('artifact', CONTROL)) ?? { status: 'ready', paused: false, stopped: false }; }
+  async function setControl(patch) { const current = await getControl(); await persistence.update('artifact', CONTROL, { ...current, ...patch }); return getControl(); }
+  async function history() { const artifacts = await persistence.list('artifact'); return artifacts.filter((a) => a.artifactType === 'chat.message' && a.threadId === THREAD).sort((a,b) => String(a.createdAt).localeCompare(String(b.createdAt))).map((a) => ({ id:a.id, role:a.role, text:a.text, createdAt:a.createdAt, status:a.status ?? null })); }
 
   async function snapshot() {
     const control = await getControl();
     const hist = await history();
     let visible = USER_STATES.READY;
-    if (control.stopped) visible = USER_STATES.NEEDS_ATTENTION;
-    else if (control.paused) visible = USER_STATES.PAUSED;
-    else if (control.status === 'working') visible = USER_STATES.WORKING;
-    else if (control.lastUserStatus) visible = control.lastUserStatus;
-    return {
-      ready: !control.paused && !control.stopped,
-      paused: Boolean(control.paused),
-      stopped: Boolean(control.stopped),
-      status: visible,
-      history: hist,
-      lastTaskId: control.lastTaskId ?? null,
-      note: 'Local · DRY_RUN · Autonomy disabled · Scheduler must stay disabled for chat',
-    };
+    if (control.stopped) visible = USER_STATES.NEEDS_ATTENTION; else if (control.paused) visible = USER_STATES.PAUSED; else if (control.status === 'working') visible = USER_STATES.WORKING; else if (control.lastUserStatus) visible = control.lastUserStatus;
+    const lastTaskId = control.lastTaskId ?? null;
+    const artifacts = await persistence.list('artifact');
+    let evidence = null;
+    if (lastTaskId) { const events = await persistence.list('event'); evidence = projectBasicChatEvidence({ taskId: lastTaskId, artifacts, events }); }
+    const jobs = projectBasicChatJobs({ artifacts, limit: 5, projectId: PROJECT_ID });
+    return { ready: !control.paused && !control.stopped, paused: Boolean(control.paused), stopped: Boolean(control.stopped), status: visible, history: hist, lastTaskId, evidence, jobs, note: 'Local · DRY_RUN · Autonomy disabled · Scheduler must stay disabled for chat' };
   }
 
   async function send(text) {
     return enqueue(async () => {
-      const control = await getControl();
-      if (control.stopped) throw new Error('CHAT_STOPPED');
-      if (control.paused) throw new Error('CHAT_PAUSED');
-      const message = typeof text === 'string' ? text.trim() : '';
-      if (!message) throw new TypeError('text is required');
-      if (message.length > 4000) throw new Error('MESSAGE_TOO_LONG');
-
-      const messageId = `chat:${randomUUID()}`;
-      const createdAt = new Date().toISOString();
-      await persistence.create('artifact', {
-        id: messageId,
-        artifactType: 'chat.message',
-        threadId: THREAD,
-        role: 'user',
-        text: message,
-        createdAt,
-      });
-      await setControl({ status: 'working', lastUserStatus: USER_STATES.WORKING });
-
+      const control = await getControl(); if (control.stopped) throw new Error('CHAT_STOPPED'); if (control.paused) throw new Error('CHAT_PAUSED');
+      const message = typeof text === 'string' ? text.trim() : ''; if (!message) throw new TypeError('text is required'); if (message.length > 4000) throw new Error('MESSAGE_TOO_LONG');
+      await persistence.create('artifact', { id:`chat:${randomUUID()}`, artifactType:'chat.message', threadId:THREAD, role:'user', text:message, createdAt:new Date().toISOString() });
+      await setControl({ status:'working', lastUserStatus:USER_STATES.WORKING });
       let result;
-      try {
-        result = await wakeLocal({
-          root,
-          objective: message,
-          requireSchedulerDisabled: true,
-        });
-      } catch (error) {
-        let errText = error?.message ?? String(error);
-        if (/LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED/.test(errText)) {
-          errText = 'Basic Chat needs scheduled checks turned off before starting.';
-        }
-        await persistence.create('artifact', {
-          id: `chat:${randomUUID()}`,
-          artifactType: 'chat.message',
-          threadId: THREAD,
-          role: 'agentos',
-          text: `Blocked: ${errText}`,
-          createdAt: new Date().toISOString(),
-          status: USER_STATES.BLOCKED,
-        });
-        await setControl({
-          status: 'ready',
-          lastUserStatus: USER_STATES.BLOCKED,
-          lastError: errText,
-        });
-        throw error;
+      try { result = await wakeLocal({ root, objective:message, requireSchedulerDisabled:true }); await refreshPersistence(); }
+      catch (error) {
+        await refreshPersistence(); let errText = error?.message ?? String(error); if (/LOCAL_WAKE_REQUIRES_SCHEDULER_DISABLED/.test(errText)) errText = 'Basic Chat needs scheduled checks turned off before starting.';
+        await persistence.create('artifact', { id:`chat:${randomUUID()}`, artifactType:'chat.message', threadId:THREAD, role:'agentos', text:`Blocked: ${errText}`, createdAt:new Date().toISOString(), status:USER_STATES.BLOCKED });
+        await setControl({ status:'ready', lastUserStatus:USER_STATES.BLOCKED, lastError:errText }); throw error;
       }
-
       const userStatus = mapStatus(result.status);
-      const assistantText =
-        result.status === 'COMPLETED'
-          ? 'Completed one bounded local check through the governed AgentOS pipeline. Your message was recorded and verified under Green.'
-          : result.status === 'INCOMPLETE' || result.status === 'GREEN_BLOCKED'
-            ? `Verification did not pass (${result.status}). Work was not marked complete.`
-            : `Turn finished with status ${result.status}.`;
-
-      await persistence.create('artifact', {
-        id: `chat:${randomUUID()}`,
-        artifactType: 'chat.message',
-        threadId: THREAD,
-        role: 'agentos',
-        text: assistantText,
-        createdAt: new Date().toISOString(),
-        status: userStatus,
-        taskId: result.task_id ?? null,
-      });
-      await setControl({
-        status: 'ready',
-        lastUserStatus: userStatus,
-        lastTaskId: result.task_id ?? null,
-        lastError: null,
-      });
-      return snapshot();
+      const assistantText = result.status === 'COMPLETED' ? 'Completed one bounded local check through the governed AgentOS pipeline. Your message was recorded and verified under Green.' : result.status === 'INCOMPLETE' || result.status === 'GREEN_BLOCKED' ? `Verification did not pass (${result.status}). Work was not marked complete.` : `Turn finished with status ${result.status}.`;
+      await persistence.create('artifact', { id:`chat:${randomUUID()}`, artifactType:'chat.message', threadId:THREAD, role:'agentos', text:assistantText, createdAt:new Date().toISOString(), status:userStatus, taskId:result.task_id ?? null });
+      await setControl({ status:'ready', lastUserStatus:userStatus, lastTaskId:result.task_id ?? null, lastError:null }); return snapshot();
     });
   }
 
   async function control(action) {
     const a = String(action || '').toLowerCase();
+    const current = await getControl();
     if (a === 'pause') {
-      await setControl({ paused: true, lastUserStatus: USER_STATES.PAUSED });
+      if (current.stopped) throw new Error('CHAT_STOPPED');
+      await setControl({ paused:true, lastUserStatus:USER_STATES.PAUSED });
     } else if (a === 'resume') {
-      await setControl({ paused: false, stopped: false, lastUserStatus: USER_STATES.READY, status: 'ready' });
+      // Stop is sticky for this host lifetime. A UI/API caller must not be able to
+      // reinterpret Resume as clearing a prior Stop request; host restart is the
+      // explicit boundary advertised by Basic Chat.
+      if (current.stopped) throw new Error('CHAT_STOPPED');
+      await setControl({ paused:false, lastUserStatus:USER_STATES.READY, status:'ready' });
     } else if (a === 'stop') {
-      await setControl({ stopped: true, paused: false, lastUserStatus: USER_STATES.NEEDS_ATTENTION });
+      await setControl({ stopped:true, paused:false, lastUserStatus:USER_STATES.NEEDS_ATTENTION });
     } else {
       throw new Error('UNKNOWN_CONTROL_ACTION');
     }
     return snapshot();
   }
-
-  let closePromise = null;
-  function close() {
-    if (!closePromise) {
-      closePromise = releaseHostLock({ lock, lockPath, unlinkLock, lifecycleStage });
-    }
-    return closePromise;
-  }
-
+  let closePromise=null; function close(){ if(!closePromise) closePromise=releaseHostLock({lock,lockPath,unlinkLock,lifecycleStage}); return closePromise; }
   return Object.freeze({ send, control, snapshot, history, close, THREAD });
 }
 
