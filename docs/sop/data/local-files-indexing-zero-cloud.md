@@ -1,4 +1,4 @@
-# SOP-DATA-002 — Local Files, Indexing and Zero-Cloud Evidence
+# SOP-DATA-003 — Local Files, Indexing and Zero-Cloud Evidence
 
 Status: DRAFT / IMPLEMENTATION-DEPENDENT
 Owner: SOP Overseer
@@ -22,3 +22,6 @@ Local-file approval does not automatically authorize sending content to a remote
 Deleting an index is not necessarily deleting source files; deleting source files is not necessarily deleting backups/provider copies. UX must state the actual scope and invoke SOP-DATA-001 / retention-deletion controls.
 
 This SOP does not prove the current runtime implements zero-cloud indexing.
+
+## Identifier note
+This document was originally labelled `SOP-DATA-002`, colliding with the pre-existing Export, Delete, Disconnect and Uninstall SOP. It is `SOP-DATA-003` from Cycle 018 onward. The content scope is unchanged by the identifier correction.
