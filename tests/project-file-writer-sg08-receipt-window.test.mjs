@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createProjectFileWriter } from '../runtime/project-file-writer.mjs';
@@ -31,49 +31,51 @@ function persistenceHarness({ beforeSuccessReceipt } = {}) {
   };
 }
 
-async function displaceOwner(lock, displaced) {
-  await rename(lock, displaced);
-  await mkdir(lock);
-  await writeFile(path.join(lock, 'owner.json'), JSON.stringify({
-    lock_id: 'successor-before-receipt',
-    intent_hash: 'successor-before-receipt-intent',
-    worker_id: 'successor-before-receipt-worker',
-  }));
-}
-
-test('SG-08: ownership can be displaced after postwrite verification but before success receipt persistence', { skip: process.platform === 'win32' }, async () => {
+test('SG-08 regression: governed successor cannot enter after verification but before durable success receipt', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'agentos-sg08-receipt-window-'));
   const target = path.join(root, 'fixture.txt');
-  const lock = `${target}.agentos-write-lock`;
-  const displaced = `${lock}.displaced`;
-  let injected = false;
+  let successorError = null;
+  let challenged = false;
+  const successorPersistence = persistenceHarness();
+  const successorWriter = await createProjectFileWriter({ approvedRoots: [root], persistence: successorPersistence.api });
   const persistence = persistenceHarness({
     beforeSuccessReceipt: async () => {
-      if (injected) return;
-      injected = true;
-      await displaceOwner(lock, displaced);
+      if (challenged) return;
+      challenged = true;
+      try {
+        await successorWriter.execute({
+          task: { ...task, task_id: 'task-sg08-receipt-window-successor', worker_id: 'worker-sg08-receipt-window-successor' },
+          targetPath: target,
+          content: 'successor-must-not-publish\n',
+          idempotencyKey: 'sg08-receipt-window-successor',
+        });
+      } catch (error) {
+        successorError = error;
+      }
     },
   });
 
   try {
-    await assert.rejects(
-      (await createProjectFileWriter({ approvedRoots: [root], persistence: persistence.api })).execute({
-        task,
-        targetPath: target,
-        content: 'published-before-receipt-ownership-loss\n',
-        idempotencyKey: 'sg08-receipt-window',
-      }),
-      (error) => error?.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED'
-    );
+    const result = await (await createProjectFileWriter({ approvedRoots: [root], persistence: persistence.api })).execute({
+      task,
+      targetPath: target,
+      content: 'published-before-receipt-successor-challenge\n',
+      idempotencyKey: 'sg08-receipt-window',
+    });
 
-    assert.equal(injected, true);
-    assert.equal(await readFile(target, 'utf8'), 'published-before-receipt-ownership-loss\n');
+    assert.equal(challenged, true);
+    assert.equal(successorError?.code, 'PROJECT_FILE_LIVE_CONTENTION');
+    assert.equal(await readFile(target, 'utf8'), 'published-before-receipt-successor-challenge\n');
+    assert.equal(result.result, 'MUTATED_VERIFIED');
     const receipts = [...persistence.artifacts.values()].filter(
       (artifact) => artifact.artifact_kind === 'project.file.write.receipt'
     );
     assert.equal(receipts.length, 1);
     assert.equal(receipts[0].result, 'MUTATED_VERIFIED');
     assert.equal(receipts[0].recovery_required, false);
+    assert.equal([...successorPersistence.artifacts.values()].filter(
+      (artifact) => artifact.artifact_kind === 'project.file.write.receipt'
+    ).length, 0);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
