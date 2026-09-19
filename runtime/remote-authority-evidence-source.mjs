@@ -1,12 +1,14 @@
 // AGENTOS-P0-REMOTE-AUTHORITY-EVIDENCE-001
-// Read-only loader/validator for canonical remote authentication and grant evidence.
-// This module does not authenticate transports, issue grants, mutate evidence, or execute work.
+// Read-only loader/validator for canonical remote authentication, grant and consent evidence.
+// This module does not authenticate transports, issue grants/consent, mutate evidence, or execute work.
 // It consumes typed artifacts from the existing AgentOS persistence vocabulary and fails closed.
 
 const SESSION_ARTIFACT_TYPE = 'remote.authenticated.session';
 const GRANT_ARTIFACT_TYPE = 'remote.authority.grant';
+const CONSENT_ARTIFACT_TYPE = 'remote.consent.decision';
 const SESSION_STATUS = 'AUTHENTICATED';
 const GRANT_STATUS = 'GRANTED';
+const CONSENT_STATUS = 'ACTIVE';
 const CONSENT_MODES = new Set(['PRE_AUTHORIZED', 'CONFIRMATION_REQUIRED', 'PROHIBITED']);
 
 function requireObject(value, name) {
@@ -46,12 +48,17 @@ function assertActiveWindow(payload, nowMs, prefix) {
 }
 
 async function loadExactArtifact(persistence, id, artifactType, missingCode, typeCode) {
-  const artifact = await persistence.get('artifact', requireText(id, 'evidenceId'));
+  const expectedId = requireText(id, 'evidenceId');
+  const artifact = await persistence.get('artifact', expectedId);
   if (!artifact) throw new Error(missingCode);
-  if (artifact.id !== id || artifact.artifactType !== artifactType) throw new Error(typeCode);
+  if (artifact.id !== expectedId || artifact.artifactType !== artifactType) throw new Error(typeCode);
   requireObject(artifact.payload, 'artifact.payload');
-  if (artifact.payload.evidence_id !== id) throw new Error(`${typeCode}_ID_MISMATCH`);
+  if (artifact.payload.evidence_id !== expectedId) throw new Error(`${typeCode}_ID_MISMATCH`);
   return artifact.payload;
+}
+
+function assertSame(value, expected, code) {
+  if (value !== expected) throw new Error(code);
 }
 
 export function createRemoteAuthorityEvidenceSource({ persistence, now = () => new Date() } = {}) {
@@ -101,6 +108,37 @@ export function createRemoteAuthorityEvidenceSource({ persistence, now = () => n
     });
   }
 
+  async function validatedConsent({ consentEvidenceId, expected } = {}) {
+    requireObject(expected, 'expected');
+    const evidenceId = requireText(consentEvidenceId, 'consentEvidenceId');
+    const payload = await loadExactArtifact(
+      persistence,
+      evidenceId,
+      CONSENT_ARTIFACT_TYPE,
+      'REMOTE_CONSENT_EVIDENCE_REQUIRED',
+      'REMOTE_CONSENT_EVIDENCE_TYPE_MISMATCH'
+    );
+    if (payload.status !== CONSENT_STATUS) throw new Error('REMOTE_CONSENT_EVIDENCE_INACTIVE');
+    const mode = requireText(payload.consent_mode, 'consent.consent_mode');
+    if (!CONSENT_MODES.has(mode)) throw new Error('REMOTE_CONSENT_MODE_INVALID');
+    assertActiveWindow(payload, nowMs(), 'REMOTE_CONSENT');
+
+    const checks = [
+      ['actor_id', 'REMOTE_CONSENT_ACTOR_MISMATCH'],
+      ['issuer', 'REMOTE_CONSENT_ISSUER_MISMATCH'],
+      ['project_id', 'REMOTE_CONSENT_PROJECT_MISMATCH'],
+      ['mission_id', 'REMOTE_CONSENT_MISSION_MISMATCH'],
+      ['request_id', 'REMOTE_CONSENT_REQUEST_MISMATCH'],
+      ['delivery_id', 'REMOTE_CONSENT_DELIVERY_MISMATCH'],
+      ['objective', 'REMOTE_CONSENT_INTENT_MISMATCH'],
+      ['target', 'REMOTE_CONSENT_TARGET_MISMATCH'],
+    ];
+    for (const [field, code] of checks) assertSame(requireText(payload[field], `consent.${field}`), expected[field], code);
+    assertSame(mode, expected.consent_mode, 'REMOTE_CONSENT_MODE_MISMATCH');
+
+    return Object.freeze({ evidence_id: evidenceId, consent_mode: mode, status: CONSENT_STATUS });
+  }
+
   async function resolveGrant({ grantEvidenceId, candidate, actorContext, requestedCapabilities } = {}) {
     requireObject(candidate, 'candidate');
     requireObject(actorContext, 'actorContext');
@@ -146,9 +184,20 @@ export function createRemoteAuthorityEvidenceSource({ persistence, now = () => n
     }
     if (!requested.every((capability) => granted.includes(capability))) throw new Error('REMOTE_AUTHORITY_GRANT_INCOMPLETE');
 
-    if (consentMode === 'PRE_AUTHORIZED' && consentEvidenceId === evidenceId) {
-      throw new Error('REMOTE_AUTHORITY_CONSENT_PROVENANCE_INVALID');
-    }
+    await validatedConsent({
+      consentEvidenceId,
+      expected: {
+        actor_id: actorId,
+        issuer,
+        project_id: projectId,
+        mission_id: missionId,
+        request_id: requestId,
+        delivery_id: deliveryId,
+        objective,
+        target,
+        consent_mode: consentMode,
+      },
+    });
 
     return Object.freeze({
       status: GRANT_STATUS,
@@ -174,4 +223,5 @@ export function createRemoteAuthorityEvidenceSource({ persistence, now = () => n
 export const REMOTE_AUTHORITY_EVIDENCE_TYPES = Object.freeze({
   session: SESSION_ARTIFACT_TYPE,
   grant: GRANT_ARTIFACT_TYPE,
+  consent: CONSENT_ARTIFACT_TYPE,
 });
