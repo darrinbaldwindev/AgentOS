@@ -19,13 +19,21 @@ test('Basic Chat does not restore a clicked control to enabled blindly after the
   assert.match(js, /finally\s*\{\s*render\(\);\s*\}/s);
 });
 
-test('control failures refresh canonical state before controls are rendered again', () => {
+test('control failures reconcile canonical state before controls are rendered again', () => {
   const marker = "for (const button of document.querySelectorAll('[data-action]')) button.addEventListener";
   const start = js.indexOf(marker);
   assert.notEqual(start, -1);
   const controlHandler = js.slice(start);
-  assert.match(controlHandler, /catch \(error\) \{ showError\(error\); await refresh\(\)\.catch\(\(\) => \{\}\); \}/);
+  assert.match(controlHandler, /catch \(error\) \{ showError\(error\); await reconcileAfterError\(\); \}/);
   assert.match(controlHandler, /finally \{ render\(\); \}/);
+});
+
+test('failed state reconciliation disables new work and controls instead of reusing stale availability', () => {
+  assert.match(js, /function failClosedState\(\) \{ state = \{ \.\.\.state, ready: false, paused: false, stopped: false, status: 'UNKNOWN' \}; \}/);
+  assert.match(js, /async function reconcileAfterError\(\) \{ try \{ await refresh\(\); \} catch \{ failClosedState\(\); \} \}/);
+  assert.match(js, /if \(!res\.ok\) throw new Error\(`STATE_REFRESH_FAILED_\$\{res\.status\}`\)/);
+  assert.match(js, /const blocked = sending \|\| state\.paused \|\| state\.stopped \|\| !state\.ready/);
+  assert.match(js, /controlsAvailable = Boolean\(state\.ready \|\| state\.paused \|\| state\.stopped \|\| sending\)/);
 });
 
 test('Stop remains available during an active send because it is a request, not a termination claim', () => {
