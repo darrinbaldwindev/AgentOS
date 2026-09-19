@@ -11,6 +11,7 @@ const taskC = Object.freeze({ project_id: 'agentos', mission_id: 'lock-race', ta
 function persistenceHarness() {
   const artifacts = new Map();
   return {
+    artifacts,
     get: async (type, id) => type === 'artifact' ? artifacts.get(id) ?? null : null,
     create: async (type, input) => {
       if (type !== 'artifact') throw new Error('unexpected type');
@@ -21,7 +22,7 @@ function persistenceHarness() {
   };
 }
 
-test('POSIX retirement guard preserves replacement lock and blocks a third governed writer', { skip: process.platform === 'win32' }, async () => {
+test('POSIX continuous fence preserves replacement metadata and blocks a third governed writer', { skip: process.platform === 'win32' }, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'agentos-three-writer-retire-'));
   try {
     const target = path.join(root, 'fixture.txt');
@@ -30,11 +31,13 @@ test('POSIX retirement guard preserves replacement lock and blocks a third gover
     const predecessor = `${lock}.predecessor`;
     const successor = { lock_id: 'writer-b-lock', intent_hash: 'writer-b-intent', worker_id: 'writer-b', pid: process.pid };
     let thirdWriterError = null;
+    const persistenceA = persistenceHarness();
+    const persistenceC = persistenceHarness();
 
-    const writerC = await createProjectFileWriter({ approvedRoots: [root], persistence: persistenceHarness() });
+    const writerC = await createProjectFileWriter({ approvedRoots: [root], persistence: persistenceC });
     const writerA = await createProjectFileWriter({
       approvedRoots: [root],
-      persistence: persistenceHarness(),
+      persistence: persistenceA,
       hooks: {
         afterLockValidation: async ({ reason }) => {
           if (reason !== 'release') return;
@@ -55,10 +58,15 @@ test('POSIX retirement guard preserves replacement lock and blocks a third gover
       (error) => error.code === 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED',
     );
 
-    assert.equal(thirdWriterError?.code, 'PROJECT_FILE_LOCK_RECOVERY_REQUIRED');
-    assert.equal(thirdWriterError?.guard, guard);
+    assert.equal(thirdWriterError?.code, 'PROJECT_FILE_LIVE_CONTENTION');
     assert.deepEqual(JSON.parse(await readFile(path.join(lock, 'owner.json'), 'utf8')), successor);
     assert.equal(await readFile(target, 'utf8'), 'writer-a');
+    assert.equal([...persistenceA.artifacts.values()].filter(
+      (artifact) => artifact.artifact_kind === 'project.file.write.receipt' && artifact.result === 'MUTATED_VERIFIED'
+    ).length, 0);
+    assert.equal([...persistenceC.artifacts.values()].filter(
+      (artifact) => artifact.artifact_kind === 'project.file.write.receipt'
+    ).length, 0);
     await assert.rejects(readFile(guard), (error) => error.code === 'ENOENT');
   } finally {
     await rm(root, { recursive: true, force: true });
