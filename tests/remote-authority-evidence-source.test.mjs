@@ -8,6 +8,7 @@ import {
 const NOW = new Date('2026-09-19T04:30:00.000Z');
 const sessionId = 'session-evidence-1';
 const grantId = 'grant-evidence-1';
+const consentId = 'consent-evidence-1';
 
 function request(overrides = {}) {
   return {
@@ -23,9 +24,14 @@ function request(overrides = {}) {
 }
 
 function candidate(overrides = {}) {
+  return { ...request(), admission_state: 'AWAITING_AUTHORITY', ...overrides };
+}
+
+function windowFields(overrides = {}) {
   return {
-    ...request(),
-    admission_state: 'AWAITING_AUTHORITY',
+    issued_at: '2026-09-19T04:29:00.000Z',
+    expires_at: '2026-09-19T04:40:00.000Z',
+    revoked_at: null,
     ...overrides,
   };
 }
@@ -41,9 +47,25 @@ function sessionPayload(overrides = {}) {
     authentication_method: 'trusted-local-test-fixture',
     request_id: 'request-1',
     delivery_id: 'delivery-1',
-    issued_at: '2026-09-19T04:29:00.000Z',
-    expires_at: '2026-09-19T04:40:00.000Z',
-    revoked_at: null,
+    ...windowFields(),
+    ...overrides,
+  };
+}
+
+function consentPayload(overrides = {}) {
+  return {
+    evidence_id: consentId,
+    status: 'ACTIVE',
+    actor_id: 'owner-1',
+    issuer: 'agentos:overseer',
+    project_id: 'agentos',
+    mission_id: 'mission-1',
+    request_id: 'request-1',
+    delivery_id: 'delivery-1',
+    objective: 'update bounded project documentation',
+    target: 'docs/level2.md',
+    consent_mode: 'PRE_AUTHORIZED',
+    ...windowFields({ issued_at: '2026-09-19T04:29:05.000Z' }),
     ...overrides,
   };
 }
@@ -63,18 +85,17 @@ function grantPayload(overrides = {}) {
     target: 'docs/level2.md',
     acceptance_criteria: ['exact requested file changed', 'tests remain green'],
     consent_mode: 'PRE_AUTHORIZED',
-    consent_evidence_id: 'consent-evidence-1',
-    issued_at: '2026-09-19T04:29:10.000Z',
-    expires_at: '2026-09-19T04:40:00.000Z',
-    revoked_at: null,
+    consent_evidence_id: consentId,
+    ...windowFields({ issued_at: '2026-09-19T04:29:10.000Z' }),
     ...overrides,
   };
 }
 
-function harness({ session = sessionPayload(), grant = grantPayload() } = {}) {
+function harness({ session = sessionPayload(), grant = grantPayload(), consent = consentPayload() } = {}) {
   const artifacts = new Map();
   if (session) artifacts.set(sessionId, { id: sessionId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.session, payload: session });
   if (grant) artifacts.set(grantId, { id: grantId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.grant, payload: grant });
+  if (consent) artifacts.set(consentId, { id: consentId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.consent, payload: consent });
   let reads = 0;
   const persistence = {
     async get(type, id) {
@@ -83,11 +104,7 @@ function harness({ session = sessionPayload(), grant = grantPayload() } = {}) {
       return artifacts.get(id) ?? null;
     },
   };
-  return {
-    source: createRemoteAuthorityEvidenceSource({ persistence, now: () => NOW }),
-    artifacts,
-    reads: () => reads,
-  };
+  return { source: createRemoteAuthorityEvidenceSource({ persistence, now: () => NOW }), artifacts, reads: () => reads };
 }
 
 async function actor(source, inputRequest = request()) {
@@ -98,7 +115,7 @@ async function grant(source, actorContext, inputCandidate = candidate(), request
   return source.resolveGrant({ grantEvidenceId: grantId, candidate: inputCandidate, actorContext, requestedCapabilities });
 }
 
-test('durable session and grant evidence reconstruct bounded immutable authority inputs', async () => {
+test('durable session grant and consent evidence reconstruct bounded immutable authority inputs', async () => {
   const { source, reads } = harness();
   const actorContext = await actor(source);
   assert.equal(actorContext.authenticated, true);
@@ -112,10 +129,10 @@ test('durable session and grant evidence reconstruct bounded immutable authority
   assert.equal(resolved.target, 'docs/level2.md');
   assert.deepEqual(resolved.acceptance_criteria, ['exact requested file changed', 'tests remain green']);
   assert.equal(resolved.consent_mode, 'PRE_AUTHORIZED');
-  assert.equal(resolved.consent_evidence_id, 'consent-evidence-1');
+  assert.equal(resolved.consent_evidence_id, consentId);
   assert.equal(Object.isFrozen(actorContext), true);
   assert.equal(Object.isFrozen(resolved), true);
-  assert.equal(reads(), 2);
+  assert.equal(reads(), 3);
 });
 
 test('caller authentication boolean without durable session evidence cannot authenticate', async () => {
@@ -141,12 +158,8 @@ test('grant must exist durably and remain exact-correlated to actor issuer proje
   await assert.rejects(grant(missing.source, missingActor), /REMOTE_AUTHORITY_GRANT_REQUIRED/);
 
   for (const overrides of [
-    { actor_id: 'other-owner' },
-    { issuer: 'other-issuer' },
-    { project_id: 'other-project' },
-    { request_id: 'other-request' },
-    { delivery_id: 'other-delivery' },
-    { objective: 'different intent' },
+    { actor_id: 'other-owner' }, { issuer: 'other-issuer' }, { project_id: 'other-project' },
+    { request_id: 'other-request' }, { delivery_id: 'other-delivery' }, { objective: 'different intent' },
   ]) {
     const h = harness({ grant: grantPayload(overrides) });
     const a = await actor(h.source);
@@ -173,19 +186,60 @@ test('requested capability drift or incomplete grant cannot borrow authority', a
   await assert.rejects(grant(incomplete.source, incompleteActor), /REMOTE_AUTHORITY_GRANT_INCOMPLETE/);
 });
 
-test('grant target acceptance criteria and consent provenance are mandatory', async () => {
+test('grant target acceptance criteria and consent evidence id are mandatory', async () => {
   for (const [overrides, pattern] of [
     [{ target: '' }, /grant.target is required/],
     [{ acceptance_criteria: [] }, /grant.acceptance_criteria must be a non-empty array/],
     [{ consent_mode: '' }, /grant.consent_mode is required/],
     [{ consent_mode: 'UNKNOWN' }, /REMOTE_AUTHORITY_CONSENT_MODE_INVALID/],
     [{ consent_evidence_id: '' }, /grant.consent_evidence_id is required/],
-    [{ consent_evidence_id: grantId }, /REMOTE_AUTHORITY_CONSENT_PROVENANCE_INVALID/],
   ]) {
     const h = harness({ grant: grantPayload(overrides) });
     const a = await actor(h.source);
     await assert.rejects(grant(h.source, a), pattern);
   }
+});
+
+test('consent evidence is required and cannot be replaced by an opaque id', async () => {
+  const h = harness({ consent: null });
+  const a = await actor(h.source);
+  await assert.rejects(grant(h.source, a), /REMOTE_CONSENT_EVIDENCE_REQUIRED/);
+});
+
+test('consent evidence must match actor issuer project mission request delivery intent target and mode', async () => {
+  const cases = [
+    [{ actor_id: 'other-owner' }, /REMOTE_CONSENT_ACTOR_MISMATCH/],
+    [{ issuer: 'other-issuer' }, /REMOTE_CONSENT_ISSUER_MISMATCH/],
+    [{ project_id: 'other-project' }, /REMOTE_CONSENT_PROJECT_MISMATCH/],
+    [{ mission_id: 'other-mission' }, /REMOTE_CONSENT_MISSION_MISMATCH/],
+    [{ request_id: 'other-request' }, /REMOTE_CONSENT_REQUEST_MISMATCH/],
+    [{ delivery_id: 'other-delivery' }, /REMOTE_CONSENT_DELIVERY_MISMATCH/],
+    [{ objective: 'different intent' }, /REMOTE_CONSENT_INTENT_MISMATCH/],
+    [{ target: 'docs/other.md' }, /REMOTE_CONSENT_TARGET_MISMATCH/],
+    [{ consent_mode: 'CONFIRMATION_REQUIRED' }, /REMOTE_CONSENT_MODE_MISMATCH/],
+  ];
+  for (const [overrides, pattern] of cases) {
+    const h = harness({ consent: consentPayload(overrides) });
+    const a = await actor(h.source);
+    await assert.rejects(grant(h.source, a), pattern);
+  }
+});
+
+test('expired revoked inactive malformed or wrong-type consent evidence fails closed', async () => {
+  for (const [overrides, pattern] of [
+    [{ expires_at: '2026-09-19T04:29:59.000Z' }, /REMOTE_CONSENT_EVIDENCE_EXPIRED/],
+    [{ revoked_at: '2026-09-19T04:29:30.000Z' }, /REMOTE_CONSENT_EVIDENCE_REVOKED/],
+    [{ status: 'REVOKED' }, /REMOTE_CONSENT_EVIDENCE_INACTIVE/],
+    [{ consent_mode: 'UNKNOWN' }, /REMOTE_CONSENT_MODE_INVALID/],
+  ]) {
+    const h = harness({ consent: consentPayload(overrides) });
+    const a = await actor(h.source);
+    await assert.rejects(grant(h.source, a), pattern);
+  }
+  const wrongType = harness();
+  wrongType.artifacts.set(consentId, { id: consentId, artifactType: 'remote.execution.receipt', payload: consentPayload() });
+  const a = await actor(wrongType.source);
+  await assert.rejects(grant(wrongType.source, a), /REMOTE_CONSENT_EVIDENCE_TYPE_MISMATCH/);
 });
 
 test('expired revoked or non-granted authority evidence fails closed', async () => {
@@ -200,13 +254,18 @@ test('expired revoked or non-granted authority evidence fails closed', async () 
   }
 });
 
-test('evidence artifact type and embedded id must match exactly', async () => {
-  const wrongType = harness();
-  wrongType.artifacts.set(sessionId, { id: sessionId, artifactType: 'remote.execution.receipt', payload: sessionPayload() });
-  await assert.rejects(actor(wrongType.source), /REMOTE_SESSION_EVIDENCE_TYPE_MISMATCH/);
+test('session grant and consent artifact type and embedded id must match exactly', async () => {
+  const wrongSessionType = harness();
+  wrongSessionType.artifacts.set(sessionId, { id: sessionId, artifactType: 'remote.execution.receipt', payload: sessionPayload() });
+  await assert.rejects(actor(wrongSessionType.source), /REMOTE_SESSION_EVIDENCE_TYPE_MISMATCH/);
 
-  const wrongEmbeddedId = harness();
-  wrongEmbeddedId.artifacts.set(grantId, { id: grantId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.grant, payload: grantPayload({ evidence_id: 'grant-other' }) });
-  const a = await actor(wrongEmbeddedId.source);
-  await assert.rejects(grant(wrongEmbeddedId.source, a), /REMOTE_AUTHORITY_GRANT_TYPE_MISMATCH_ID_MISMATCH/);
+  const wrongGrantId = harness();
+  wrongGrantId.artifacts.set(grantId, { id: grantId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.grant, payload: grantPayload({ evidence_id: 'grant-other' }) });
+  const grantActor = await actor(wrongGrantId.source);
+  await assert.rejects(grant(wrongGrantId.source, grantActor), /REMOTE_AUTHORITY_GRANT_TYPE_MISMATCH_ID_MISMATCH/);
+
+  const wrongConsentId = harness();
+  wrongConsentId.artifacts.set(consentId, { id: consentId, artifactType: REMOTE_AUTHORITY_EVIDENCE_TYPES.consent, payload: consentPayload({ evidence_id: 'consent-other' }) });
+  const consentActor = await actor(wrongConsentId.source);
+  await assert.rejects(grant(wrongConsentId.source, consentActor), /REMOTE_CONSENT_EVIDENCE_TYPE_MISMATCH_ID_MISMATCH/);
 });
