@@ -7,59 +7,68 @@ Operating mode: FRESH SCAN -> RECONCILE -> PRIORITISE -> EXECUTE VERTICALLY -> V
 
 ## Hard governance boundaries
 
-No merge, approval, ready transition, rebase of protected work, deploy, credential/security-policy changes, production writes, unrestricted PowerShell, production autonomy, purchases, public/external contact, physical owner-host actions, Green self-certification, PRS self-certification, or duplicate scheduler/queue/authority/registry/persistence/ledger/assurance systems.
-
-Functional evidence never promotes itself to Green/PRS. Exact-head evidence does not transfer to another SHA.
+No merge, approval, ready transition, protected rebase, deploy, credential/security-policy changes, production writes, unrestricted PowerShell, production autonomy, purchase, external publication/contact, physical owner-host action, Green self-certification, PRS self-certification, or duplicate scheduler/queue/authority/registry/persistence/ledger/assurance system. Exact-head evidence only.
 
 ## Fresh scan anchors
 
-- `main`: `44e0bd506767a6b4f00f169c5ef4f8ddeefaf4eb` — product-surface consolidation contract; product direction does not override runtime governance.
-- PR #104: `6b32b2cad54eb58bbf8d30285c82af875a211686` — canonical Windows-worker/remote-bridge lineage; OPEN/DRAFT/UNMERGED; SG-01/02 and admission->local-wake source provenance remain BLOCKED_STABLE.
-- PR #120: `a0b13feafdfc85a81ba5656c188118f7cf5effc9` — receipt-persistence contradiction hardening; OPEN/DRAFT/UNMERGED.
-- PR #121: `fd616b27c58264c2ebe873b546f85779ceeab8c0` — admission->local-wake compatibility evidence; OPEN/DRAFT/UNMERGED.
-- PR #122: `d827547f12c180a1e37e2ae69d6da17659cce97b` — Windows install/Doctor/recovery hardening; OPEN/DRAFT/UNMERGED.
-- PR #123: `b993632ef44d26c91cab08190968205a6316106d` — prior SG-08 prepared-recovery hardening; retained defect baseline because independent PRS reproduced two continuous-ownership false-success cases.
-- PR #124: `8bba77aa04b535d6c7a1c0edad495336572b5951` — POSIX kernel-fence viability spike.
-- PR #125: `203273761794cca8c7a9636d45eae0249a435a72` — current SG-08 kernel-fence integration candidate; OPEN/DRAFT/UNMERGED; hosted exact-head Tests `35420953642` SUCCESS and bounded independent PRS probe `35421118895` NEGATIVE_CASES_PASS/defect_count=0. Jess/Michael identical-head review remains independently required.
-- PR #111: frontend Basic Chat/presentation lane remains separate and must not manufacture mutation/authority/readiness state.
-- PR #112: project-overseer batch/integration lane; this file lives here and does not itself promote implementation.
+- `main`: `44e0bd506767a6b4f00f169c5ef4f8ddeefaf4eb` — product-surface consolidation contract only; no runtime authority implied.
+- #104: `6b32b2cad54eb58bbf8d30285c82af875a211686` — canonical Windows-worker/remote-admission lineage; SG-01/02 and admission->local-wake provenance remain blocked.
+- #120: `a0b13feafdfc85a81ba5656c188118f7cf5effc9` — receipt persistence contradiction hardening.
+- #121: `fd616b27c58264c2ebe873b546f85779ceeab8c0` — admission/local-wake compatibility evidence.
+- #122: `d827547f12c180a1e37e2ae69d6da17659cce97b` — install/Doctor/recovery lane.
+- #123: `b993632ef44d26c91cab08190968205a6316106d` — retained SG-08 false-success defect baseline.
+- #124: `8bba77aa04b535d6c7a1c0edad495336572b5951` — POSIX fence viability spike.
+- #125 predecessor repair head: `203273761794cca8c7a9636d45eae0249a435a72` — old pathname-displacement cases passed bounded PRS probe, but that evidence did not cover helper-holder death.
+- #111 current repaired frontend head: `f8521b5cfb48d332ae890983c2a9dbcd231d94da`.
 
-## Maximised dependency-ordered execution queue
+## Executed work
 
-### M-01 — SG-08 exact-head independent integration review — ACTIVE FIRST
-Inspect #125 runtime and tests for whether one kernel-held token truly spans fresh mutation and prepared recovery through metadata retirement, durable success receipt and final release. Hunt for: pre-fence receipt creation; fence-path replacement; parent-directory replacement; child-holder crash semantics; release-before-receipt; receipt persistence failure; metadata-retirement failure; three-writer successor; prepared postimage reconciliation. Do not patch merely because a theoretical race exists: reproduce or identify exact code path first.
+| ID | State | Result | Exact evidence |
+|---|---|---|---|
+| M-01 | REPRODUCED_NEW_BLOCKER | #125 kernel fence is held by a helper `sh` process. Killing only that holder releases `flock` while the Node owner remains alive, allowing a successor to acquire the fence. This breaks the intended fate-sharing/continuous-owner invariant beyond the old pathname-displacement cases. | New regression `tests/posix-kernel-fence-holder-loss.test.mjs`; #125 head `277285d4af5557cff51056db3827c1742ebe2a1b`; Tests #2097 / `35446351123` SUCCESS on Ubuntu+Windows (POSIX test skipped on Windows). |
+| M-02 | DO_NOT_PROMOTE | A-AG-01 cannot be advanced to broad VERIFYING on #125. Prior PRS `defect_count:0` is bounded to the two #123 pathname-displacement cases and does not cover helper-holder loss. | predecessor #125 `203273...` + PRS run `35421118895`; superseded for broader invariant by `277285d4...` regression. |
+| M-03 | NOT_PRESENT_BOUNDED | No canonical authenticated human/session actor producer, durable grant resolver, consent issuer, or canonical source for remote `target` / `acceptance_criteria` / `consent_mode` was evidenced in scanned main/#104 architecture. Issue #89 defines required boundaries, not an implementation source. | #104 `runtime/remote-authority-admission.mjs`; issue #89; current source scan. |
+| M-04 | BLOCKED_STABLE | Current #104 admission task still omits `target`, `acceptance_criteria`, `consent_mode`; current `local-wake` requires them before non-PowerShell execution. Hard-coding defaults would manufacture governance evidence. | #104 admission + local-wake exact files. |
+| M-05 | PRESERVED | #120 remains the bounded receipt-persistence contradiction lane; no new uncovered completion-authorising receipt path was reproduced in this batch. | #120 exact head retained. |
+| M-06 | PRESERVED | #122 remains separate installer/Doctor lane; scheduler default-disabled and physical Windows remains owner-gated. | #122 `d827547...`, exact-head success already recorded. |
+| M-07 | REPAIRED_EXACT_HEAD | Fresh scan found #111 actual head `9ba9e1db...` red because static accessibility test still required literal `currentColor` while CSS had moved to canonical `--focus` token. Production CSS already provided 3px visible focus. Test was corrected to require a defined `--focus` colour and `outline: 3px solid var(--focus)` rather than weakening CSS. | First red run `35414071670`; repaired #111 head `f8521b5cfb48d332ae890983c2a9dbcd231d94da`; Tests #2110 / `35446534255` SUCCESS including general suite/audit and Windows Basic Chat lifecycle. |
+| M-08 | PRESERVED | Main six-pillar consolidation remains presentation/IA direction only; no authority/readiness/assurance state created. | main `44e0bd5...`. |
 
-Acceptance: exact file/line evidence, current exact CI, current independent PRS evidence, and a bounded PASS/OPEN_GAP classification. No overall GREEN.
+## Controlling SG-08 finding
 
-### M-02 — SG-08 successor routing
-If M-01 finds no concrete new false-success path, move A-AG-01 from BLOCKED defect-reproduction to VERIFYING on exact #125 only, while retaining #123 as defect baseline. Do not merge or mark ready. If a concrete gap is found, add the smallest adversarial regression on #125 lineage first.
+The current POSIX fence implementation delegates the kernel lock to a child shell. The parent Node writer can remain alive after that child is killed. Once the holder exits, the kernel releases the advisory lock and a successor may acquire it. Therefore the current design does not prove that the writer and fence share one failure domain.
 
-### M-03 — SG-01/02 canonical source discovery
-Search canonical architecture/issues/runtime for an existing authenticated human/session actor source, durable grant resolver, consent authority, and provenance for `target`, `acceptance_criteria`, `consent_mode`. Treat issue #89 as architecture boundary, not implementation evidence. Never use provider login, caller `authenticated:true`, role identity, payload fields or arbitrary resolver output as canonical proof.
+This is not fixed by another pathname check. The next repair must prove one of:
 
-Acceptance: exact existing source contract or bounded NOT_PRESENT with explicit missing schema; no new authority plane.
+1. the actual writer process itself holds the kernel fence; or
+2. a helper design has deterministic fate-sharing such that helper loss fail-stops the writer before it can mutate/persist/report success, with no helper-death -> receipt race.
 
-### M-04 — admission -> local-wake compatibility
-Reconcile #121 against current #104. Determine whether `target`, `acceptance_criteria`, `consent_mode` now have a canonical source. Patch only if a legitimate source exists. Otherwise preserve fail-closed mismatch and document exact dependency.
+Until then SG-08 remains BLOCKED despite the earlier bounded PRS success against the old defect class.
 
-### M-05 — receipt durability continuity
-Reconcile #120 with current #104/#125. Confirm contradictory recorder acknowledgements, wrong-task artifacts, replay/reload and result-write failure cannot manufacture verified completion. Add a negative regression only if a current uncovered execution-authorising path is reproduced.
+## Authority/composition disposition
 
-### M-06 — Windows install / Doctor / recovery
-Reconcile #122 exact head and exact CI. Keep scheduler default-disabled and physical Windows actions owner-gated. Do not import unrelated SG-08 semantics into installer lane.
+`remote-authority-admission.mjs` validates supplied actor/grant provenance but does not authenticate transport or own grant issuance. The admitted task lacks canonical `target`, `acceptance_criteria`, and `consent_mode`; `local-wake.mjs` requires those values. No legitimate source for them was found. SG-01 and end-to-end SG-02 remain BLOCKED. Admission->local-wake composition remains fail-closed.
 
-### M-07 — frontend truth boundary
-Reconcile #111 with current #104/#125/#112. Ensure mutation readiness stays `unknown` until canonical source exists; execution completion remains distinct from verification/Green/PRS; Simple/Essentials/Tech Head remain presentation-only.
+## Replenished maximised queue
 
-### M-08 — product consolidation compatibility
-Apply main's six-pillar product consolidation contract only as a presentation/information-architecture constraint. Ensure no surface decision invents authority, entitlement, readiness, verification or assurance.
+| ID | State | Next task | Acceptance |
+|---|---|---|---|
+| M-11 | PENDING | Reproduce writer-level consequence of POSIX helper-holder death, not just primitive reacquisition: prove whether original writer can continue to success receipt after holder death while successor obtains fence. | deterministic adversarial test; no production patch first |
+| M-12 | PENDING | Test `release()` when helper has already exited to detect any wait-on-already-fired-exit/hang path. | focused primitive regression |
+| M-13 | PENDING | Evaluate smallest fate-shared/same-process POSIX fence repair on #125 lineage. Do not create a second ownership subsystem. | one ownership token; crash release; no helper-loss success window |
+| M-14 | PENDING | After any SG-08 repair, rerun old #123 false-success probes + helper-holder-loss probes + full exact-head Ubuntu/Windows CI, then fresh independent Jess/Michael/PRS on unchanged SHA. | exact-head evidence only |
+| M-15 | BLOCKED | SG-01/02 implementation. | real authenticated actor/session source + canonical grant/consent source must exist first |
+| M-16 | BLOCKED | admission->local-wake production composition. | canonical target/criteria/consent provenance required |
+| M-17 | PENDING | Reconcile #111 after exact-head green and ensure project-file mutation/readiness remains unknown rather than inheriting #125 claims. | presentation-only evidence |
+| M-18 | HOLD | Physical Windows / merge / deployment / production autonomy. | owner gate + all software/security/assurance prerequisites |
 
-### M-09 — exact-head verification matrix
-For every changed branch: capture exact SHA and hosted Ubuntu/Windows CI. A retry on unchanged SHA may resolve infrastructure/test flake, but predecessor success never transfers across runtime changes.
+## Current status
 
-### M-10 — durable checkpoint + portfolio log
-Record exact evidence, blockers and next vertical dependency in this batch/checkpoint and `Overseer#49`. Replenish rather than ending with an empty queue.
-
-## Execution started immediately
-
-Priority order for this run: M-01 -> M-03/M-04 -> M-05/M-06/M-07 reconciliation -> M-10. M-02 only if M-01 supports VERIFYING without inventing assurance.
+- SG-01: BLOCKED.
+- SG-02: PARTIAL / BLOCKED end-to-end.
+- SG-08: BLOCKED — new helper-holder-loss defect reproduced.
+- Admission->local-wake: BLOCKED_STABLE.
+- #111 frontend exact repaired head: functional CI PASS only; no mutation/authority promotion.
+- Physical Windows acceptance: NOT PROVEN for current mutation candidate.
+- Green/PRS: independent and exact-head required.
+- No overall GREEN.
